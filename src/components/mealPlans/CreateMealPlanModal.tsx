@@ -140,11 +140,11 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
     }
   };
 
-  const addMealEntry = () => {
+  const addMealEntry = (date?: string, mealType?: string) => {
     const newEntry: MealPlanEntryCreate = {
       recipe_id: 0,
-      date: formData.start_date,
-      meal_type: 'breakfast',
+      date: date || formData.start_date,
+      meal_type: mealType || 'breakfast',
       servings: 1
     };
     setFormData(prev => ({
@@ -174,6 +174,53 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
     const end = new Date(start);
     end.setDate(start.getDate() + days - 1);
     return end.toISOString().split('T')[0];
+  };
+
+  // Group entries by date and meal type for organized display
+  const groupEntriesByDateAndMeal = () => {
+    if (!formData.start_date || !formData.end_date) return {};
+    
+    const grouped: Record<string, Record<string, MealPlanEntryCreate[]>> = {};
+    
+    // Create date range
+    const startDate = new Date(formData.start_date);
+    const endDate = new Date(formData.end_date);
+    const dates: string[] = [];
+    
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      dates.push(dateStr);
+      grouped[dateStr] = {
+        breakfast: [],
+        lunch: [],
+        dinner: [],
+        snack: []
+      };
+    }
+    
+    // Group existing entries
+    formData.entries.forEach((entry, index) => {
+      if (grouped[entry.date] && grouped[entry.date][entry.meal_type]) {
+        grouped[entry.date][entry.meal_type].push({ ...entry, index });
+      }
+    });
+    
+    return { grouped, dates };
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      month: 'short', 
+      day: 'numeric' 
+    });
+  };
+
+  // Define meal type order for sorting
+  const getMealTypeOrder = (mealType: string): number => {
+    const order = { breakfast: 1, lunch: 2, dinner: 3, snack: 4 };
+    return order[mealType as keyof typeof order] || 5;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -256,10 +303,11 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
   if (!isOpen) return null;
 
   const isLoading = creating || updating || autoGenerating;
+  const { grouped, dates } = groupEntriesByDateAndMeal();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
           <h2 className="text-xl font-semibold text-neutral-900">
             {isEditing ? 'Edit Meal Plan' : 'Create Meal Plan'}
@@ -454,85 +502,101 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                 </div>
               </div>
 
-              {/* Meal Entries */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-neutral-900">Meal Entries</h3>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addMealEntry}
-                    leftIcon={<Plus className="h-4 w-4" />}
-                  >
-                    Add Meal
-                  </Button>
-                </div>
+              {/* Meal Schedule - Organized by Day and Meal Type */}
+              {formData.start_date && formData.end_date && (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-neutral-900">Meal Schedule</h3>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addMealEntry()}
+                      leftIcon={<Plus className="h-4 w-4" />}
+                    >
+                      Add Meal
+                    </Button>
+                  </div>
 
-                <div className="space-y-4">
-                  {formData.entries.map((entry, index) => (
-                    <Card key={index}>
-                      <CardContent className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-neutral-700 mb-1">
-                              Recipe
-                            </label>
-                            <RecipeSearchSelect
-                              value={entry.recipe_id}
-                              onChange={(recipeId) => updateMealEntry(index, 'recipe_id', recipeId)}
-                              placeholder="Search for recipe..."
-                            />
-                          </div>
-                          
-                          <Input
-                            label="Date"
-                            type="date"
-                            value={entry.date}
-                            onChange={(e) => updateMealEntry(index, 'date', e.target.value)}
-                            fullWidth
-                          />
-                          
-                          <Select
-                            label="Meal Type"
-                            options={mealTypeOptions}
-                            value={entry.meal_type}
-                            onChange={(value) => updateMealEntry(index, 'meal_type', value)}
-                            fullWidth
-                          />
-                          
-                          <div className="flex items-end space-x-2">
-                            <Input
-                              label="Servings"
-                              type="number"
-                              value={entry.servings}
-                              onChange={(e) => updateMealEntry(index, 'servings', Number(e.target.value))}
-                              min={1}
-                              max={20}
-                              fullWidth
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeMealEntry(index)}
-                              className="text-error-600 hover:text-error-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  
-                  {formData.entries.length === 0 && (
-                    <div className="text-center py-8 text-neutral-500">
-                      No meal entries added yet. Click "Add Meal" to get started.
-                    </div>
-                  )}
+                  <div className="space-y-6">
+                    {dates.map((date) => (
+                      <Card key={date}>
+                        <CardHeader>
+                          <CardTitle className="text-base">{formatDate(date)}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          {['breakfast', 'lunch', 'dinner', 'snack'].map((mealType) => (
+                            <div key={mealType} className="border-l-4 border-primary-200 pl-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-medium text-neutral-700 capitalize">{mealType}</h4>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => addMealEntry(date, mealType)}
+                                  className="text-xs"
+                                >
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  Add
+                                </Button>
+                              </div>
+                              
+                              {grouped[date][mealType].length === 0 ? (
+                                <div className="text-sm text-neutral-400 italic">No meals planned</div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {grouped[date][mealType].map((entry: any) => {
+                                    const entryIndex = formData.entries.findIndex(
+                                      (e, i) => e.recipe_id === entry.recipe_id && 
+                                               e.date === entry.date && 
+                                               e.meal_type === entry.meal_type &&
+                                               i === entry.index
+                                    );
+                                    
+                                    return (
+                                      <div key={entryIndex} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 bg-neutral-50 rounded-lg">
+                                        <div className="md:col-span-2">
+                                          <RecipeSearchSelect
+                                            value={entry.recipe_id}
+                                            onChange={(recipeId) => updateMealEntry(entryIndex, 'recipe_id', recipeId)}
+                                            placeholder="Search for recipe..."
+                                          />
+                                        </div>
+                                        
+                                        <Input
+                                          label="Servings"
+                                          type="number"
+                                          value={entry.servings}
+                                          onChange={(e) => updateMealEntry(entryIndex, 'servings', Number(e.target.value))}
+                                          min={1}
+                                          max={20}
+                                          fullWidth
+                                        />
+                                        
+                                        <div className="flex items-end">
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => removeMealEntry(entryIndex)}
+                                            className="text-error-600 hover:text-error-700 w-full"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -547,7 +611,7 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
               disabled={
                 isAutoGenerate && !isEditing
                   ? !autoGenerateData.start_date || autoGenerateData.days < 1
-                  : !formData.start_date || !formData.end_date || formData.entries.length === 0
+                  : !formData.start_date || !formData.end_date
               }
             >
               {isEditing 

@@ -38,21 +38,30 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     }
   }, [searchQuery, isOpen, searchRecipes]);
 
-  // Find selected recipe when value changes
+  // Find selected recipe when value changes or recipes load
   useEffect(() => {
     if (value && recipes) {
       const recipe = recipes.find(rec => rec.id === value);
-      setSelectedRecipe(recipe || null);
       if (recipe) {
-        setSearchQuery(recipe.name);
+        setSelectedRecipe(recipe);
+        if (!isOpen) {
+          setSearchQuery(recipe.name);
+        }
       }
-    } else {
+    } else if (value === 0) {
       setSelectedRecipe(null);
       if (!isOpen) {
         setSearchQuery('');
       }
     }
   }, [value, recipes, isOpen]);
+
+  // Load all recipes initially to find pre-selected recipe
+  useEffect(() => {
+    if (value && !selectedRecipe) {
+      searchRecipes();
+    }
+  }, [value, selectedRecipe, searchRecipes]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
