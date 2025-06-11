@@ -178,9 +178,9 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
 
   // Group entries by date and meal type for organized display
   const groupEntriesByDateAndMeal = () => {
-    if (!formData.start_date || !formData.end_date) return {};
+    if (!formData.start_date || !formData.end_date) return { grouped: {}, dates: [] };
     
-    const grouped: Record<string, Record<string, MealPlanEntryCreate[]>> = {};
+    const grouped: Record<string, Record<string, Array<MealPlanEntryCreate & { originalIndex: number }>>> = {};
     
     // Create date range
     const startDate = new Date(formData.start_date);
@@ -198,10 +198,10 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
       };
     }
     
-    // Group existing entries
-    formData.entries.forEach((entry, index) => {
+    // Group existing entries with their original indices
+    formData.entries.forEach((entry, originalIndex) => {
       if (grouped[entry.date] && grouped[entry.date][entry.meal_type]) {
-        grouped[entry.date][entry.meal_type].push({ ...entry, index });
+        grouped[entry.date][entry.meal_type].push({ ...entry, originalIndex });
       }
     });
     
@@ -215,12 +215,6 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
       month: 'short', 
       day: 'numeric' 
     });
-  };
-
-  // Define meal type order for sorting
-  const getMealTypeOrder = (mealType: string): number => {
-    const order = { breakfast: 1, lunch: 2, dinner: 3, snack: 4 };
-    return order[mealType as keyof typeof order] || 5;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -545,48 +539,49 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                                 <div className="text-sm text-neutral-400 italic">No meals planned</div>
                               ) : (
                                 <div className="space-y-2">
-                                  {grouped[date][mealType].map((entry: any) => {
-                                    const entryIndex = formData.entries.findIndex(
-                                      (e, i) => e.recipe_id === entry.recipe_id && 
-                                               e.date === entry.date && 
-                                               e.meal_type === entry.meal_type &&
-                                               i === entry.index
-                                    );
-                                    
-                                    return (
-                                      <div key={entryIndex} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 bg-neutral-50 rounded-lg">
-                                        <div className="md:col-span-2">
+                                  {grouped[date][mealType].map((entry) => (
+                                    <div key={entry.originalIndex} className="bg-neutral-50 rounded-lg p-3">
+                                      <div className="grid grid-cols-12 gap-3 items-end">
+                                        {/* Recipe Selection - Takes up most space */}
+                                        <div className="col-span-12 md:col-span-7">
+                                          <label className="block text-xs font-medium text-neutral-700 mb-1">
+                                            Recipe
+                                          </label>
                                           <RecipeSearchSelect
                                             value={entry.recipe_id}
-                                            onChange={(recipeId) => updateMealEntry(entryIndex, 'recipe_id', recipeId)}
+                                            onChange={(recipeId) => updateMealEntry(entry.originalIndex, 'recipe_id', recipeId)}
                                             placeholder="Search for recipe..."
                                           />
                                         </div>
                                         
-                                        <Input
-                                          label="Servings"
-                                          type="number"
-                                          value={entry.servings}
-                                          onChange={(e) => updateMealEntry(entryIndex, 'servings', Number(e.target.value))}
-                                          min={1}
-                                          max={20}
-                                          fullWidth
-                                        />
+                                        {/* Servings */}
+                                        <div className="col-span-8 md:col-span-3">
+                                          <Input
+                                            label="Servings"
+                                            type="number"
+                                            value={entry.servings}
+                                            onChange={(e) => updateMealEntry(entry.originalIndex, 'servings', Number(e.target.value))}
+                                            min={1}
+                                            max={20}
+                                            fullWidth
+                                          />
+                                        </div>
                                         
-                                        <div className="flex items-end">
+                                        {/* Delete Button */}
+                                        <div className="col-span-4 md:col-span-2">
                                           <Button
                                             type="button"
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => removeMealEntry(entryIndex)}
-                                            className="text-error-600 hover:text-error-700 w-full"
+                                            onClick={() => removeMealEntry(entry.originalIndex)}
+                                            className="text-error-600 hover:text-error-700 w-full h-[42px] px-2"
                                           >
-                                            <Trash2 className="h-4 w-4" />
+                                            <Trash2 className="h-3 w-3" />
                                           </Button>
                                         </div>
                                       </div>
-                                    );
-                                  })}
+                                    </div>
+                                  ))}
                                 </div>
                               )}
                             </div>
