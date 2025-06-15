@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, Merge } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import CreateIngredientModal from '../components/ingredients/CreateIngredientModal';
+import MergeIngredientsModal from '../components/ingredients/MergeIngredientsModal';
 import Card, { CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -15,6 +16,7 @@ import { getIngredients } from '../api/ingredientApi';
 const Ingredients: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   
   const { data: ingredients, loading, error, execute: fetchIngredients } = useApi<Ingredient[]>(getIngredients);
   
@@ -40,6 +42,11 @@ const Ingredients: React.FC = () => {
     // Refresh the ingredients list
     loadIngredients();
   };
+
+  const handleMergeSuccess = () => {
+    // Refresh the ingredients list
+    loadIngredients();
+  };
   
   return (
     <Container className="py-6 sm:py-8 lg:py-12">
@@ -47,13 +54,23 @@ const Ingredients: React.FC = () => {
         title="Ingredients"
         description="Browse and manage ingredients"
         actions={
-          <Button 
-            leftIcon={<PlusCircle size={18} />}
-            onClick={() => setIsCreateModalOpen(true)}
-            className="w-full sm:w-auto"
-          >
-            Add Ingredient
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+            <Button 
+              variant="outline"
+              leftIcon={<Merge size={18} />}
+              onClick={() => setIsMergeModalOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              Merge Ingredients
+            </Button>
+            <Button 
+              leftIcon={<PlusCircle size={18} />}
+              onClick={() => setIsCreateModalOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              Add Ingredient
+            </Button>
+          </div>
         }
       />
       
@@ -161,10 +178,17 @@ const Ingredients: React.FC = () => {
         </Card>
       )}
 
+      {/* Modals */}
       <CreateIngredientModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleCreateSuccess}
+      />
+
+      <MergeIngredientsModal
+        isOpen={isMergeModalOpen}
+        onClose={() => setIsMergeModalOpen(false)}
+        onSuccess={handleMergeSuccess}
       />
     </Container>
   );
