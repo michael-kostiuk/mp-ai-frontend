@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Recipe, RecipeFilterParams } from '../../types';
 import RecipeCard from './RecipeCard';
 import RecipeSearchFilters from './RecipeSearchFilters';
@@ -19,9 +19,15 @@ const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
   
   const { data: recipes, loading, error, execute: fetchRecipes } = useApi<Recipe[]>(getRecipes);
   
-  useEffect(() => {
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const loadRecipes = useCallback(() => {
     fetchRecipes(filters);
-  }, [filters, fetchRecipes]);
+  }, [fetchRecipes, filters]);
+  
+  // Load recipes when filters change
+  useEffect(() => {
+    loadRecipes();
+  }, [filters]); // Only depend on filters, not the fetch function
   
   const handleFilterChange = (newFilters: RecipeFilterParams) => {
     setFilters({
@@ -53,7 +59,7 @@ const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
         <ErrorMessage 
           title="Failed to load recipes" 
           message={error.message}
-          onRetry={() => fetchRecipes(filters)} 
+          onRetry={loadRecipes} 
         />
       )}
       

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2 } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
 import Button from '../ui/Button';
@@ -29,11 +29,19 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
   const { loading: deleting, execute: deletePlan } = useApi(deleteMealPlan);
   const { data: shoppingList, loading: generatingList, execute: generateList } = useApi<ShoppingList>(generateShoppingList);
 
-  useEffect(() => {
-    if (isOpen && mealPlanId) {
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const loadMealPlan = useCallback(() => {
+    if (mealPlanId) {
       fetchMealPlan(mealPlanId);
     }
-  }, [isOpen, mealPlanId, fetchMealPlan]);
+  }, [fetchMealPlan, mealPlanId]);
+
+  // Load meal plan only when modal opens or mealPlanId changes
+  useEffect(() => {
+    if (isOpen && mealPlanId) {
+      loadMealPlan();
+    }
+  }, [isOpen, mealPlanId]); // Only depend on isOpen and mealPlanId, not the fetch function
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -140,7 +148,7 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
             <ErrorMessage 
               title="Failed to load meal plan" 
               message={error.message}
-              onRetry={() => mealPlanId && fetchMealPlan(mealPlanId)} 
+              onRetry={loadMealPlan} 
             />
           )}
 

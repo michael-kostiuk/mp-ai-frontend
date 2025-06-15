@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Clock, Users, Target, Edit, Trash2, ChefHat } from 'lucide-react';
 import { Recipe } from '../../types';
 import Button from '../ui/Button';
@@ -28,11 +28,19 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const { data: recipe, loading, error, execute: fetchRecipe } = useApi<Recipe>(getRecipe);
   const { loading: deleting, execute: deleteRecipeById } = useApi(deleteRecipe);
 
-  useEffect(() => {
-    if (isOpen && recipeId) {
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const loadRecipe = useCallback(() => {
+    if (recipeId) {
       fetchRecipe(recipeId);
     }
-  }, [isOpen, recipeId, fetchRecipe]);
+  }, [fetchRecipe, recipeId]);
+
+  // Load recipe only when modal opens or recipeId changes
+  useEffect(() => {
+    if (isOpen && recipeId) {
+      loadRecipe();
+    }
+  }, [isOpen, recipeId]); // Only depend on isOpen and recipeId, not the fetch function
 
   const formatTime = (minutes: number) => {
     if (minutes < 60) {
@@ -46,18 +54,6 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const getTotalTime = () => {
     if (!recipe) return 0;
     return recipe.prep_time + recipe.cook_time;
-  };
-
-  const handleDelete = async () => {
-    if (!recipeId) return;
-    
-    try {
-      await deleteRecipeById(recipeId);
-      onDelete?.();
-      onClose();
-    } catch (error) {
-      console.error('Failed to delete recipe:', error);
-    }
   };
 
   const groupIngredientsByCategory = () => {
@@ -81,6 +77,18 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
       .map(step => step.trim());
     
     return steps;
+  };
+
+  const handleDelete = async () => {
+    if (!recipeId) return;
+    
+    try {
+      await deleteRecipeById(recipeId);
+      onDelete?.();
+      onClose();
+    } catch (error) {
+      console.error('Failed to delete recipe:', error);
+    }
   };
 
   if (!isOpen) return null;
@@ -109,7 +117,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
             <ErrorMessage 
               title="Failed to load recipe" 
               message={error.message}
-              onRetry={() => recipeId && fetchRecipe(recipeId)} 
+              onRetry={loadRecipe} 
             />
           )}
 
