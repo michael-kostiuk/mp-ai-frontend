@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, Users, Target, Plus, Trash2 } from 'lucide-react';
 import { MealPlanCreate, MealPlanEntryCreate, Recipe, MealPlan } from '../../types';
 import Button from '../ui/Button';
@@ -48,6 +48,18 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
   const { loading: updating, execute: updatePlan } = useApi(updateMealPlan);
   const { loading: autoGenerating, execute: autoGenerate } = useApi(autoGenerateMealPlan);
 
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const loadRecipes = useCallback(() => {
+    fetchRecipes();
+  }, [fetchRecipes]);
+
+  // Load recipes only once when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      loadRecipes();
+    }
+  }, [isOpen]); // Only depend on isOpen, not the fetch function
+
   // Initialize form data when editing meal plan changes
   useEffect(() => {
     if (editingMealPlan) {
@@ -90,12 +102,6 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
       });
     }
   }, [editingMealPlan]);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchRecipes();
-    }
-  }, [isOpen, fetchRecipes]);
 
   const dietaryOptions = [
     { value: 'vegetarian', label: 'Vegetarian' },

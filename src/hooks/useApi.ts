@@ -43,24 +43,21 @@ const useApi = <T>(
         // Only update state if request wasn't cancelled
         if (!newAbortController.signal.aborted) {
           setData(result);
+          setLoading(false); // Set loading to false here
           setAbortController(null);
         }
         
         return result;
       } catch (err) {
         // Only handle error if request wasn't cancelled
-        if (abortController && !abortController.signal.aborted) {
+        if (!abortController || !abortController.signal.aborted) {
           const apiError = err as ApiError;
           setError(apiError);
+          setLoading(false); // Set loading to false on error
           setAbortController(null);
           throw apiError;
         }
         throw err;
-      } finally {
-        // Only update loading state if request wasn't cancelled
-        if (abortController && !abortController.signal.aborted) {
-          setLoading(false);
-        }
       }
     },
     [apiFunc, abortController]
@@ -95,7 +92,7 @@ const useApi = <T>(
         abortController.abort();
       }
     };
-  }, []);
+  }, [abortController]);
   
   return { data, loading, error, execute, reset, cancel };
 };
