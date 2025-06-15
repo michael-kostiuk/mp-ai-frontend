@@ -24,87 +24,102 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
+  const [displayValue, setDisplayValue] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const { data: recipes, loading, execute: searchRecipes } = useApi<Recipe[]>(getRecipes);
 
-  // Debounced search function
-  const debouncedSearch = (query: string, immediate = false) => {
+  // Find and set selected recipe when value changes
+  useEffect(() => {
+    if (value && value !== selectedRecipe?.id) {
+      // Only search if we don't already have the recipe in our current results
+      const existingRecipe = recipes?.find(rec => rec.id === value);
+      if (existingRecipe) {
+        setSelectedRecipe(existingRecipe);
+        setDisplayValue(existingRecipe.name);
+      } else if (value > 0) {
+        // Need to fetch this specific recipe
+        performSearch('', value);
+      }
+    } else if (value === 0) {
+      setSelectedRecipe(null);
+      setDisplayValue('');
+    }
+  }, [value, recipes]);
+
+  // Debounced search with cancellation
+  const performSearch = (query: string, specificId?: number) => {
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    const executeSearch = () => {
-      if (query.trim().length >= 3) {
-        searchRecipes({ name: query.trim() });
-      } else if (query.trim().length === 0) {
-        // Load all recipes when query is empty
-        searchRecipes();
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const executeSearch = async () => {
+      try {
+        // Create new abort controller for this request
+        abortControllerRef.current = new AbortController();
+        
+        if (specificId) {
+          // Search for specific recipe by ID (when component mounts with pre-selected value)
+          await searchRecipes({ id: specificId });
+        } else if (query.trim().length >= 3) {
+          // Search by name
+          await searchRecipes({ name: query.trim() });
+        }
+      } catch (error) {
+        // Ignore aborted requests
+        if (error.name !== 'AbortError') {
+          console.error('Search error:', error);
+        }
       }
     };
 
-    if (immediate) {
-      executeSearch();
-    } else {
-      // Set new timeout
-      debounceTimeoutRef.current = setTimeout(executeSearch, 300);
+    if (specificId || query.trim().length >= 3) {
+      // Set timeout for search (except for specific ID lookups)
+      if (specificId) {
+        executeSearch();
+      } else {
+        debounceTimeoutRef.current = setTimeout(executeSearch, 300);
+      }
     }
   };
 
-  // Handle search query changes with debounce
+  // Handle search query changes
   useEffect(() => {
-    if (isOpen && hasInitiallyLoaded) {
-      debouncedSearch(searchQuery);
+    if (isOpen && searchQuery !== displayValue) {
+      performSearch(searchQuery);
     }
 
-    // Cleanup timeout on unmount
+    // Cleanup on unmount
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
-  }, [searchQuery, isOpen, hasInitiallyLoaded]);
-
-  // Find selected recipe when value changes or recipes load
-  useEffect(() => {
-    if (value && recipes) {
-      const recipe = recipes.find(rec => rec.id === value);
-      if (recipe) {
-        setSelectedRecipe(recipe);
-        if (!isOpen) {
-          setSearchQuery(recipe.name);
-        }
-      }
-    } else if (value === 0) {
-      setSelectedRecipe(null);
-      if (!isOpen) {
-        setSearchQuery('');
-      }
-    }
-  }, [value, recipes, isOpen]);
-
-  // Initial load when component mounts or dropdown opens for the first time
-  useEffect(() => {
-    if (isOpen && !hasInitiallyLoaded) {
-      setHasInitiallyLoaded(true);
-      // Load recipes immediately when opening dropdown for the first time
-      debouncedSearch('', true); // immediate = true
-    }
-  }, [isOpen, hasInitiallyLoaded]);
+  }, [searchQuery, isOpen]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        // Reset search query to selected recipe name if closed without selection
+        // Reset display to selected recipe name or empty
         if (selectedRecipe) {
+          setDisplayValue(selectedRecipe.name);
           setSearchQuery(selectedRecipe.name);
         } else {
+          setDisplayValue('');
           setSearchQuery('');
         }
       }
@@ -116,11 +131,16 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
 
   const handleInputFocus = () => {
     setIsOpen(true);
+    // Clear the input for fresh search
     setSearchQuery('');
+    setDisplayValue('');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+    const newValue = e.target.value;
+    setSearchQuery(newValue);
+    setDisplayValue(newValue);
+    
     if (!isOpen) {
       setIsOpen(true);
     }
@@ -128,6 +148,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
 
   const handleSelectRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
+    setDisplayValue(recipe.name);
     setSearchQuery(recipe.name);
     onChange(recipe.id);
     setIsOpen(false);
@@ -142,6 +163,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
 
   const handleClear = () => {
     setSelectedRecipe(null);
+    setDisplayValue('');
     setSearchQuery('');
     onChange(0);
     inputRef.current?.focus();
@@ -152,7 +174,8 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     rec => rec.name.toLowerCase() === searchQuery.toLowerCase()
   );
   const showCreateOption = searchQuery.trim() && !hasExactMatch && onCreateNew;
-  const showMinCharMessage = searchQuery.trim().length > 0 && searchQuery.trim().length < 3;
+  const showMinCharMessage = isOpen && searchQuery.trim().length > 0 && searchQuery.trim().length < 3;
+  const showNoResults = isOpen && !loading && !showMinCharMessage && searchQuery.trim().length >= 3 && filteredRecipes.length === 0 && !showCreateOption;
 
   return (
     <div ref={containerRef} className="relative">
@@ -160,7 +183,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
         <Input
           ref={inputRef}
           type="text"
-          value={searchQuery}
+          value={displayValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           placeholder={placeholder}
@@ -195,13 +218,13 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
             </div>
           )}
 
-          {!loading && !showMinCharMessage && filteredRecipes.length === 0 && !showCreateOption && (
+          {showNoResults && (
             <div className="px-3 py-2 text-sm text-neutral-500 text-center">
               No recipes found
             </div>
           )}
 
-          {!loading && !showMinCharMessage && filteredRecipes.map((recipe) => (
+          {!loading && !showMinCharMessage && searchQuery.trim().length >= 3 && filteredRecipes.map((recipe) => (
             <button
               key={recipe.id}
               type="button"

@@ -24,76 +24,102 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
+  const [displayValue, setDisplayValue] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const { data: ingredients, loading, execute: searchIngredients } = useApi<Ingredient[]>(getIngredients);
 
-  // Debounced search function
-  const debouncedSearch = (query: string) => {
+  // Find and set selected ingredient when value changes
+  useEffect(() => {
+    if (value && value !== selectedIngredient?.id) {
+      // Only search if we don't already have the ingredient in our current results
+      const existingIngredient = ingredients?.find(ing => ing.id === value);
+      if (existingIngredient) {
+        setSelectedIngredient(existingIngredient);
+        setDisplayValue(existingIngredient.name);
+      } else if (value > 0) {
+        // Need to fetch this specific ingredient
+        performSearch('', value);
+      }
+    } else if (value === 0) {
+      setSelectedIngredient(null);
+      setDisplayValue('');
+    }
+  }, [value, ingredients]);
+
+  // Debounced search with cancellation
+  const performSearch = (query: string, specificId?: number) => {
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Set new timeout
-    debounceTimeoutRef.current = setTimeout(() => {
-      if (query.trim().length >= 3) {
-        searchIngredients({ name: query.trim() });
-      } else if (query.trim().length === 0 && isOpen) {
-        // Load all ingredients when query is empty and dropdown is open
-        searchIngredients();
-      }
-    }, 300); // 300ms delay
-  };
-
-  // Search ingredients when query changes
-  useEffect(() => {
-    if (isOpen) {
-      debouncedSearch(searchQuery);
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
 
-    // Cleanup timeout on unmount
+    const executeSearch = async () => {
+      try {
+        // Create new abort controller for this request
+        abortControllerRef.current = new AbortController();
+        
+        if (specificId) {
+          // Search for specific ingredient by ID (when component mounts with pre-selected value)
+          await searchIngredients({ id: specificId });
+        } else if (query.trim().length >= 3) {
+          // Search by name
+          await searchIngredients({ name: query.trim() });
+        }
+      } catch (error) {
+        // Ignore aborted requests
+        if (error.name !== 'AbortError') {
+          console.error('Search error:', error);
+        }
+      }
+    };
+
+    if (specificId || query.trim().length >= 3) {
+      // Set timeout for search (except for specific ID lookups)
+      if (specificId) {
+        executeSearch();
+      } else {
+        debounceTimeoutRef.current = setTimeout(executeSearch, 300);
+      }
+    }
+  };
+
+  // Handle search query changes
+  useEffect(() => {
+    if (isOpen && searchQuery !== displayValue) {
+      performSearch(searchQuery);
+    }
+
+    // Cleanup on unmount
     return () => {
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, [searchQuery, isOpen]);
-
-  // Find selected ingredient when value changes
-  useEffect(() => {
-    if (value && ingredients) {
-      const ingredient = ingredients.find(ing => ing.id === value);
-      setSelectedIngredient(ingredient || null);
-      if (ingredient) {
-        setSearchQuery(ingredient.name);
-      }
-    } else {
-      setSelectedIngredient(null);
-      if (!isOpen) {
-        setSearchQuery('');
-      }
-    }
-  }, [value, ingredients, isOpen]);
-
-  // Load initial ingredients when component mounts with a value
-  useEffect(() => {
-    if (value && !selectedIngredient && !ingredients) {
-      searchIngredients();
-    }
-  }, [value, selectedIngredient, ingredients, searchIngredients]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        // Reset search query to selected ingredient name if closed without selection
+        // Reset display to selected ingredient name or empty
         if (selectedIngredient) {
+          setDisplayValue(selectedIngredient.name);
           setSearchQuery(selectedIngredient.name);
         } else {
+          setDisplayValue('');
           setSearchQuery('');
         }
       }
@@ -105,16 +131,24 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
 
   const handleInputFocus = () => {
     setIsOpen(true);
+    // Clear the input for fresh search
     setSearchQuery('');
+    setDisplayValue('');
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-    setIsOpen(true);
+    const newValue = e.target.value;
+    setSearchQuery(newValue);
+    setDisplayValue(newValue);
+    
+    if (!isOpen) {
+      setIsOpen(true);
+    }
   };
 
   const handleSelectIngredient = (ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);
+    setDisplayValue(ingredient.name);
     setSearchQuery(ingredient.name);
     onChange(ingredient.id);
     setIsOpen(false);
@@ -129,6 +163,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
 
   const handleClear = () => {
     setSelectedIngredient(null);
+    setDisplayValue('');
     setSearchQuery('');
     onChange(0);
     inputRef.current?.focus();
@@ -139,7 +174,8 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     ing => ing.name.toLowerCase() === searchQuery.toLowerCase()
   );
   const showCreateOption = searchQuery.trim() && !hasExactMatch && onCreateNew;
-  const showMinCharMessage = searchQuery.trim().length > 0 && searchQuery.trim().length < 3;
+  const showMinCharMessage = isOpen && searchQuery.trim().length > 0 && searchQuery.trim().length < 3;
+  const showNoResults = isOpen && !loading && !showMinCharMessage && searchQuery.trim().length >= 3 && filteredIngredients.length === 0 && !showCreateOption;
 
   return (
     <div ref={containerRef} className="relative">
@@ -147,7 +183,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
         <Input
           ref={inputRef}
           type="text"
-          value={searchQuery}
+          value={displayValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           placeholder={placeholder}
@@ -182,13 +218,13 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
             </div>
           )}
 
-          {!loading && !showMinCharMessage && filteredIngredients.length === 0 && !showCreateOption && (
+          {showNoResults && (
             <div className="px-3 py-2 text-sm text-neutral-500 text-center">
               No ingredients found
             </div>
           )}
 
-          {!loading && !showMinCharMessage && filteredIngredients.map((ingredient) => (
+          {!loading && !showMinCharMessage && searchQuery.trim().length >= 3 && filteredIngredients.map((ingredient) => (
             <button
               key={ingredient.id}
               type="button"
