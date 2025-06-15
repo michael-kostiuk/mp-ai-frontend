@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Search, Sliders } from 'lucide-react';
 import { RecipeFilterParams } from '../../types';
 import Input from '../ui/Input';
@@ -19,6 +19,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
   const [maxPrepTime, setMaxPrepTime] = useState<number | undefined>(undefined);
   const [minCalories, setMinCalories] = useState<number | undefined>(undefined);
   const [maxCalories, setMaxCalories] = useState<number | undefined>(undefined);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const categoryOptions = [
     { value: '', label: 'All Categories' },
@@ -38,14 +39,51 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
     { value: 'low-carb', label: 'Low Carb' },
     { value: 'high-protein', label: 'High Protein' },
   ];
+
+  // Debounced search function
+  const debouncedSearch = (query: string) => {
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Set new timeout
+    debounceTimeoutRef.current = setTimeout(() => {
+      if (query.trim().length >= 3 || query.trim().length === 0) {
+        handleSearch(query);
+      }
+    }, 300); // 300ms delay
+  };
+
+  // Auto-search when query changes
+  useEffect(() => {
+    debouncedSearch(searchQuery);
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
   
-  const handleSearch = () => {
+  const handleSearch = (query?: string) => {
+    const searchTerm = query !== undefined ? query : searchQuery;
+    
     // For search, we'd use the search endpoint instead of filters
-    if (searchQuery.trim()) {
-      // This would typically use a different API endpoint
-      console.log('Searching for:', searchQuery);
-    } else {
-      // Apply filters
+    if (searchTerm.trim().length >= 3) {
+      // This would typically use a different API endpoint for search
+      console.log('Searching for:', searchTerm);
+      onFilterChange({
+        name: searchTerm.trim(),
+        category: category || undefined,
+        dietary_tags: dietaryTags.length > 0 ? dietaryTags : undefined,
+        max_prep_time: maxPrepTime,
+        min_calories: minCalories,
+        max_calories: maxCalories,
+      });
+    } else if (searchTerm.trim().length === 0) {
+      // Apply filters without search term
       onFilterChange({
         category: category || undefined,
         dietary_tags: dietaryTags.length > 0 ? dietaryTags : undefined,
@@ -57,6 +95,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
   };
   
   const handleReset = () => {
+    setSearchQuery('');
     setCategory(undefined);
     setDietaryTags([]);
     setMaxPrepTime(undefined);
@@ -73,24 +112,38 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
         : [...prev, tag]
     );
   };
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const showMinCharMessage = searchQuery.trim().length > 0 && searchQuery.trim().length < 3;
   
   return (
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden transition-all">
       <div className="p-4">
         <div className="flex items-center space-x-4">
           <div className="flex-1">
-            <Input
-              placeholder="Search recipes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              leftIcon={<Search className="h-5 w-5" />}
-              fullWidth
-            />
+            <div className="relative">
+              <Input
+                placeholder="Search recipes..."
+                value={searchQuery}
+                onChange={handleSearchInputChange}
+                leftIcon={<Search className="h-5 w-5" />}
+                fullWidth
+              />
+              {showMinCharMessage && (
+                <div className="absolute top-full left-0 right-0 mt-1 px-3 py-2 bg-white border border-neutral-200 rounded-md shadow-sm text-sm text-neutral-400 z-10">
+                  Type at least 3 characters to search
+                </div>
+              )}
+            </div>
           </div>
           
           <Button 
-            onClick={handleSearch}
+            onClick={() => handleSearch()}
             className="flex-shrink-0"
+            disabled={searchQuery.trim().length > 0 && searchQuery.trim().length < 3}
           >
             Search
           </Button>
@@ -193,7 +246,8 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
             </Button>
             <Button 
               type="button" 
-              onClick={handleSearch}
+              onClick={() => handleSearch()}
+              disabled={searchQuery.trim().length > 0 && searchQuery.trim().length < 3}
             >
               Apply Filters
             </Button>

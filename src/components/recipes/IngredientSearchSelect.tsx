@@ -26,17 +26,41 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: ingredients, loading, execute: searchIngredients } = useApi<Ingredient[]>(getIngredients);
 
+  // Debounced search function
+  const debouncedSearch = (query: string) => {
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Set new timeout
+    debounceTimeoutRef.current = setTimeout(() => {
+      if (query.trim().length >= 3) {
+        searchIngredients({ name: query.trim() });
+      } else if (query.trim().length === 0 && isOpen) {
+        // Load all ingredients when query is empty and dropdown is open
+        searchIngredients();
+      }
+    }, 300); // 300ms delay
+  };
+
   // Search ingredients when query changes
   useEffect(() => {
-    if (searchQuery.trim()) {
-      searchIngredients({ name: searchQuery.trim() });
-    } else if (isOpen) {
-      searchIngredients();
+    if (isOpen) {
+      debouncedSearch(searchQuery);
     }
-  }, [searchQuery, isOpen, searchIngredients]);
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, isOpen]);
 
   // Find selected ingredient when value changes
   useEffect(() => {
@@ -53,6 +77,13 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
       }
     }
   }, [value, ingredients, isOpen]);
+
+  // Load initial ingredients when component mounts with a value
+  useEffect(() => {
+    if (value && !selectedIngredient && !ingredients) {
+      searchIngredients();
+    }
+  }, [value, selectedIngredient, ingredients, searchIngredients]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -108,6 +139,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     ing => ing.name.toLowerCase() === searchQuery.toLowerCase()
   );
   const showCreateOption = searchQuery.trim() && !hasExactMatch && onCreateNew;
+  const showMinCharMessage = searchQuery.trim().length > 0 && searchQuery.trim().length < 3;
 
   return (
     <div ref={containerRef} className="relative">
@@ -144,13 +176,19 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
             </div>
           )}
 
-          {!loading && filteredIngredients.length === 0 && !showCreateOption && (
+          {showMinCharMessage && (
+            <div className="px-3 py-2 text-sm text-neutral-400 text-center">
+              Type at least 3 characters to search
+            </div>
+          )}
+
+          {!loading && !showMinCharMessage && filteredIngredients.length === 0 && !showCreateOption && (
             <div className="px-3 py-2 text-sm text-neutral-500 text-center">
               No ingredients found
             </div>
           )}
 
-          {!loading && filteredIngredients.map((ingredient) => (
+          {!loading && !showMinCharMessage && filteredIngredients.map((ingredient) => (
             <button
               key={ingredient.id}
               type="button"

@@ -26,17 +26,41 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: recipes, loading, execute: searchRecipes } = useApi<Recipe[]>(getRecipes);
 
+  // Debounced search function
+  const debouncedSearch = (query: string) => {
+    // Clear existing timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Set new timeout
+    debounceTimeoutRef.current = setTimeout(() => {
+      if (query.trim().length >= 3) {
+        searchRecipes({ name: query.trim() });
+      } else if (query.trim().length === 0 && isOpen) {
+        // Load all recipes when query is empty and dropdown is open
+        searchRecipes();
+      }
+    }, 300); // 300ms delay
+  };
+
   // Search recipes when query changes
   useEffect(() => {
-    if (searchQuery.trim()) {
-      searchRecipes({ name: searchQuery.trim() });
-    } else if (isOpen) {
-      searchRecipes();
+    if (isOpen) {
+      debouncedSearch(searchQuery);
     }
-  }, [searchQuery, isOpen, searchRecipes]);
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, isOpen]);
 
   // Find selected recipe when value changes or recipes load
   useEffect(() => {
@@ -56,12 +80,12 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     }
   }, [value, recipes, isOpen]);
 
-  // Load all recipes initially to find pre-selected recipe
+  // Load initial recipes when component mounts with a value
   useEffect(() => {
-    if (value && !selectedRecipe) {
+    if (value && !selectedRecipe && !recipes) {
       searchRecipes();
     }
-  }, [value, selectedRecipe, searchRecipes]);
+  }, [value, selectedRecipe, recipes, searchRecipes]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -117,6 +141,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     rec => rec.name.toLowerCase() === searchQuery.toLowerCase()
   );
   const showCreateOption = searchQuery.trim() && !hasExactMatch && onCreateNew;
+  const showMinCharMessage = searchQuery.trim().length > 0 && searchQuery.trim().length < 3;
 
   return (
     <div ref={containerRef} className="relative">
@@ -153,13 +178,19 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
             </div>
           )}
 
-          {!loading && filteredRecipes.length === 0 && !showCreateOption && (
+          {showMinCharMessage && (
+            <div className="px-3 py-2 text-sm text-neutral-400 text-center">
+              Type at least 3 characters to search
+            </div>
+          )}
+
+          {!loading && !showMinCharMessage && filteredRecipes.length === 0 && !showCreateOption && (
             <div className="px-3 py-2 text-sm text-neutral-500 text-center">
               No recipes found
             </div>
           )}
 
-          {!loading && filteredRecipes.map((recipe) => (
+          {!loading && !showMinCharMessage && filteredRecipes.map((recipe) => (
             <button
               key={recipe.id}
               type="button"
