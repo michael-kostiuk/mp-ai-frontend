@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Download } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -14,9 +14,15 @@ import { getShoppingLists } from '../api/shoppingListApi';
 const ShoppingLists: React.FC = () => {
   const { data: shoppingLists, loading, error, execute: fetchShoppingLists } = useApi<ShoppingListType[]>(getShoppingLists);
   
-  useEffect(() => {
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const loadShoppingLists = useCallback(() => {
     fetchShoppingLists();
   }, [fetchShoppingLists]);
+  
+  // Load shopping lists only once on mount
+  useEffect(() => {
+    loadShoppingLists();
+  }, []); // Empty dependency array - only run once on mount
   
   const handleExportList = (id: number) => {
     // In a real app, this would trigger the export functionality
@@ -40,7 +46,7 @@ const ShoppingLists: React.FC = () => {
         <ErrorMessage 
           title="Failed to load shopping lists" 
           message={error.message}
-          onRetry={fetchShoppingLists} 
+          onRetry={loadShoppingLists} 
         />
       )}
       

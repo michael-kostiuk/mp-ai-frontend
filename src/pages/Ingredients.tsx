@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -15,13 +15,18 @@ import { getIngredients } from '../api/ingredientApi';
 const Ingredients: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   
   const { data: ingredients, loading, error, execute: fetchIngredients } = useApi<Ingredient[]>(getIngredients);
   
-  useEffect(() => {
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const loadIngredients = useCallback(() => {
     fetchIngredients();
-  }, [fetchIngredients, refreshKey]);
+  }, [fetchIngredients]);
+  
+  // Load ingredients only once on mount
+  useEffect(() => {
+    loadIngredients();
+  }, []); // Empty dependency array - only run once on mount
   
   const filteredIngredients = ingredients
     ? ingredients.filter(
@@ -33,7 +38,7 @@ const Ingredients: React.FC = () => {
 
   const handleCreateSuccess = () => {
     // Refresh the ingredients list
-    setRefreshKey(prev => prev + 1);
+    loadIngredients();
   };
   
   return (
@@ -73,7 +78,7 @@ const Ingredients: React.FC = () => {
         <ErrorMessage 
           title="Failed to load ingredients" 
           message={error.message}
-          onRetry={fetchIngredients} 
+          onRetry={loadIngredients} 
         />
       )}
       

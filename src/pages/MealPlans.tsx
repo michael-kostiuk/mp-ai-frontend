@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { PlusCircle, Calendar, Users, Target } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -24,9 +24,15 @@ const MealPlans: React.FC = () => {
   
   const { data: mealPlans, loading, error, execute: fetchMealPlans } = useApi<MealPlan[]>(getMealPlans);
   
-  useEffect(() => {
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const loadMealPlans = useCallback(() => {
     fetchMealPlans(userId);
   }, [fetchMealPlans, userId]);
+  
+  // Load meal plans only once on mount
+  useEffect(() => {
+    loadMealPlans();
+  }, []); // Empty dependency array - only run once on mount
   
   const handleSelectMealPlan = (mealPlan: MealPlan) => {
     setSelectedMealPlanId(mealPlan.id);
@@ -34,11 +40,11 @@ const MealPlans: React.FC = () => {
   };
 
   const handleCreateSuccess = () => {
-    fetchMealPlans(userId);
+    loadMealPlans(); // Refresh the list after creating
   };
 
   const handleDeleteSuccess = () => {
-    fetchMealPlans(userId);
+    loadMealPlans(); // Refresh the list after deleting
     setIsDetailModalOpen(false);
     setSelectedMealPlanId(null);
   };
@@ -134,7 +140,7 @@ const MealPlans: React.FC = () => {
         <ErrorMessage 
           title="Failed to load meal plans" 
           message={error.message}
-          onRetry={() => fetchMealPlans(userId)} 
+          onRetry={loadMealPlans} 
         />
       )}
       

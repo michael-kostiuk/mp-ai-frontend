@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { PlusCircle } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -20,10 +20,10 @@ const Recipes: React.FC = () => {
     setIsDetailModalOpen(true);
   };
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = useCallback(() => {
     // Refresh the recipe list
     setRefreshKey(prev => prev + 1);
-  };
+  }, []);
 
   const handleEditRecipe = (recipe: Recipe) => {
     // Close detail modal and open edit modal with recipe data
@@ -32,12 +32,12 @@ const Recipes: React.FC = () => {
     setIsCreateModalOpen(true);
   };
 
-  const handleDeleteSuccess = () => {
+  const handleDeleteSuccess = useCallback(() => {
     // Refresh the recipe list and close detail modal
     setRefreshKey(prev => prev + 1);
     setIsDetailModalOpen(false);
     setSelectedRecipe(null);
-  };
+  }, []);
 
   const handleCreateModalClose = () => {
     setIsCreateModalOpen(false);
