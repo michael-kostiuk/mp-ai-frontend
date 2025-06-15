@@ -22,37 +22,35 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [displayValue, setDisplayValue] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSearchQueryRef = useRef<string>('');
 
   const { data: recipes, loading, execute: searchRecipes } = useApi<Recipe[]>(getRecipes);
 
   // Find and set selected recipe when value changes
   useEffect(() => {
     if (value && value !== selectedRecipe?.id) {
-      // Only search if we don't already have the recipe in our current results
+      // Check if we already have this recipe in our current results
       const existingRecipe = recipes?.find(rec => rec.id === value);
       if (existingRecipe) {
         setSelectedRecipe(existingRecipe);
-        setDisplayValue(existingRecipe.name);
-        setSearchQuery(existingRecipe.name);
+        setInputValue(existingRecipe.name);
       } else if (value > 0) {
-        // Need to fetch this specific recipe - load all recipes to find it
-        searchRecipes();
+        // Need to load all recipes to find this specific one
+        performSearch('', true);
       }
     } else if (value === 0) {
       setSelectedRecipe(null);
-      setDisplayValue('');
-      setSearchQuery('');
+      setInputValue('');
     }
-  }, [value, recipes, searchRecipes]);
+  }, [value, recipes]);
 
   // Debounced search function
-  const performSearch = (query: string) => {
+  const performSearch = async (query: string, loadAll = false) => {
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
@@ -60,107 +58,112 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
 
     const executeSearch = async () => {
       try {
-        if (query.trim().length >= 2) {
+        // Avoid duplicate requests
+        const searchKey = loadAll ? '__ALL__' : query.trim();
+        if (lastSearchQueryRef.current === searchKey) {
+          return;
+        }
+        lastSearchQueryRef.current = searchKey;
+
+        if (loadAll) {
+          // Load all recipes (for finding pre-selected recipe)
+          await searchRecipes();
+        } else if (query.trim().length >= 2) {
           // Search by name with minimum 2 characters
           await searchRecipes({ name: query.trim() });
-        } else if (query.trim().length === 0) {
-          // Load all recipes when query is empty
-          await searchRecipes();
         }
       } catch (error) {
         console.error('Search error:', error);
       }
     };
 
-    if (query.trim().length >= 2 || query.trim().length === 0) {
-      // Set timeout for search
+    if (loadAll) {
+      // Execute immediately for loading all recipes
+      executeSearch();
+    } else if (query.trim().length >= 2) {
+      // Set timeout for user search
       debounceTimeoutRef.current = setTimeout(executeSearch, 300);
     }
   };
 
-  // Handle search query changes
-  useEffect(() => {
-    if (isOpen) {
-      performSearch(searchQuery);
+  // Handle input changes with debounced search
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    
+    if (!isOpen) {
+      setIsOpen(true);
     }
 
-    // Cleanup on unmount
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
-  }, [searchQuery, isOpen]);
+    // Only search if user is actively typing (not when we set the value programmatically)
+    if (isOpen) {
+      performSearch(newValue);
+    }
+  };
+
+  const handleInputFocus = () => {
+    setIsOpen(true);
+    // Only clear if there's a selected recipe, otherwise keep the current input
+    if (selectedRecipe) {
+      setInputValue('');
+      // Reset last search to allow fresh search
+      lastSearchQueryRef.current = '';
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        // Reset display to selected recipe name or empty
+        // Reset input to selected recipe name or empty
         if (selectedRecipe) {
-          setDisplayValue(selectedRecipe.name);
-          setSearchQuery(selectedRecipe.name);
+          setInputValue(selectedRecipe.name);
         } else {
-          setDisplayValue('');
-          setSearchQuery('');
+          setInputValue('');
         }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      // Cleanup timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
   }, [selectedRecipe]);
-
-  const handleInputFocus = () => {
-    setIsOpen(true);
-    // Clear the input for fresh search but keep the display value
-    if (selectedRecipe) {
-      setSearchQuery('');
-      setDisplayValue('');
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setSearchQuery(newValue);
-    setDisplayValue(newValue);
-    
-    if (!isOpen) {
-      setIsOpen(true);
-    }
-  };
 
   const handleSelectRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
-    setDisplayValue(recipe.name);
-    setSearchQuery(recipe.name);
+    setInputValue(recipe.name);
     onChange(recipe.id);
     setIsOpen(false);
   };
 
   const handleCreateNew = () => {
-    if (onCreateNew && searchQuery.trim()) {
-      onCreateNew(searchQuery.trim());
+    if (onCreateNew && inputValue.trim()) {
+      onCreateNew(inputValue.trim());
       setIsOpen(false);
     }
   };
 
   const handleClear = () => {
     setSelectedRecipe(null);
-    setDisplayValue('');
-    setSearchQuery('');
+    setInputValue('');
     onChange(0);
+    lastSearchQueryRef.current = '';
     inputRef.current?.focus();
   };
 
   const filteredRecipes = recipes || [];
   const hasExactMatch = filteredRecipes.some(
-    rec => rec.name.toLowerCase() === searchQuery.toLowerCase()
+    rec => rec.name.toLowerCase() === inputValue.toLowerCase()
   );
-  const showCreateOption = searchQuery.trim() && !hasExactMatch && onCreateNew;
-  const showMinCharMessage = isOpen && searchQuery.trim().length > 0 && searchQuery.trim().length < 2;
-  const showNoResults = isOpen && !loading && !showMinCharMessage && searchQuery.trim().length >= 2 && filteredRecipes.length === 0 && !showCreateOption;
+  const showCreateOption = inputValue.trim() && !hasExactMatch && onCreateNew;
+  const showMinCharMessage = isOpen && inputValue.trim().length > 0 && inputValue.trim().length < 2;
+  const showNoResults = isOpen && !loading && !showMinCharMessage && inputValue.trim().length >= 2 && filteredRecipes.length === 0 && !showCreateOption;
 
   return (
     <div ref={containerRef} className="relative">
@@ -168,7 +171,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
         <Input
           ref={inputRef}
           type="text"
-          value={displayValue}
+          value={inputValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           placeholder={placeholder}
@@ -209,7 +212,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
             </div>
           )}
 
-          {!loading && !showMinCharMessage && (searchQuery.trim().length >= 2 || searchQuery.trim().length === 0) && filteredRecipes.map((recipe) => (
+          {!loading && !showMinCharMessage && (inputValue.trim().length >= 2 || inputValue.trim().length === 0) && filteredRecipes.map((recipe) => (
             <button
               key={recipe.id}
               type="button"
@@ -239,7 +242,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
               >
                 <div className="flex items-center">
                   <Plus className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Create "{searchQuery}"</span>
+                  <span className="font-medium">Create "{inputValue}"</span>
                 </div>
                 <div className="text-xs text-primary-500 mt-1">
                   Add this recipe to your database
