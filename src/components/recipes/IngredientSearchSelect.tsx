@@ -22,160 +22,160 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   disabled = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [inputValue, setInputValue] = useState('');
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
-  const [displayValue, setDisplayValue] = useState('');
+  const [isUserTyping, setIsUserTyping] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastSearchQueryRef = useRef<string>('');
 
   const { data: ingredients, loading, execute: searchIngredients } = useApi<Ingredient[]>(getIngredients);
 
-  // Find and set selected ingredient when value changes
+  // Find and set selected ingredient when value changes (only if user is not actively typing)
   useEffect(() => {
-    if (value && value !== selectedIngredient?.id) {
-      // Only search if we don't already have the ingredient in our current results
+    if (!isUserTyping && value && value !== selectedIngredient?.id) {
+      // Check if we already have this ingredient in our current results
       const existingIngredient = ingredients?.find(ing => ing.id === value);
       if (existingIngredient) {
         setSelectedIngredient(existingIngredient);
-        setDisplayValue(existingIngredient.name);
+        setInputValue(existingIngredient.name);
       } else if (value > 0) {
-        // Need to fetch this specific ingredient
-        performSearch('', value);
+        // Need to load all ingredients to find this specific one
+        performSearch('', true);
       }
-    } else if (value === 0) {
+    } else if (!isUserTyping && value === 0) {
       setSelectedIngredient(null);
-      setDisplayValue('');
+      setInputValue('');
     }
-  }, [value, ingredients]);
+  }, [value, ingredients, isUserTyping]);
 
-  // Debounced search with cancellation
-  const performSearch = (query: string, specificId?: number) => {
+  // Debounced search function
+  const performSearch = async (query: string, loadAll = false) => {
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
     const executeSearch = async () => {
       try {
-        // Create new abort controller for this request
-        abortControllerRef.current = new AbortController();
-        
-        if (specificId) {
-          // Search for specific ingredient by ID (when component mounts with pre-selected value)
-          await searchIngredients({ id: specificId });
+        // Avoid duplicate requests
+        const searchKey = loadAll ? '__ALL__' : query.trim();
+        if (lastSearchQueryRef.current === searchKey) {
+          return;
+        }
+        lastSearchQueryRef.current = searchKey;
+
+        if (loadAll) {
+          // Load all ingredients (for finding pre-selected ingredient)
+          await searchIngredients();
         } else if (query.trim().length >= 3) {
-          // Search by name
+          // Search by name with minimum 3 characters
           await searchIngredients({ name: query.trim() });
         }
       } catch (error) {
-        // Ignore aborted requests
-        if (error.name !== 'AbortError') {
-          console.error('Search error:', error);
-        }
+        console.error('Search error:', error);
       }
     };
 
-    if (specificId || query.trim().length >= 3) {
-      // Set timeout for search (except for specific ID lookups)
-      if (specificId) {
-        executeSearch();
-      } else {
-        debounceTimeoutRef.current = setTimeout(executeSearch, 300);
-      }
+    if (loadAll) {
+      // Execute immediately for loading all ingredients
+      executeSearch();
+    } else if (query.trim().length >= 3) {
+      // Set timeout for user search
+      debounceTimeoutRef.current = setTimeout(executeSearch, 300);
     }
   };
 
-  // Handle search query changes
-  useEffect(() => {
-    if (isOpen && searchQuery !== displayValue) {
-      performSearch(searchQuery);
+  // Handle input changes with debounced search
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    setIsUserTyping(true); // Mark that user is actively typing
+    
+    if (!isOpen) {
+      setIsOpen(true);
     }
 
-    // Cleanup on unmount
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [searchQuery, isOpen]);
+    // Search based on user input
+    performSearch(newValue);
+  };
+
+  const handleInputFocus = () => {
+    setIsOpen(true);
+    setIsUserTyping(true);
+    // Only clear if there's a selected ingredient, otherwise keep the current input
+    if (selectedIngredient) {
+      setInputValue('');
+      // Reset last search to allow fresh search
+      lastSearchQueryRef.current = '';
+    }
+  };
+
+  const handleInputBlur = () => {
+    // Small delay to allow for click events on dropdown items
+    setTimeout(() => {
+      setIsUserTyping(false);
+    }, 150);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        // Reset display to selected ingredient name or empty
+        setIsUserTyping(false);
+        // Reset input to selected ingredient name or empty
         if (selectedIngredient) {
-          setDisplayValue(selectedIngredient.name);
-          setSearchQuery(selectedIngredient.name);
+          setInputValue(selectedIngredient.name);
         } else {
-          setDisplayValue('');
-          setSearchQuery('');
+          setInputValue('');
         }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      // Cleanup timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
   }, [selectedIngredient]);
-
-  const handleInputFocus = () => {
-    setIsOpen(true);
-    // Clear the input for fresh search
-    setSearchQuery('');
-    setDisplayValue('');
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setSearchQuery(newValue);
-    setDisplayValue(newValue);
-    
-    if (!isOpen) {
-      setIsOpen(true);
-    }
-  };
 
   const handleSelectIngredient = (ingredient: Ingredient) => {
     setSelectedIngredient(ingredient);
-    setDisplayValue(ingredient.name);
-    setSearchQuery(ingredient.name);
+    setInputValue(ingredient.name);
+    setIsUserTyping(false);
     onChange(ingredient.id);
     setIsOpen(false);
   };
 
   const handleCreateNew = () => {
-    if (onCreateNew && searchQuery.trim()) {
-      onCreateNew(searchQuery.trim());
+    if (onCreateNew && inputValue.trim()) {
+      onCreateNew(inputValue.trim());
       setIsOpen(false);
+      setIsUserTyping(false);
     }
   };
 
   const handleClear = () => {
     setSelectedIngredient(null);
-    setDisplayValue('');
-    setSearchQuery('');
+    setInputValue('');
+    setIsUserTyping(false);
     onChange(0);
+    lastSearchQueryRef.current = '';
     inputRef.current?.focus();
   };
 
   const filteredIngredients = ingredients || [];
   const hasExactMatch = filteredIngredients.some(
-    ing => ing.name.toLowerCase() === searchQuery.toLowerCase()
+    ing => ing.name.toLowerCase() === inputValue.toLowerCase()
   );
-  const showCreateOption = searchQuery.trim() && !hasExactMatch && onCreateNew;
-  const showMinCharMessage = isOpen && searchQuery.trim().length > 0 && searchQuery.trim().length < 3;
-  const showNoResults = isOpen && !loading && !showMinCharMessage && searchQuery.trim().length >= 3 && filteredIngredients.length === 0 && !showCreateOption;
+  const showCreateOption = inputValue.trim() && !hasExactMatch && onCreateNew;
+  const showMinCharMessage = isOpen && inputValue.trim().length > 0 && inputValue.trim().length < 3;
+  const showNoResults = isOpen && !loading && !showMinCharMessage && inputValue.trim().length >= 3 && filteredIngredients.length === 0 && !showCreateOption;
 
   return (
     <div ref={containerRef} className="relative">
@@ -183,9 +183,10 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
         <Input
           ref={inputRef}
           type="text"
-          value={displayValue}
+          value={inputValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           placeholder={placeholder}
           leftIcon={<Search className="h-4 w-4" />}
           rightIcon={
@@ -224,7 +225,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
             </div>
           )}
 
-          {!loading && !showMinCharMessage && searchQuery.trim().length >= 3 && filteredIngredients.map((ingredient) => (
+          {!loading && !showMinCharMessage && (inputValue.trim().length >= 3 || inputValue.trim().length === 0) && filteredIngredients.map((ingredient) => (
             <button
               key={ingredient.id}
               type="button"
@@ -254,7 +255,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
               >
                 <div className="flex items-center">
                   <Plus className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Create "{searchQuery}"</span>
+                  <span className="font-medium">Create "{inputValue}"</span>
                 </div>
                 <div className="text-xs text-primary-500 mt-1">
                   Add this ingredient to your database
