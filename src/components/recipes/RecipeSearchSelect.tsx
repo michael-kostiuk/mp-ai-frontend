@@ -24,6 +24,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [isUserTyping, setIsUserTyping] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -31,9 +32,9 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
 
   const { data: recipes, loading, execute: searchRecipes } = useApi<Recipe[]>(getRecipes);
 
-  // Find and set selected recipe when value changes
+  // Find and set selected recipe when value changes (only if user is not actively typing)
   useEffect(() => {
-    if (value && value !== selectedRecipe?.id) {
+    if (!isUserTyping && value && value !== selectedRecipe?.id) {
       // Check if we already have this recipe in our current results
       const existingRecipe = recipes?.find(rec => rec.id === value);
       if (existingRecipe) {
@@ -43,11 +44,11 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
         // Need to load all recipes to find this specific one
         performSearch('', true);
       }
-    } else if (value === 0) {
+    } else if (!isUserTyping && value === 0) {
       setSelectedRecipe(null);
       setInputValue('');
     }
-  }, [value, recipes]);
+  }, [value, recipes, isUserTyping]);
 
   // Debounced search function
   const performSearch = async (query: string, loadAll = false) => {
@@ -90,19 +91,19 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
+    setIsUserTyping(true); // Mark that user is actively typing
     
     if (!isOpen) {
       setIsOpen(true);
     }
 
-    // Only search if user is actively typing (not when we set the value programmatically)
-    if (isOpen) {
-      performSearch(newValue);
-    }
+    // Search based on user input
+    performSearch(newValue);
   };
 
   const handleInputFocus = () => {
     setIsOpen(true);
+    setIsUserTyping(true);
     // Only clear if there's a selected recipe, otherwise keep the current input
     if (selectedRecipe) {
       setInputValue('');
@@ -111,11 +112,19 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     }
   };
 
+  const handleInputBlur = () => {
+    // Small delay to allow for click events on dropdown items
+    setTimeout(() => {
+      setIsUserTyping(false);
+    }, 150);
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setIsUserTyping(false);
         // Reset input to selected recipe name or empty
         if (selectedRecipe) {
           setInputValue(selectedRecipe.name);
@@ -138,6 +147,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   const handleSelectRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
     setInputValue(recipe.name);
+    setIsUserTyping(false);
     onChange(recipe.id);
     setIsOpen(false);
   };
@@ -146,12 +156,14 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     if (onCreateNew && inputValue.trim()) {
       onCreateNew(inputValue.trim());
       setIsOpen(false);
+      setIsUserTyping(false);
     }
   };
 
   const handleClear = () => {
     setSelectedRecipe(null);
     setInputValue('');
+    setIsUserTyping(false);
     onChange(0);
     lastSearchQueryRef.current = '';
     inputRef.current?.focus();
@@ -174,6 +186,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
           value={inputValue}
           onChange={handleInputChange}
           onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
           placeholder={placeholder}
           leftIcon={<Search className="h-4 w-4" />}
           rightIcon={
