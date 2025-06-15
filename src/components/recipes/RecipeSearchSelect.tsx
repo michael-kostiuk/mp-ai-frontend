@@ -24,6 +24,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [hasInitiallyLoaded, setHasInitiallyLoaded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -31,26 +32,32 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   const { data: recipes, loading, execute: searchRecipes } = useApi<Recipe[]>(getRecipes);
 
   // Debounced search function
-  const debouncedSearch = (query: string) => {
+  const debouncedSearch = (query: string, immediate = false) => {
     // Clear existing timeout
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
 
-    // Set new timeout
-    debounceTimeoutRef.current = setTimeout(() => {
+    const executeSearch = () => {
       if (query.trim().length >= 3) {
         searchRecipes({ name: query.trim() });
-      } else if (query.trim().length === 0 && isOpen) {
-        // Load all recipes when query is empty and dropdown is open
+      } else if (query.trim().length === 0) {
+        // Load all recipes when query is empty
         searchRecipes();
       }
-    }, 300); // 300ms delay
+    };
+
+    if (immediate) {
+      executeSearch();
+    } else {
+      // Set new timeout
+      debounceTimeoutRef.current = setTimeout(executeSearch, 300);
+    }
   };
 
-  // Search recipes when query changes
+  // Handle search query changes with debounce
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && hasInitiallyLoaded) {
       debouncedSearch(searchQuery);
     }
 
@@ -60,7 +67,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
         clearTimeout(debounceTimeoutRef.current);
       }
     };
-  }, [searchQuery, isOpen]);
+  }, [searchQuery, isOpen, hasInitiallyLoaded]);
 
   // Find selected recipe when value changes or recipes load
   useEffect(() => {
@@ -80,12 +87,14 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     }
   }, [value, recipes, isOpen]);
 
-  // Load initial recipes when component mounts with a value
+  // Initial load when component mounts or dropdown opens for the first time
   useEffect(() => {
-    if (value && !selectedRecipe && !recipes) {
-      searchRecipes();
+    if (isOpen && !hasInitiallyLoaded) {
+      setHasInitiallyLoaded(true);
+      // Load recipes immediately when opening dropdown for the first time
+      debouncedSearch('', true); // immediate = true
     }
-  }, [value, selectedRecipe, recipes, searchRecipes]);
+  }, [isOpen, hasInitiallyLoaded]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -112,7 +121,9 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
-    setIsOpen(true);
+    if (!isOpen) {
+      setIsOpen(true);
+    }
   };
 
   const handleSelectRecipe = (recipe: Recipe) => {
