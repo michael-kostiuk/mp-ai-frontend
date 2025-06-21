@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, Users, Target, Plus, Trash2 } from 'lucide-react';
 import { MealPlanCreate, MealPlanEntryCreate, Recipe, MealPlan } from '../../types';
 import Button from '../ui/Button';
@@ -7,7 +7,6 @@ import Select from '../ui/Select';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import RecipeSearchSelect from '../recipes/RecipeSearchSelect';
 import useApi from '../../hooks/useApi';
-import { getRecipes } from '../../api/recipeApi';
 import { createMealPlan, autoGenerateMealPlan, updateMealPlan } from '../../api/mealPlanApi';
 
 interface CreateMealPlanModalProps {
@@ -43,22 +42,9 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
     user_id: 1
   });
 
-  const { data: recipes, execute: fetchRecipes } = useApi<Recipe[]>(getRecipes);
   const { loading: creating, execute: createPlan } = useApi(createMealPlan);
   const { loading: updating, execute: updatePlan } = useApi(updateMealPlan);
   const { loading: autoGenerating, execute: autoGenerate } = useApi(autoGenerateMealPlan);
-
-  // Memoize the fetch function to prevent unnecessary re-renders
-  const loadRecipes = useCallback(() => {
-    fetchRecipes();
-  }, [fetchRecipes]);
-
-  // Load recipes only once when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      loadRecipes();
-    }
-  }, [isOpen]); // Only depend on isOpen, not the fetch function
 
   // Initialize form data when editing meal plan changes
   useEffect(() => {
@@ -175,13 +161,6 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
     }));
   };
 
-  const calculateEndDate = (startDate: string, days: number) => {
-    const start = new Date(startDate);
-    const end = new Date(start);
-    end.setDate(start.getDate() + days - 1);
-    return end.toISOString().split('T')[0];
-  };
-
   // Group entries by date and meal type for organized display
   const groupEntriesByDateAndMeal = () => {
     if (!formData.start_date || !formData.end_date) return { grouped: {}, dates: [] };
@@ -221,6 +200,17 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
       month: 'short', 
       day: 'numeric' 
     });
+  };
+
+  // Get recipe name from editing meal plan data if available
+  const getRecipeName = (recipeId: number): string => {
+    if (isEditing && editingMealPlan) {
+      const entry = editingMealPlan.entries.find(e => e.recipe_id === recipeId);
+      if (entry && entry.recipe) {
+        return entry.recipe.name;
+      }
+    }
+    return '';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -557,6 +547,7 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                                             value={entry.recipe_id}
                                             onChange={(recipeId) => updateMealEntry(entry.originalIndex, 'recipe_id', recipeId)}
                                             placeholder="Search for recipe..."
+                                            initialDisplayName={getRecipeName(entry.recipe_id)}
                                           />
                                         </div>
                                         

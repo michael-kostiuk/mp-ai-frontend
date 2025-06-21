@@ -12,6 +12,7 @@ interface RecipeSearchSelectProps {
   onCreateNew?: (name: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  initialDisplayName?: string; // Add this prop to show existing recipe name
 }
 
 const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
@@ -19,7 +20,8 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   onChange,
   onCreateNew,
   placeholder = "Search recipes...",
-  disabled = false
+  disabled = false,
+  initialDisplayName = ''
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -32,6 +34,35 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
 
   const { data: recipes, loading, execute: searchRecipes } = useApi<Recipe[]>(getRecipes);
 
+  // Initialize with existing recipe name if provided
+  useEffect(() => {
+    if (initialDisplayName && value > 0 && !selectedRecipe) {
+      // Create a minimal recipe object for display purposes
+      const displayRecipe: Recipe = {
+        id: value,
+        name: initialDisplayName,
+        // Add other required fields with default values
+        servings: 1,
+        prep_time: 0,
+        cook_time: 0,
+        instructions: '',
+        category: '',
+        dietary_tags: [],
+        calories: 0,
+        protein: 0,
+        carbs: 0,
+        fats: 0,
+        breakfast_weight: 0,
+        lunch_weight: 0,
+        dinner_weight: 0,
+        created_at: '',
+        ingredients: []
+      };
+      setSelectedRecipe(displayRecipe);
+      setInputValue(initialDisplayName);
+    }
+  }, [initialDisplayName, value, selectedRecipe]);
+
   // Find and set selected recipe when value changes (only if user is not actively typing)
   useEffect(() => {
     if (!isUserTyping && value && value !== selectedRecipe?.id) {
@@ -40,15 +71,15 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
       if (existingRecipe) {
         setSelectedRecipe(existingRecipe);
         setInputValue(existingRecipe.name);
-      } else if (value > 0) {
-        // Need to load all recipes to find this specific one
+      } else if (value > 0 && !initialDisplayName) {
+        // Only load all recipes if we don't have an initial display name
         performSearch('', true);
       }
     } else if (!isUserTyping && value === 0) {
       setSelectedRecipe(null);
       setInputValue('');
     }
-  }, [value, recipes, isUserTyping]);
+  }, [value, recipes, isUserTyping, initialDisplayName]);
 
   // Debounced search function
   const performSearch = async (query: string, loadAll = false) => {
