@@ -48,6 +48,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const [pendingIngredientName, setPendingIngredientName] = useState('');
   const [pendingIngredientIndex, setPendingIngredientIndex] = useState<number | null>(null);
 
+  // Only fetch ingredients if we're creating a new recipe or if we need to search
   const { data: ingredients, execute: fetchIngredients } = useApi<Ingredient[]>(getIngredients);
   const { loading: creating, execute: createNewRecipe } = useApi(createRecipe);
   const { loading: updating, execute: updateExistingRecipe } = useApi(updateRecipe);
@@ -98,11 +99,12 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     }
   }, [editingRecipe]);
 
+  // Only fetch ingredients when modal opens for new recipes
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !isEditing) {
       fetchIngredients();
     }
-  }, [isOpen, fetchIngredients]);
+  }, [isOpen, isEditing, fetchIngredients]);
 
   const categoryOptions = [
     { value: 'breakfast', label: 'Breakfast' },
@@ -200,25 +202,56 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     setPendingIngredientIndex(null);
   };
 
+  // Get ingredient name from editing recipe data if available
+  const getIngredientName = (ingredientId: number): string => {
+    if (isEditing && editingRecipe) {
+      const recipeIngredient = editingRecipe.ingredients.find(ing => ing.ingredient_id === ingredientId);
+      if (recipeIngredient && recipeIngredient.ingredient) {
+        return recipeIngredient.ingredient.name;
+      }
+    }
+    return '';
+  };
+
   const calculateNutrition = () => {
-    if (!ingredients || formData.ingredients.length === 0) return;
+    if (formData.ingredients.length === 0) return;
 
     let totalCalories = 0;
     let totalProtein = 0;
     let totalCarbs = 0;
     let totalFats = 0;
 
-    formData.ingredients.forEach(recipeIngredient => {
-      const ingredient = ingredients.find(ing => ing.id === recipeIngredient.ingredient_id);
-      if (ingredient) {
-        // Convert quantity to base unit (assuming base unit is per 100g)
-        const factor = recipeIngredient.quantity / 100;
-        totalCalories += ingredient.calories * factor;
-        totalProtein += ingredient.protein * factor;
-        totalCarbs += ingredient.carbs * factor;
-        totalFats += ingredient.fats * factor;
-      }
-    });
+    // For editing mode, use the existing ingredient data
+    if (isEditing && editingRecipe) {
+      formData.ingredients.forEach(recipeIngredient => {
+        const existingIngredient = editingRecipe.ingredients.find(
+          ing => ing.ingredient_id === recipeIngredient.ingredient_id
+        );
+        
+        if (existingIngredient && existingIngredient.ingredient) {
+          const ingredient = existingIngredient.ingredient;
+          // Convert quantity to base unit (assuming base unit is per 100g)
+          const factor = recipeIngredient.quantity / 100;
+          totalCalories += ingredient.calories * factor;
+          totalProtein += ingredient.protein * factor;
+          totalCarbs += ingredient.carbs * factor;
+          totalFats += ingredient.fats * factor;
+        }
+      });
+    } else if (ingredients) {
+      // For new recipes, use the fetched ingredients data
+      formData.ingredients.forEach(recipeIngredient => {
+        const ingredient = ingredients.find(ing => ing.id === recipeIngredient.ingredient_id);
+        if (ingredient) {
+          // Convert quantity to base unit (assuming base unit is per 100g)
+          const factor = recipeIngredient.quantity / 100;
+          totalCalories += ingredient.calories * factor;
+          totalProtein += ingredient.protein * factor;
+          totalCarbs += ingredient.carbs * factor;
+          totalFats += ingredient.fats * factor;
+        }
+      });
+    }
 
     // Divide by servings to get per-serving nutrition
     const servings = formData.servings || 1;
@@ -462,6 +495,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                             onChange={(ingredientId) => updateIngredient(index, 'ingredient_id', ingredientId)}
                             onCreateNew={(name) => handleCreateNewIngredient(name, index)}
                             placeholder="Search for ingredient..."
+                            initialDisplayName={getIngredientName(ingredient.ingredient_id)}
                           />
                         </div>
                         
