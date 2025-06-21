@@ -1,0 +1,97 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Download } from 'lucide-react';
+import Container from '../components/layout/Container';
+import PageHeader from '../components/layout/PageHeader';
+import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import Button from '../components/ui/Button';
+import Loader from '../components/ui/Loader';
+import ErrorMessage from '../components/ui/ErrorMessage';
+import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
+import { ShoppingList as ShoppingListType } from '../types';
+import useApi from '../hooks/useApi';
+import { getShoppingLists } from '../api/shoppingListApi';
+
+const ShoppingLists: React.FC = () => {
+  const { data: shoppingLists, loading, error, execute: fetchShoppingLists } = useApi<ShoppingListType[]>(getShoppingLists);
+  
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const loadShoppingLists = useCallback(() => {
+    fetchShoppingLists();
+  }, [fetchShoppingLists]);
+  
+  // Load shopping lists only once on mount
+  useEffect(() => {
+    loadShoppingLists();
+  }, []); // Empty dependency array - only run once on mount
+  
+  const handleExportList = (id: number) => {
+    // In a real app, this would trigger the export functionality
+    console.log('Export shopping list:', id);
+  };
+  
+  return (
+    <Container className="py-8">
+      <PageHeader
+        title="Shopping Lists"
+        description="View and manage your shopping lists"
+      />
+      
+      {loading && shoppingLists === null && (
+        <div className="py-12">
+          <Loader centered label="Loading shopping lists..." />
+        </div>
+      )}
+      
+      {error && (
+        <ErrorMessage 
+          title="Failed to load shopping lists" 
+          message={error.message}
+          onRetry={loadShoppingLists} 
+        />
+      )}
+      
+      {shoppingLists && shoppingLists.length === 0 && (
+        <div className="py-12 text-center bg-white rounded-lg shadow-sm border border-neutral-200">
+          <p className="text-neutral-500 mb-4">You don't have any shopping lists yet.</p>
+          <p className="text-neutral-500 text-sm mb-4">
+            Create a meal plan first, then generate a shopping list from it.
+          </p>
+          <Button>Go to Meal Plans</Button>
+        </div>
+      )}
+      
+      {shoppingLists && shoppingLists.length > 0 && (
+        <div className="space-y-6 animate-fadeIn">
+          {shoppingLists.map((list) => (
+            <Card key={list.id}>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Shopping List #{list.id}</CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  leftIcon={<Download size={16} />}
+                  onClick={() => handleExportList(list.id)}
+                >
+                  Export
+                </Button>
+              </CardHeader>
+              
+              <CardContent>
+                <div className="space-y-2">
+                  {list.items.map((item) => (
+                    <ShoppingListItem 
+                      key={item.id} 
+                      item={item} 
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </Container>
+  );
+};
+
+export default ShoppingLists;
