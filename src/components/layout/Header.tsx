@@ -1,14 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChefHat, Wifi, WifiOff } from 'lucide-react';
 import { useApiContext } from '../../context/ApiContext';
 
+const MAX_RETRIES = 5;
+const INITIAL_DELAY = 1000; // 1 second
+
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('connected');
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const location = useLocation();
   const { config } = useApiContext();
   
+  const retryCount = useRef(0);
+  const retryTimeout = useRef<NodeJS.Timeout | null>(null);
+
   const navigation = [
     { name: 'Recipes', href: '/recipes' },
     { name: 'Meal Plans', href: '/meal-plans' },
@@ -20,18 +26,23 @@ const Header: React.FC = () => {
     return location.pathname.startsWith(path);
   };
   
-  // Test API connection
-  const testConnection = async () => {
+  const testConnection = useCallback(async (isManual = false) => {
+    if (isManual) {
+      retryCount.current = 0;
+      if (retryTimeout.current) {
+        clearTimeout(retryTimeout.current);
+      }
+    }
+
     setConnectionStatus('checking');
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), config.timeout);
       
       const response = await fetch(`${config.baseUrl}/ingredients/`, {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-        },
+        headers: { 'Accept': 'application/json' },
         signal: controller.signal,
       });
       
@@ -39,18 +50,41 @@ const Header: React.FC = () => {
       
       if (response.ok) {
         setConnectionStatus('connected');
+        retryCount.current = 0;
       } else {
-        setConnectionStatus('disconnected');
+        throw new Error('Server responded with an error');
       }
     } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        console.warn('API connection test timed out.');
+      }
+      
       setConnectionStatus('disconnected');
+      
+      if (!isManual && retryCount.current < MAX_RETRIES) {
+        const delay = INITIAL_DELAY * Math.pow(2, retryCount.current);
+        console.log(`Connection failed. Retrying in ${delay / 1000}s...`);
+        
+        retryCount.current++;
+        
+        retryTimeout.current = setTimeout(() => {
+          testConnection(false);
+        }, delay);
+      } else if (!isManual) {
+        console.error(`Connection failed after ${MAX_RETRIES} retries. Giving up.`);
+      }
     }
-  };
-  
-  // Test connection when config changes
-  React.useEffect(() => {
-    testConnection();
   }, [config.baseUrl, config.timeout]);
+  
+  useEffect(() => {
+    testConnection(true); // Initial test on mount or config change
+
+    return () => {
+      if (retryTimeout.current) {
+        clearTimeout(retryTimeout.current);
+      }
+    };
+  }, [testConnection]);
   
   const getStatusIcon = () => {
     switch (connectionStatus) {
@@ -99,7 +133,6 @@ const Header: React.FC = () => {
               </Link>
             </div>
             
-            {/* Desktop navigation */}
             <nav className="hidden lg:ml-8 xl:ml-12 lg:flex lg:space-x-6 xl:space-x-8" aria-label="Main navigation">
               {navigation.map((item) => (
                 <Link
@@ -118,7 +151,6 @@ const Header: React.FC = () => {
             </nav>
           </div>
           
-          {/* Mobile menu button */}
           <div className="flex items-center lg:hidden">
             <button
               type="button"
@@ -135,10 +167,9 @@ const Header: React.FC = () => {
             </button>
           </div>
           
-          {/* API status indicator */}
           <div className="hidden lg:ml-6 lg:flex lg:items-center">
             <button
-              onClick={testConnection}
+              onClick={() => testConnection(true)}
               className="flex items-center text-xs xl:text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
               title={`Click to test connection. Timeout: ${config.timeout}ms`}
             >
@@ -152,7 +183,6 @@ const Header: React.FC = () => {
         </div>
       </div>
       
-      {/* Mobile menu */}
       {isMenuOpen && (
         <div className="lg:hidden border-t border-neutral-200 bg-white">
           <div className="space-y-1 pt-2 pb-3">
@@ -173,11 +203,10 @@ const Header: React.FC = () => {
             ))}
           </div>
           
-          {/* API status in mobile menu */}
           <div className="border-t border-neutral-200 pt-4 pb-3">
             <div className="flex items-center px-4">
               <button
-                onClick={testConnection}
+                onClick={() => testConnection(true)}
                 className="flex items-center text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
                 title={`Click to test connection. Timeout: ${config.timeout}ms`}
               >

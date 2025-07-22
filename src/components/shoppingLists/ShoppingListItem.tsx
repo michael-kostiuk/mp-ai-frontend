@@ -13,7 +13,7 @@ interface ShoppingListItemProps {
   onStatusChange?: (itemId: number, status: string) => void;
 }
 
-const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
+const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
   item,
   onStatusChange
 }) => {
@@ -171,6 +171,6 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = ({
       )}
     </div>
   );
-};
+});
 
 export default ShoppingListItem;

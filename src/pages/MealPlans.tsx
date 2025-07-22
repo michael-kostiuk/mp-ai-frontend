@@ -24,15 +24,10 @@ const MealPlans: React.FC = () => {
   
   const { data: mealPlans, loading, error, execute: fetchMealPlans } = useApi<MealPlan[]>(getMealPlans);
   
-  // Memoize the fetch function to prevent unnecessary re-renders
-  const loadMealPlans = useCallback(() => {
-    fetchMealPlans(userId);
-  }, [fetchMealPlans, userId]);
-  
   // Load meal plans only once on mount
   useEffect(() => {
-    loadMealPlans();
-  }, []); // Empty dependency array - only run once on mount
+    fetchMealPlans(userId);
+  }, [fetchMealPlans, userId]);
   
   const handleSelectMealPlan = (mealPlan: MealPlan) => {
     setSelectedMealPlanId(mealPlan.id);
@@ -40,11 +35,11 @@ const MealPlans: React.FC = () => {
   };
 
   const handleCreateSuccess = () => {
-    loadMealPlans(); // Refresh the list after creating
+    fetchMealPlans(userId); // Refresh the list after creating
   };
 
   const handleDeleteSuccess = () => {
-    loadMealPlans(); // Refresh the list after deleting
+    fetchMealPlans(userId); // Refresh the list after deleting
     setIsDetailModalOpen(false);
     setSelectedMealPlanId(null);
   };
@@ -140,7 +135,7 @@ const MealPlans: React.FC = () => {
         <ErrorMessage 
           title="Failed to load meal plans" 
           message={error.message}
-          onRetry={loadMealPlans} 
+          onRetry={() => fetchMealPlans(userId)} 
         />
       )}
       

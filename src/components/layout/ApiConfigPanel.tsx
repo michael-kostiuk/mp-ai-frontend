@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApiContext } from '../../context/ApiContext';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import Card, { CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
 
 const ApiConfigPanel: React.FC = () => {
-  const { config, updateBaseUrl, updateTimeout } = useApiContext();
+  const { config, updateConfig } = useApiContext();
   const [baseUrl, setBaseUrl] = useState(config.baseUrl);
-  const [timeout, setTimeout] = useState(config.timeout);
+  const [timeout, setTimeoutValue] = useState(config.timeout);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -16,9 +16,7 @@ const ApiConfigPanel: React.FC = () => {
     setIsSaving(true);
     
     try {
-      // Update configuration immediately
-      updateBaseUrl(baseUrl);
-      updateTimeout(timeout);
+      updateConfig({ baseUrl, timeout });
       
       // Small delay to show saving state
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -34,15 +32,15 @@ const ApiConfigPanel: React.FC = () => {
   const handleCancel = () => {
     // Reset form to current config values
     setBaseUrl(config.baseUrl);
-    setTimeout(config.timeout);
+    setTimeoutValue(config.timeout);
     setIsEditing(false);
   };
   
   // Update form when config changes externally
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isEditing) {
       setBaseUrl(config.baseUrl);
-      setTimeout(config.timeout);
+      setTimeoutValue(config.timeout);
     }
   }, [config, isEditing]);
   
@@ -71,7 +69,7 @@ const ApiConfigPanel: React.FC = () => {
                 label="Request Timeout (ms)"
                 type="number"
                 value={timeout}
-                onChange={(e) => setTimeout(Number(e.target.value))}
+                onChange={(e) => setTimeoutValue(Number(e.target.value))}
                 fullWidth
                 min={1000}
                 max={60000}
@@ -112,7 +110,7 @@ const ApiConfigPanel: React.FC = () => {
               Cancel
             </Button>
             <Button 
-              type="button" 
+              type="submit"
               onClick={handleSubmit}
               isLoading={isSaving}
             >

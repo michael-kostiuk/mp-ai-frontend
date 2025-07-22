@@ -8,7 +8,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import IngredientSearchSelect from './IngredientSearchSelect';
 import CreateIngredientModal from '../ingredients/CreateIngredientModal';
 import useApi from '../../hooks/useApi';
-import { getIngredients } from '../../api/ingredientApi';
+import { useIngredientContext } from '../../context/IngredientContext';
 import { createRecipe, updateRecipe } from '../../api/recipeApi';
 
 interface CreateRecipeModalProps {
@@ -48,7 +48,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const [pendingIngredientName, setPendingIngredientName] = useState('');
   const [pendingIngredientIndex, setPendingIngredientIndex] = useState<number | null>(null);
 
-  const { data: ingredients, execute: fetchIngredients } = useApi<Ingredient[]>(getIngredients);
+  const { ingredients, fetchIngredients } = useIngredientContext();
   const { loading: creating, execute: createNewRecipe } = useApi(createRecipe);
   const { loading: updating, execute: updateExistingRecipe } = useApi(updateRecipe);
 

@@ -1,43 +1,38 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import apiConfig, { ApiConfig } from '../config/apiConfig';
+import { ApiConfig } from '../config/apiConfig';
 import { getApiClient } from '../api/apiClient';
+
+// Function to get config from localStorage
+const getConfigFromStorage = (): ApiConfig => {
+  const storedConfig = localStorage.getItem('apiConfig');
+  if (storedConfig) {
+    return JSON.parse(storedConfig);
+  }
+  // Default config if nothing is in storage
+  return {
+    baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+    timeout: 10000,
+  };
+};
+
+// Function to set config in localStorage
+const setConfigInStorage = (config: ApiConfig) => {
+  localStorage.setItem('apiConfig', JSON.stringify(config));
+};
 
 interface ApiContextType {
   config: ApiConfig;
-  updateBaseUrl: (url: string) => void;
-  updateTimeout: (timeout: number) => void;
   updateConfig: (config: ApiConfig) => void;
 }
 
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
 
 export const ApiProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [config, setConfig] = useState<ApiConfig>(apiConfig);
-  
-  const updateBaseUrl = (url: string) => {
-    const newConfig = { ...config, baseUrl: url };
-    setConfig(newConfig);
-    
-    // Update the API client immediately
-    const client = getApiClient();
-    client.baseUrl = url;
-    
-    console.log('API Base URL updated to:', url);
-  };
-  
-  const updateTimeout = (timeout: number) => {
-    const newConfig = { ...config, timeout };
-    setConfig(newConfig);
-    
-    // Update the API client immediately
-    const client = getApiClient();
-    client.timeout = timeout;
-    
-    console.log('API Timeout updated to:', timeout, 'ms');
-  };
-  
+  const [config, setConfig] = useState<ApiConfig>(getConfigFromStorage);
+
   const updateConfig = (newConfig: ApiConfig) => {
     setConfig(newConfig);
+    setConfigInStorage(newConfig);
     
     // Update the API client immediately
     const client = getApiClient();
@@ -45,15 +40,15 @@ export const ApiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     console.log('API Configuration updated:', newConfig);
   };
-  
+
   // Initialize API client with current config on mount
   useEffect(() => {
     const client = getApiClient();
     client.updateConfig(config.baseUrl, config.timeout);
-  }, []);
+  }, [config]);
   
   return (
-    <ApiContext.Provider value={{ config, updateBaseUrl, updateTimeout, updateConfig }}>
+    <ApiContext.Provider value={{ config, updateConfig }}>
       {children}
     </ApiContext.Provider>
   );

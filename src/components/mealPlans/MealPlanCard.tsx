@@ -8,7 +8,7 @@ interface MealPlanCardProps {
   onClick?: () => void;
 }
 
-const MealPlanCard: React.FC<MealPlanCardProps> = ({
+const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
   mealPlan,
   onClick
 }) => {
@@ -85,6 +85,6 @@ const MealPlanCard: React.FC<MealPlanCardProps> = ({
       </CardContent>
     </Card>
   );
-};
+});
 
 export default MealPlanCard;

@@ -8,7 +8,7 @@ interface RecipeCardProps {
   onClick?: () => void;
 }
 
-const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
+const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) => {
   const totalTime = recipe.prep_time + recipe.cook_time;
   
   return (
@@ -71,6 +71,6 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
       </CardContent>
     </Card>
   );
-};
+});
 
 export default RecipeCard;

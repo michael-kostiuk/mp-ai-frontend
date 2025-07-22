@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { PlusCircle, Search, Merge } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -9,26 +9,14 @@ import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
-import { Ingredient } from '../types';
-import useApi from '../hooks/useApi';
-import { getIngredients } from '../api/ingredientApi';
+import { useIngredientContext } from '../context/IngredientContext';
 
 const Ingredients: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   
-  const { data: ingredients, loading, error, execute: fetchIngredients } = useApi<Ingredient[]>(getIngredients);
-  
-  // Memoize the fetch function to prevent unnecessary re-renders
-  const loadIngredients = useCallback(() => {
-    fetchIngredients();
-  }, [fetchIngredients]);
-  
-  // Load ingredients only once on mount
-  useEffect(() => {
-    loadIngredients();
-  }, []); // Empty dependency array - only run once on mount
+  const { ingredients, loading, error, fetchIngredients } = useIngredientContext();
   
   const filteredIngredients = ingredients
     ? ingredients.filter(
@@ -40,12 +28,12 @@ const Ingredients: React.FC = () => {
 
   const handleCreateSuccess = () => {
     // Refresh the ingredients list
-    loadIngredients();
+    fetchIngredients();
   };
 
   const handleMergeSuccess = () => {
     // Refresh the ingredients list
-    loadIngredients();
+    fetchIngredients();
   };
   
   return (
@@ -95,7 +83,7 @@ const Ingredients: React.FC = () => {
         <ErrorMessage 
           title="Failed to load ingredients" 
           message={error.message}
-          onRetry={loadIngredients} 
+          onRetry={fetchIngredients} 
         />
       )}
       
