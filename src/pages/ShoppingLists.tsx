@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Download } from 'lucide-react';
+import { Download, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
@@ -51,7 +52,9 @@ const ShoppingLists: React.FC = () => {
           <p className="text-neutral-500 text-sm mb-4">
             Create a meal plan first, then generate a shopping list from it.
           </p>
-          <Button>Go to Meal Plans</Button>
+          <Link to="/meal-plans">
+            <Button>Go to Meal Plans</Button>
+          </Link>
         </div>
       )}
       
@@ -59,26 +62,45 @@ const ShoppingLists: React.FC = () => {
         <div className="space-y-6 animate-fadeIn">
           {shoppingLists.map((list) => (
             <Card key={list.id}>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Shopping List #{list.id}</CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  leftIcon={<Download size={16} />}
-                  onClick={() => handleExportList(list.id)}
-                >
-                  Export
-                </Button>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <CardTitle>Shopping List #{list.id}</CardTitle>
+                    <Link to={`/shopping-lists/${list.id}`}>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        rightIcon={<ExternalLink size={14} />}
+                        className="text-primary-600 hover:text-primary-700"
+                      >
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    leftIcon={<Download size={16} />}
+                    onClick={() => handleExportList(list.id)}
+                  >
+                    Export
+                  </Button>
+                </div>
               </CardHeader>
               
               <CardContent>
-                <div className="space-y-2">
-                  {list.items.map((item) => (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {list.items.slice(0, 5).map((item) => (
                     <ShoppingListItem 
                       key={item.id} 
                       item={item} 
                     />
                   ))}
+                  {list.items.length > 5 && (
+                    <div className="text-center py-2 text-sm text-neutral-500 border-t border-neutral-200">
+                      +{list.items.length - 5} more items
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
