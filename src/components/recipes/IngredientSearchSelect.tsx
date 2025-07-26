@@ -69,8 +69,8 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
         if (loadAll) {
           // Load all ingredients (for finding pre-selected ingredient)
           await searchIngredients();
-        } else if (query.trim().length >= 3) {
-          // Search by name with minimum 3 characters
+        } else if (query.trim().length >= 1) {
+          // Search by name with minimum 1 character
           await searchIngredients({ name: query.trim() });
         }
       } catch (error) {
@@ -81,7 +81,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     if (loadAll) {
       // Execute immediately for loading all ingredients
       executeSearch();
-    } else if (query.trim().length >= 3) {
+    } else if (query.trim().length >= 1) {
       // Set timeout for user search
       debounceTimeoutRef.current = setTimeout(executeSearch, 300);
     }
@@ -174,11 +174,11 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     ing => ing.name.toLowerCase() === inputValue.toLowerCase()
   );
   const showCreateOption = inputValue.trim() && !hasExactMatch && onCreateNew;
-  const showMinCharMessage = isOpen && inputValue.trim().length > 0 && inputValue.trim().length < 3;
-  const showNoResults = isOpen && !loading && !showMinCharMessage && inputValue.trim().length >= 3 && filteredIngredients.length === 0 && !showCreateOption;
+  const showMinCharMessage = false; // Remove minimum character message since we search from 1 char
+  const showNoResults = isOpen && !loading && !showMinCharMessage && inputValue.trim().length >= 1 && filteredIngredients.length === 0 && !showCreateOption;
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative z-50">
       <div className="relative">
         <Input
           ref={inputRef}
@@ -206,16 +206,10 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-neutral-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
+        <div className="absolute z-[100] w-full mt-1 bg-white border border-neutral-200 rounded-md shadow-xl max-h-60 overflow-y-auto">
           {loading && (
             <div className="px-3 py-2 text-sm text-neutral-500 text-center">
               Searching ingredients...
-            </div>
-          )}
-
-          {showMinCharMessage && (
-            <div className="px-3 py-2 text-sm text-neutral-400 text-center">
-              Type at least 3 characters to search
             </div>
           )}
 
@@ -225,7 +219,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
             </div>
           )}
 
-          {!loading && !showMinCharMessage && (inputValue.trim().length >= 3 || inputValue.trim().length === 0) && filteredIngredients.map((ingredient) => (
+          {!loading && !showMinCharMessage && (inputValue.trim().length >= 1 || inputValue.trim().length === 0) && filteredIngredients.map((ingredient) => (
             <button
               key={ingredient.id}
               type="button"

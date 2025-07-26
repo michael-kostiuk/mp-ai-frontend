@@ -450,52 +450,55 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
               <div className="space-y-4">
                 {formData.ingredients.map((ingredient, index) => (
-                  <Card key={index}>
-                    <CardContent className="p-4">
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-neutral-700 mb-1">
-                            Ingredient
-                          </label>
-                          <IngredientSearchSelect
-                            value={ingredient.ingredient_id}
-                            onChange={(ingredientId) => updateIngredient(index, 'ingredient_id', ingredientId)}
-                            onCreateNew={(name) => handleCreateNewIngredient(name, index)}
-                            placeholder="Search for ingredient..."
-                          />
-                        </div>
-                        
+                  <div key={index} className="bg-neutral-50 rounded-lg p-3 border border-neutral-200">
+                    <div className="grid grid-cols-12 gap-3 items-end">
+                      {/* Ingredient - Takes up most space */}
+                      <div className="col-span-12 sm:col-span-6 lg:col-span-5">
+                        <IngredientSearchSelect
+                          value={ingredient.ingredient_id}
+                          onChange={(ingredientId) => updateIngredient(index, 'ingredient_id', ingredientId)}
+                          onCreateNew={(name) => handleCreateNewIngredient(name, index)}
+                          placeholder="Search ingredient..."
+                        />
+                      </div>
+                      
+                      {/* Quantity */}
+                      <div className="col-span-6 sm:col-span-3 lg:col-span-2">
                         <Input
-                          label="Quantity"
                           type="number"
                           value={ingredient.quantity}
                           onChange={(e) => updateIngredient(index, 'quantity', Number(e.target.value))}
                           min={0}
                           step={0.1}
+                          placeholder="Qty"
                           fullWidth
                         />
-                        
-                        <div className="flex items-end space-x-2">
-                          <Select
-                            label="Unit"
-                            options={unitOptions}
-                            value={ingredient.unit}
-                            onChange={(value) => updateIngredient(index, 'unit', value)}
-                            fullWidth
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeIngredient(index)}
-                            className="text-error-600 hover:text-error-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                      
+                      {/* Unit */}
+                      <div className="col-span-4 sm:col-span-2 lg:col-span-3">
+                        <Select
+                          options={unitOptions}
+                          value={ingredient.unit}
+                          onChange={(value) => updateIngredient(index, 'unit', value)}
+                          fullWidth
+                        />
+                      </div>
+                      
+                      {/* Delete Button */}
+                      <div className="col-span-2 sm:col-span-1 lg:col-span-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeIngredient(index)}
+                          className="text-error-600 hover:text-error-700 w-full h-[42px] px-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
                 
                 {formData.ingredients.length === 0 && (
