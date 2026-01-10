@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Clock, Users, Target } from 'lucide-react';
+import { X, Plus, Trash2, Clock, Users, Target, Sparkles } from 'lucide-react';
 import { RecipeCreate, RecipeIngredientCreate, Ingredient, Recipe } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -10,6 +10,7 @@ import CreateIngredientModal from '../ingredients/CreateIngredientModal';
 import useApi from '../../hooks/useApi';
 import { useIngredientContext } from '../../context/IngredientContext';
 import { createRecipe, updateRecipe } from '../../api/recipeApi';
+import { estimateNutrition, IngredientInput } from '../../api/nutritionApi';
 
 interface CreateRecipeModalProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const [isCreateIngredientModalOpen, setIsCreateIngredientModalOpen] = useState(false);
   const [pendingIngredientName, setPendingIngredientName] = useState('');
   const [pendingIngredientIndex, setPendingIngredientIndex] = useState<number | null>(null);
+  const [estimating, setEstimating] = useState(false);
 
   const { ingredients, fetchIngredients } = useIngredientContext();
   const { loading: creating, execute: createNewRecipe } = useApi(createRecipe);
@@ -257,6 +259,50 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       carbs: Math.round((totalCarbs / servings) * 10) / 10,
       fats: Math.round((totalFats / servings) * 10) / 10,
     }));
+  };
+
+  const estimateNutritionFromApi = async () => {
+    if (!ingredients || formData.ingredients.length === 0) return;
+
+    // Build the ingredients list for the API
+    const ingredientInputs: IngredientInput[] = formData.ingredients
+      .map(recipeIngredient => {
+        const ingredient = ingredients.find(ing => ing.id === recipeIngredient.ingredient_id);
+        if (ingredient) {
+          return {
+            name: ingredient.name,
+            quantity: recipeIngredient.quantity,
+            unit: recipeIngredient.unit
+          };
+        }
+        return null;
+      })
+      .filter((ing): ing is IngredientInput => ing !== null);
+
+    if (ingredientInputs.length === 0) {
+      alert('Please add valid ingredients before estimating nutrition.');
+      return;
+    }
+
+    setEstimating(true);
+    try {
+      const response = await estimateNutrition({ ingredients: ingredientInputs });
+
+      // Divide by servings to get per-serving nutrition
+      const servings = formData.servings || 1;
+      setFormData(prev => ({
+        ...prev,
+        calories: Math.round(response.calories / servings),
+        protein: Math.round((response.protein / servings) * 10) / 10,
+        carbs: Math.round((response.carbs / servings) * 10) / 10,
+        fats: Math.round((response.fats / servings) * 10) / 10,
+      }));
+    } catch (error) {
+      console.error('Failed to estimate nutrition:', error);
+      alert('Failed to estimate nutrition. Please try again.');
+    } finally {
+      setEstimating(false);
+    }
   };
 
   const validateForm = () => {
@@ -537,7 +583,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
               </div>
 
               {formData.ingredients.length > 0 && (
-                <div className="mt-4">
+                <div className="mt-4 flex gap-2 flex-wrap">
                   <Button
                     type="button"
                     variant="outline"
@@ -545,6 +591,16 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     leftIcon={<Target className="h-4 w-4" />}
                   >
                     Calculate Nutrition
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={estimateNutritionFromApi}
+                    leftIcon={<Sparkles className="h-4 w-4" />}
+                    isLoading={estimating}
+                    disabled={estimating}
+                  >
+                    Estimate with AI
                   </Button>
                 </div>
               )}
@@ -577,20 +633,20 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                   />
 
                   <Input
-                    label="Carbs (g)"
+                    label="Fats (g)"
                     type="number"
-                    value={formData.carbs}
-                    onChange={(e) => handleNumericInputChange('carbs', e.target.value)}
+                    value={formData.fats}
+                    onChange={(e) => handleNumericInputChange('fats', e.target.value)}
                     min={0}
                     step={0.1}
                     fullWidth
                   />
 
                   <Input
-                    label="Fats (g)"
+                    label="Carbs (g)"
                     type="number"
-                    value={formData.fats}
-                    onChange={(e) => handleNumericInputChange('fats', e.target.value)}
+                    value={formData.carbs}
+                    onChange={(e) => handleNumericInputChange('carbs', e.target.value)}
                     min={0}
                     step={0.1}
                     fullWidth
