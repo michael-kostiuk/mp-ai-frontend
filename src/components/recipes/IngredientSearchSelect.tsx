@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, X } from 'lucide-react';
 import { Ingredient } from '../../types';
-import Button from '../ui/Button';
 import Input from '../ui/Input';
 import useApi from '../../hooks/useApi';
 import { getIngredients } from '../../api/ingredientApi';
@@ -25,10 +24,29 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
   const [isUserTyping, setIsUserTyping] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState<'below' | 'above'>('below');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSearchQueryRef = useRef<string>('');
+
+  // Calculate dropdown position based on available space
+  useEffect(() => {
+    if (isOpen && containerRef.current) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const dropdownHeight = 240; // max-h-60 = 15rem = 240px
+      const spaceBelow = window.innerHeight - containerRect.bottom;
+      const spaceAbove = containerRect.top;
+
+      // If there's not enough space below but enough above, position above
+      if (spaceBelow < dropdownHeight && spaceAbove > spaceBelow) {
+        setDropdownPosition('above');
+      } else {
+        setDropdownPosition('below');
+      }
+    }
+  }, [isOpen]);
 
   const { data: ingredients, loading, execute: searchIngredients } = useApi<Ingredient[]>(getIngredients);
 
@@ -92,7 +110,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     const newValue = e.target.value;
     setInputValue(newValue);
     setIsUserTyping(true); // Mark that user is actively typing
-    
+
     if (!isOpen) {
       setIsOpen(true);
     }
@@ -206,7 +224,13 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
       </div>
 
       {isOpen && (
-        <div className="absolute z-[100] w-full mt-1 bg-white border border-neutral-200 rounded-md shadow-xl max-h-60 overflow-y-auto">
+        <div
+          ref={dropdownRef}
+          className={`absolute z-[100] w-full bg-white border border-neutral-200 rounded-md shadow-xl max-h-60 overflow-y-auto ${dropdownPosition === 'above'
+            ? 'bottom-full mb-1'
+            : 'top-full mt-1'
+            }`}
+        >
           {loading && (
             <div className="px-3 py-2 text-sm text-neutral-500 text-center">
               Searching ingredients...
