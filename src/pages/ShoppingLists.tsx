@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Download, ExternalLink } from 'lucide-react';
+import React, { useEffect, useCallback } from 'react';
+import { Download, ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -10,42 +10,54 @@ import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
 import { ShoppingList as ShoppingListType } from '../types';
 import useApi from '../hooks/useApi';
-import { getShoppingLists } from '../api/shoppingListApi';
+import { getShoppingLists, deleteShoppingList } from '../api/shoppingListApi';
 
 const ShoppingLists: React.FC = () => {
   const { data: shoppingLists, loading, error, execute: fetchShoppingLists } = useApi<ShoppingListType[]>(getShoppingLists);
-  
+
   // Load shopping lists only once on mount
   useEffect(() => {
     fetchShoppingLists();
   }, [fetchShoppingLists]);
-  
+
   const handleExportList = (id: number) => {
     // In a real app, this would trigger the export functionality
     console.log('Export shopping list:', id);
   };
-  
+
+  const handleDeleteList = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this shopping list?')) {
+      try {
+        await deleteShoppingList(id);
+        fetchShoppingLists();
+      } catch (err) {
+        console.error('Failed to delete shopping list:', err);
+        alert('Failed to delete shopping list. Please try again.');
+      }
+    }
+  };
+
   return (
     <Container className="py-8">
       <PageHeader
         title="Shopping Lists"
         description="View and manage your shopping lists"
       />
-      
+
       {loading && shoppingLists === null && (
         <div className="py-12">
           <Loader centered label="Loading shopping lists..." />
         </div>
       )}
-      
+
       {error && (
-        <ErrorMessage 
-          title="Failed to load shopping lists" 
+        <ErrorMessage
+          title="Failed to load shopping lists"
           message={error.message}
-          onRetry={fetchShoppingLists} 
+          onRetry={fetchShoppingLists}
         />
       )}
-      
+
       {shoppingLists && shoppingLists.length === 0 && (
         <div className="py-12 text-center bg-white rounded-lg shadow-sm border border-neutral-200">
           <p className="text-neutral-500 mb-4">You don't have any shopping lists yet.</p>
@@ -57,7 +69,7 @@ const ShoppingLists: React.FC = () => {
           </Link>
         </div>
       )}
-      
+
       {shoppingLists && shoppingLists.length > 0 && (
         <div className="space-y-6 animate-fadeIn">
           {shoppingLists.map((list) => (
@@ -67,8 +79,8 @@ const ShoppingLists: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <CardTitle>Shopping List #{list.id}</CardTitle>
                     <Link to={`/shopping-lists/${list.id}`}>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         rightIcon={<ExternalLink size={14} />}
                         className="text-primary-600 hover:text-primary-700"
@@ -77,23 +89,33 @@ const ShoppingLists: React.FC = () => {
                       </Button>
                     </Link>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    leftIcon={<Download size={16} />}
-                    onClick={() => handleExportList(list.id)}
-                  >
-                    Export
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Download size={16} />}
+                      onClick={() => handleExportList(list.id)}
+                    >
+                      Export
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      leftIcon={<Trash2 size={16} />}
+                      onClick={() => handleDeleteList(list.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
-              
+
               <CardContent>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {list.items.slice(0, 5).map((item) => (
-                    <ShoppingListItem 
-                      key={item.id} 
-                      item={item} 
+                    <ShoppingListItem
+                      key={item.id}
+                      item={item}
                     />
                   ))}
                   {list.items.length > 5 && (
