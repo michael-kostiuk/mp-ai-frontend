@@ -25,7 +25,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   editingRecipe = null
 }) => {
   const isEditing = !!editingRecipe;
-  
+
   const [formData, setFormData] = useState<RecipeCreate>({
     name: '',
     servings: 4,
@@ -144,6 +144,22 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     { value: 'package', label: 'packages' },
   ];
 
+  // Helper function to handle numeric input changes
+  // Allows empty string during editing, converts properly on valid input
+  const handleNumericInputChange = (field: keyof RecipeCreate, stringValue: string) => {
+    // If empty, store empty string to allow user to type new value
+    if (stringValue === '') {
+      setFormData(prev => ({ ...prev, [field]: '' as any }));
+      return;
+    }
+
+    // Convert to number if valid
+    const numValue = Number(stringValue);
+    if (!isNaN(numValue)) {
+      setFormData(prev => ({ ...prev, [field]: numValue }));
+    }
+  };
+
   const handleInputChange = (field: keyof RecipeCreate, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -172,10 +188,22 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const updateIngredient = (index: number, field: keyof RecipeIngredientCreate, value: any) => {
     setFormData(prev => ({
       ...prev,
-      ingredients: prev.ingredients.map((ingredient, i) => 
+      ingredients: prev.ingredients.map((ingredient, i) =>
         i === index ? { ...ingredient, [field]: value } : ingredient
       )
     }));
+  };
+
+  // Helper function for numeric ingredient fields
+  const updateIngredientNumeric = (index: number, field: keyof RecipeIngredientCreate, stringValue: string) => {
+    if (stringValue === '') {
+      updateIngredient(index, field, '' as any);
+      return;
+    }
+    const numValue = Number(stringValue);
+    if (!isNaN(numValue)) {
+      updateIngredient(index, field, numValue);
+    }
   };
 
   const removeIngredient = (index: number) => {
@@ -194,7 +222,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const handleIngredientCreated = () => {
     // Refresh ingredients list
     fetchIngredients();
-    
+
     // Reset pending state
     setPendingIngredientName('');
     setPendingIngredientIndex(null);
@@ -238,16 +266,16 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     if (formData.cook_time < 0) return false;
     if (!formData.instructions.trim()) return false;
     if (formData.ingredients.length === 0) return false;
-    
+
     // Check if all ingredients are properly filled
-    return formData.ingredients.every(ing => 
+    return formData.ingredients.every(ing =>
       ing.ingredient_id > 0 && ing.quantity > 0 && ing.unit.trim()
     );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       alert('Please fill in all required fields and add at least one ingredient.');
       return;
@@ -259,10 +287,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       } else {
         await createNewRecipe(formData);
       }
-      
+
       onSuccess();
       onClose();
-      
+
       // Reset form only if not editing (editing will be reset by useEffect)
       if (!isEditing) {
         setFormData({
@@ -344,7 +372,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 required
                 fullWidth
               />
-              
+
               <Select
                 label="Category"
                 options={categoryOptions}
@@ -360,31 +388,31 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 label="Servings"
                 type="number"
                 value={formData.servings}
-                onChange={(e) => handleInputChange('servings', Number(e.target.value))}
+                onChange={(e) => handleNumericInputChange('servings', e.target.value)}
                 leftIcon={<Users className="h-5 w-5" />}
                 min={1}
                 max={20}
                 required
                 fullWidth
               />
-              
+
               <Input
                 label="Prep Time (minutes)"
                 type="number"
                 value={formData.prep_time}
-                onChange={(e) => handleInputChange('prep_time', Number(e.target.value))}
+                onChange={(e) => handleNumericInputChange('prep_time', e.target.value)}
                 leftIcon={<Clock className="h-5 w-5" />}
                 min={0}
                 max={480}
                 required
                 fullWidth
               />
-              
+
               <Input
                 label="Cook Time (minutes)"
                 type="number"
                 value={formData.cook_time}
-                onChange={(e) => handleInputChange('cook_time', Number(e.target.value))}
+                onChange={(e) => handleNumericInputChange('cook_time', e.target.value)}
                 leftIcon={<Clock className="h-5 w-5" />}
                 min={0}
                 max={480}
@@ -461,20 +489,20 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                           placeholder="Search ingredient..."
                         />
                       </div>
-                      
+
                       {/* Quantity */}
                       <div className="col-span-6 sm:col-span-3 lg:col-span-2">
                         <Input
                           type="number"
                           value={ingredient.quantity}
-                          onChange={(e) => updateIngredient(index, 'quantity', Number(e.target.value))}
+                          onChange={(e) => updateIngredientNumeric(index, 'quantity', e.target.value)}
                           min={0}
                           step={0.1}
                           placeholder="Qty"
                           fullWidth
                         />
                       </div>
-                      
+
                       {/* Unit */}
                       <div className="col-span-4 sm:col-span-2 lg:col-span-3">
                         <Select
@@ -484,7 +512,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                           fullWidth
                         />
                       </div>
-                      
+
                       {/* Delete Button */}
                       <div className="col-span-2 sm:col-span-1 lg:col-span-2">
                         <Button
@@ -500,7 +528,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     </div>
                   </div>
                 ))}
-                
+
                 {formData.ingredients.length === 0 && (
                   <div className="text-center py-8 text-neutral-500 border-2 border-dashed border-neutral-200 rounded-lg">
                     No ingredients added yet. Click "Add Ingredient" to get started.
@@ -533,36 +561,36 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     label="Calories"
                     type="number"
                     value={formData.calories}
-                    onChange={(e) => handleInputChange('calories', Number(e.target.value))}
+                    onChange={(e) => handleNumericInputChange('calories', e.target.value)}
                     min={0}
                     fullWidth
                   />
-                  
+
                   <Input
                     label="Protein (g)"
                     type="number"
                     value={formData.protein}
-                    onChange={(e) => handleInputChange('protein', Number(e.target.value))}
+                    onChange={(e) => handleNumericInputChange('protein', e.target.value)}
                     min={0}
                     step={0.1}
                     fullWidth
                   />
-                  
+
                   <Input
                     label="Carbs (g)"
                     type="number"
                     value={formData.carbs}
-                    onChange={(e) => handleInputChange('carbs', Number(e.target.value))}
+                    onChange={(e) => handleNumericInputChange('carbs', e.target.value)}
                     min={0}
                     step={0.1}
                     fullWidth
                   />
-                  
+
                   <Input
                     label="Fats (g)"
                     type="number"
                     value={formData.fats}
-                    onChange={(e) => handleInputChange('fats', Number(e.target.value))}
+                    onChange={(e) => handleNumericInputChange('fats', e.target.value)}
                     min={0}
                     step={0.1}
                     fullWidth
@@ -582,31 +610,31 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     label="Breakfast Weight"
                     type="number"
                     value={formData.breakfast_weight}
-                    onChange={(e) => handleInputChange('breakfast_weight', Number(e.target.value))}
+                    onChange={(e) => handleNumericInputChange('breakfast_weight', e.target.value)}
                     min={0}
                     max={1}
                     step={0.1}
                     helperText="0.0 to 1.0"
                     fullWidth
                   />
-                  
+
                   <Input
                     label="Lunch Weight"
                     type="number"
                     value={formData.lunch_weight}
-                    onChange={(e) => handleInputChange('lunch_weight', Number(e.target.value))}
+                    onChange={(e) => handleNumericInputChange('lunch_weight', e.target.value)}
                     min={0}
                     max={1}
                     step={0.1}
                     helperText="0.0 to 1.0"
                     fullWidth
                   />
-                  
+
                   <Input
                     label="Dinner Weight"
                     type="number"
                     value={formData.dinner_weight}
-                    onChange={(e) => handleInputChange('dinner_weight', Number(e.target.value))}
+                    onChange={(e) => handleNumericInputChange('dinner_weight', e.target.value)}
                     min={0}
                     max={1}
                     step={0.1}
@@ -625,8 +653,8 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
               <Button type="button" variant="outline" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 isLoading={isLoading}
                 disabled={!validateForm()}
               >
