@@ -10,17 +10,17 @@ const ApiConfigPanel: React.FC = () => {
   const [timeout, setTimeoutValue] = useState(config.timeout);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    
+
     try {
       updateConfig({ baseUrl, timeout });
-      
+
       // Small delay to show saving state
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       setIsEditing(false);
     } catch (error) {
       console.error('Failed to update API configuration:', error);
@@ -28,14 +28,14 @@ const ApiConfigPanel: React.FC = () => {
       setIsSaving(false);
     }
   };
-  
+
   const handleCancel = () => {
     // Reset form to current config values
     setBaseUrl(config.baseUrl);
     setTimeoutValue(config.timeout);
     setIsEditing(false);
   };
-  
+
   // Update form when config changes externally
   useEffect(() => {
     if (!isEditing) {
@@ -43,13 +43,13 @@ const ApiConfigPanel: React.FC = () => {
       setTimeoutValue(config.timeout);
     }
   }, [config, isEditing]);
-  
+
   return (
     <Card className="mt-8 mb-8">
       <CardHeader>
         <CardTitle>API Configuration</CardTitle>
       </CardHeader>
-      
+
       <CardContent>
         {isEditing ? (
           <form onSubmit={handleSubmit}>
@@ -60,11 +60,11 @@ const ApiConfigPanel: React.FC = () => {
                 value={baseUrl}
                 onChange={(e) => setBaseUrl(e.target.value)}
                 fullWidth
-                placeholder="http://localhost:8000"
+                placeholder="https://mealplanner-eu.onrender.com"
                 required
                 helperText="The base URL for your meal planning API server"
               />
-              
+
               <Input
                 label="Request Timeout (ms)"
                 type="number"
@@ -87,7 +87,7 @@ const ApiConfigPanel: React.FC = () => {
                 {config.baseUrl}
               </p>
             </div>
-            
+
             <div>
               <h4 className="text-sm font-medium text-neutral-500">Request Timeout</h4>
               <p className="mt-1 text-sm text-neutral-900">
@@ -97,19 +97,19 @@ const ApiConfigPanel: React.FC = () => {
           </div>
         )}
       </CardContent>
-      
+
       <CardFooter>
         {isEditing ? (
           <div className="flex space-x-3">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={handleCancel}
               disabled={isSaving}
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               type="submit"
               onClick={handleSubmit}
               isLoading={isSaving}
@@ -118,9 +118,9 @@ const ApiConfigPanel: React.FC = () => {
             </Button>
           </div>
         ) : (
-          <Button 
-            type="button" 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => setIsEditing(true)}
           >
             Edit Configuration

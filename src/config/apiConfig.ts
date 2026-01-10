@@ -4,7 +4,7 @@ export interface ApiConfig {
 }
 
 const apiConfig: ApiConfig = {
-  baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseUrl: import.meta.env.VITE_API_URL || 'https://mealplanner-eu.onrender.com',
   timeout: 10000,
 };
 

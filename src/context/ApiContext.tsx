@@ -10,7 +10,7 @@ const getConfigFromStorage = (): ApiConfig => {
   }
   // Default config if nothing is in storage
   return {
-    baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+    baseUrl: import.meta.env.VITE_API_URL || 'https://mealplanner-eu.onrender.com',
     timeout: 10000,
   };
 };
@@ -33,11 +33,11 @@ export const ApiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const updateConfig = (newConfig: ApiConfig) => {
     setConfig(newConfig);
     setConfigInStorage(newConfig);
-    
+
     // Update the API client immediately
     const client = getApiClient();
     client.updateConfig(newConfig.baseUrl, newConfig.timeout);
-    
+
     console.log('API Configuration updated:', newConfig);
   };
 
@@ -46,7 +46,7 @@ export const ApiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const client = getApiClient();
     client.updateConfig(config.baseUrl, config.timeout);
   }, [config]);
-  
+
   return (
     <ApiContext.Provider value={{ config, updateConfig }}>
       {children}
