@@ -286,16 +286,19 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
     setEstimating(true);
     try {
-      const response = await estimateNutrition({ ingredients: ingredientInputs });
-
-      // Divide by servings to get per-serving nutrition
       const servings = formData.servings || 1;
+      const response = await estimateNutrition({
+        ingredients: ingredientInputs,
+        servings
+      });
+
+      // Backend now returns per-serving nutrition
       setFormData(prev => ({
         ...prev,
-        calories: Math.round(response.calories / servings),
-        protein: Math.round((response.protein / servings) * 10) / 10,
-        carbs: Math.round((response.carbs / servings) * 10) / 10,
-        fats: Math.round((response.fats / servings) * 10) / 10,
+        calories: Math.round(response.calories),
+        protein: Math.round(response.protein * 10) / 10,
+        carbs: Math.round(response.carbs * 10) / 10,
+        fats: Math.round(response.fats * 10) / 10,
       }));
     } catch (error) {
       console.error('Failed to estimate nutrition:', error);

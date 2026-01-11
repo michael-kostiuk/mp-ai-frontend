@@ -8,6 +8,7 @@ export interface IngredientInput {
 
 export interface EstimateNutritionRequest {
     ingredients: IngredientInput[];
+    servings?: number;
 }
 
 export interface EstimateNutritionResponse {
