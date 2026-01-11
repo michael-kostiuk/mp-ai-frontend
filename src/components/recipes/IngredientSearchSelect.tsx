@@ -196,7 +196,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   const showNoResults = isOpen && !loading && !showMinCharMessage && inputValue.trim().length >= 1 && filteredIngredients.length === 0 && !showCreateOption;
 
   return (
-    <div ref={containerRef} className="relative z-50">
+    <div ref={containerRef} className={`relative ${isOpen ? 'z-[1000]' : 'z-50'}`}>
       <div className="relative">
         <Input
           ref={inputRef}
