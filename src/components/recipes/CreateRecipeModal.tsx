@@ -7,9 +7,10 @@ import Select from '../ui/Select';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import IngredientSearchSelect from './IngredientSearchSelect';
 import CreateIngredientModal from '../ingredients/CreateIngredientModal';
+import FileUpload from '../ui/FileUpload';
 import useApi from '../../hooks/useApi';
 import { useIngredientContext } from '../../context/IngredientContext';
-import { createRecipe, updateRecipe } from '../../api/recipeApi';
+import { createRecipe, updateRecipe, uploadRecipeImage } from '../../api/recipeApi';
 import { estimateNutrition, IngredientInput } from '../../api/nutritionApi';
 
 interface CreateRecipeModalProps {
@@ -49,6 +50,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const [pendingIngredientName, setPendingIngredientName] = useState('');
   const [pendingIngredientIndex, setPendingIngredientIndex] = useState<number | null>(null);
   const [estimating, setEstimating] = useState(false);
+  const [imageFile, setImageFile] = useState<File | undefined>();
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | undefined>();
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState<string | null>(null);
 
   const { ingredients, fetchIngredients } = useIngredientContext();
   const { loading: creating, execute: createNewRecipe } = useApi(createRecipe);
@@ -76,8 +81,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
           ingredient_id: ing.ingredient_id,
           quantity: ing.quantity,
           unit: ing.unit
-        }))
+        })),
+        image_url: editingRecipe.image_url
       });
+      setImagePreviewUrl(editingRecipe.image_url);
     } else {
       // Reset form for new recipe
       setFormData({
@@ -95,8 +102,11 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         breakfast_weight: 0.2,
         lunch_weight: 0.3,
         dinner_weight: 0.5,
-        ingredients: []
+        ingredients: [],
+        image_url: undefined
       });
+      setImagePreviewUrl(undefined);
+      setImageFile(undefined);
     }
   }, [editingRecipe]);
 
@@ -215,6 +225,19 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     }));
   };
 
+  const handleImageSelect = (url: string, file?: File) => {
+    setImagePreviewUrl(url);
+    setImageFile(file);
+    setImageUploadError(null);
+  };
+
+  const handleImageRemove = () => {
+    setImagePreviewUrl(undefined);
+    setImageFile(undefined);
+    setImageUploadError(null);
+    setFormData(prev => ({ ...prev, image_url: undefined }));
+  };
+
   const handleCreateNewIngredient = (name: string, index?: number) => {
     setPendingIngredientName(name);
     setPendingIngredientIndex(index ?? null);
@@ -331,10 +354,30 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     }
 
     try {
+      let result: Recipe;
       if (isEditing && editingRecipe) {
-        await updateExistingRecipe(editingRecipe.id, formData);
+        result = await updateExistingRecipe(editingRecipe.id, formData);
       } else {
-        await createNewRecipe(formData);
+        result = await createNewRecipe(formData);
+      }
+
+      // Upload image if there's a new file selected
+      if (imageFile) {
+        setUploadingImage(true);
+        setImageUploadError(null);
+        try {
+          const uploadResult = await uploadRecipeImage(result.id, imageFile);
+          setFormData(prev => ({ ...prev, image_url: uploadResult.image_url }));
+          setImageFile(undefined);
+        } catch (uploadError) {
+          console.error('Failed to upload image:', uploadError);
+          setImageUploadError('Recipe saved but image upload failed. Please try adding the image again.');
+          setUploadingImage(false);
+          onSuccess();
+          return;
+        } finally {
+          setUploadingImage(false);
+        }
       }
 
       onSuccess();
@@ -357,7 +400,8 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
           breakfast_weight: 0.2,
           lunch_weight: 0.3,
           dinner_weight: 0.5,
-          ingredients: []
+          ingredients: [],
+          image_url: undefined
         });
       }
     } catch (error) {
@@ -384,14 +428,17 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         breakfast_weight: 0.2,
         lunch_weight: 0.3,
         dinner_weight: 0.5,
-        ingredients: []
+        ingredients: [],
+        image_url: undefined
       });
+      setImagePreviewUrl(undefined);
+      setImageFile(undefined);
     }
   };
 
   if (!isOpen) return null;
 
-  const isLoading = creating || updating;
+  const isLoading = creating || updating || uploadingImage;
 
   return (
     <>
@@ -429,6 +476,22 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 onChange={(value) => handleInputChange('category', value)}
                 fullWidth
               />
+            </div>
+
+            {/* Image Upload */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-2">
+                Recipe Image
+              </label>
+              <FileUpload
+                value={imagePreviewUrl}
+                onChange={handleImageSelect}
+                onRemove={handleImageRemove}
+                isUploading={uploadingImage}
+              />
+              {imageUploadError && (
+                <p className="text-sm text-error-600 mt-2">{imageUploadError}</p>
+              )}
             </div>
 
             {/* Time and Servings */}

@@ -38,3 +38,7 @@ export const exportRecipes = async (): Promise<Recipe[]> => {
 export const bulkImportRecipes = async (recipes: RecipeCreate[]): Promise<Recipe[]> => {
   return apiClient.post<Recipe[]>(`${BASE_PATH}/bulk-import`, recipes);
 };
+
+export const uploadRecipeImage = async (recipeId: number, file: File): Promise<{ image_url: string }> => {
+  return apiClient.uploadFile<{ image_url: string }>(`${BASE_PATH}/${recipeId}/upload-image`, file);
+};

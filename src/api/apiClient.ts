@@ -112,6 +112,19 @@ class ApiClient {
       })
     );
   }
+
+  async uploadFile<T>(endpoint: string, file: File): Promise<T> {
+    const url = this.createUrl(endpoint);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.handleResponse<T>(
+      fetch(url, {
+        method: 'POST',
+        body: formData
+      })
+    );
+  }
 }
 
 // Create and export a singleton instance

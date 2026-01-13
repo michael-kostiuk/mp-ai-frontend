@@ -24,9 +24,17 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
         hoverable
       >
         <div className="relative">
-          <div className="bg-gradient-to-br from-secondary-100 to-secondary-200 h-32 sm:h-40 lg:h-48 rounded-t-lg flex items-center justify-center group-hover:from-secondary-200 group-hover:to-secondary-300 transition-all duration-300">
-            <span className="text-3xl sm:text-4xl lg:text-5xl group-hover:scale-110 transition-transform duration-300">🍲</span>
-          </div>
+          {recipe.image_url ? (
+            <img
+              src={recipe.image_url}
+              alt={recipe.name}
+              className="w-full h-32 sm:h-40 lg:h-48 object-cover rounded-t-lg"
+            />
+          ) : (
+            <div className="bg-gradient-to-br from-secondary-100 to-secondary-200 h-32 sm:h-40 lg:h-48 rounded-t-lg flex items-center justify-center group-hover:from-secondary-200 group-hover:to-secondary-300 transition-all duration-300">
+              <span className="text-3xl sm:text-4xl lg:text-5xl group-hover:scale-110 transition-transform duration-300">🍲</span>
+            </div>
+          )}
           
           {/* Category badge */}
           <div className="absolute top-2 right-2 sm:top-3 sm:right-3">

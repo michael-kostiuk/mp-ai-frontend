@@ -17,6 +17,7 @@ export interface Recipe {
   dinner_weight: number;
   created_at: string;
   ingredients: RecipeIngredient[];
+  image_url?: string;
 }
 
 export interface RecipeIngredient {
@@ -43,6 +44,7 @@ export interface RecipeCreate {
   lunch_weight: number;
   dinner_weight: number;
   ingredients: RecipeIngredientCreate[];
+  image_url?: string;
 }
 
 export interface RecipeIngredientCreate {
