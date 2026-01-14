@@ -23,12 +23,15 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const prevValueRef = useRef<string | undefined>();
+
   useEffect(() => {
-    return () => {
-      if (value && value.startsWith('blob:')) {
-        URL.revokeObjectURL(value);
-      }
-    };
+    const current = value;
+    const previous = prevValueRef.current;
+    if (previous && previous.startsWith('blob:') && previous !== current) {
+      URL.revokeObjectURL(previous);
+    }
+    prevValueRef.current = current;
   }, [value]);
 
   const validateFile = (file: File): boolean => {

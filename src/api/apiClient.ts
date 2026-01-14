@@ -132,9 +132,8 @@ let apiClient: ApiClient | null = null;
 
 export const getApiClient = (): ApiClient => {
   if (!apiClient) {
-    // Get initial config from environment or defaults
     const baseUrl = import.meta.env.VITE_API_URL || 'https://mealplanner-eu.onrender.com';
-    const timeout = 10000;
+    const timeout = 60000; // 60s for uploads
     apiClient = new ApiClient(baseUrl, timeout);
   }
   return apiClient;
