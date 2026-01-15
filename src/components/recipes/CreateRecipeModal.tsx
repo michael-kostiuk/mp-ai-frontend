@@ -54,6 +54,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | undefined>();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | undefined>();
 
   const { ingredients, fetchIngredients } = useIngredientContext();
   const { loading: creating, execute: createNewRecipe } = useApi(createRecipe);
@@ -85,6 +86,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         image_url: editingRecipe.image_url
       });
       setImagePreviewUrl(editingRecipe.image_url);
+      setOriginalImageUrl(editingRecipe.image_url);
     } else {
       // Reset form for new recipe
       setFormData({
@@ -107,6 +109,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       });
       setImagePreviewUrl(undefined);
       setImageFile(undefined);
+      setOriginalImageUrl(undefined);
     }
   }, [editingRecipe]);
 
@@ -229,6 +232,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     setImagePreviewUrl(url);
     setImageFile(file);
     setImageUploadError(null);
+    // Clear formData.image_url when new file is selected so backend knows to delete old image
+    if (isEditing && file) {
+      setFormData(prev => ({ ...prev, image_url: undefined }));
+    }
   };
 
   const handleImageRemove = () => {
@@ -236,6 +243,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     setImageFile(undefined);
     setImageUploadError(null);
     setFormData(prev => ({ ...prev, image_url: undefined }));
+    setOriginalImageUrl(undefined);
   };
 
   const handleCreateNewIngredient = (name: string, index?: number) => {
@@ -368,6 +376,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         try {
           const uploadResult = await uploadRecipeImage(result.id, imageFile);
           setFormData(prev => ({ ...prev, image_url: uploadResult.image_url }));
+          setImagePreviewUrl(uploadResult.image_url);
           setImageFile(undefined);
         } catch (uploadError) {
           console.error('Failed to upload image:', uploadError);

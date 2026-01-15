@@ -21,6 +21,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 }) => {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const prevValueRef = useRef<string | undefined>();
@@ -50,8 +51,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
   const handleFileSelect = (file: File) => {
     if (validateFile(file)) {
       const previewUrl = URL.createObjectURL(file);
+      setImageError(false);
       onChange(previewUrl, file);
     }
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,20 +95,31 @@ const FileUpload: React.FC<FileUploadProps> = ({
   return (
     <div className="w-full">
       {value ? (
-        <div className="relative">
-          <img
-            src={value}
-            alt="Recipe image"
-            className="w-full h-64 object-cover rounded-lg"
-          />
-          <button
-            type="button"
-            onClick={onRemove}
-            disabled={isUploading}
-            className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors disabled:opacity-50"
-          >
-            <X className="w-4 h-4" />
-          </button>
+        <div className="relative min-h-[256px] bg-neutral-100 rounded-lg overflow-hidden">
+          {imageError ? (
+            <div className="w-full h-64 flex flex-col items-center justify-center rounded-lg bg-neutral-100">
+              <ImageIcon className="w-12 h-12 text-neutral-400 mb-2" />
+              <p className="text-sm text-neutral-500">Failed to load image</p>
+            </div>
+          ) : (
+            <img
+              src={value}
+              alt="Recipe image"
+              className="w-full h-64 object-cover rounded-lg"
+              onError={handleImageError}
+            />
+          )}
+          <div className="absolute top-0 right-0 p-4 z-10">
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={isUploading}
+              className="bg-black bg-opacity-70 hover:bg-opacity-90 text-white rounded-full p-4 transition-all disabled:opacity-50 flex items-center justify-center border-2 border-white hover:border-red-400 hover:bg-red-600"
+              title="Remove image"
+            >
+              <X className="w-8 h-8" />
+            </button>
+          </div>
         </div>
       ) : (
         <div
