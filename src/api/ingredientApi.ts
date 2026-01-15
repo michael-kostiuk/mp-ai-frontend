@@ -12,6 +12,5 @@ export const createIngredient = async (ingredient: IngredientCreate): Promise<In
 };
 
 export const mergeIngredients = async (keepIngredientId: number, mergeIngredientIds: number[]): Promise<Ingredient> => {
-  const url = `${BASE_PATH}/merge?keep_ingredient_id=${keepIngredientId}`;
-  return apiClient.post<Ingredient>(url, mergeIngredientIds);
+  return apiClient.post<Ingredient>(`${BASE_PATH}/merge?keep_ingredient_id=${keepIngredientId}`, mergeIngredientIds);
 };

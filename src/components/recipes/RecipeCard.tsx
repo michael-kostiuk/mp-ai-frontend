@@ -50,7 +50,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
           </h3>
           
           <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
-            {recipe.dietary_tags.slice(0, 2).map((tag) => (
+            {(recipe.dietary_tags || []).slice(0, 2).map((tag) => (
               <span 
                 key={tag} 
                 className="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-800"
@@ -59,7 +59,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
                 {tag}
               </span>
             ))}
-            {recipe.dietary_tags.length > 2 && (
+            {(recipe.dietary_tags || []).length > 2 && (
               <span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
                 +{recipe.dietary_tags.length - 2}
               </span>
