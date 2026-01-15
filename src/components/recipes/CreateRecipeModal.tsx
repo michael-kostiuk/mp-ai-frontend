@@ -361,10 +361,29 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       return;
     }
 
+    // Convert empty strings to 0 for numeric fields before submitting
+    const cleanedFormData = {
+      ...formData,
+      servings: formData.servings === '' ? 0 : Number(formData.servings),
+      prep_time: formData.prep_time === '' ? 0 : Number(formData.prep_time),
+      cook_time: formData.cook_time === '' ? 0 : Number(formData.cook_time),
+      calories: formData.calories === '' ? 0 : Number(formData.calories),
+      protein: formData.protein === '' ? 0 : Number(formData.protein),
+      carbs: formData.carbs === '' ? 0 : Number(formData.carbs),
+      fats: formData.fats === '' ? 0 : Number(formData.fats),
+      breakfast_weight: formData.breakfast_weight === '' ? 0 : Number(formData.breakfast_weight),
+      lunch_weight: formData.lunch_weight === '' ? 0 : Number(formData.lunch_weight),
+      dinner_weight: formData.dinner_weight === '' ? 0 : Number(formData.dinner_weight),
+      ingredients: formData.ingredients.map(ing => ({
+        ...ing,
+        quantity: ing.quantity === '' ? 0 : Number(ing.quantity)
+      }))
+    };
+
     try {
       let result: Recipe;
       if (isEditing && editingRecipe) {
-        result = await updateExistingRecipe(editingRecipe.id, formData);
+        result = await updateExistingRecipe(editingRecipe.id, cleanedFormData);
       } else {
         result = await createNewRecipe(formData);
       }
@@ -688,44 +707,52 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Input
-                    label="Calories"
-                    type="number"
-                    value={formData.calories}
-                    onChange={(e) => handleNumericInputChange('calories', e.target.value)}
-                    min={0}
-                    fullWidth
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Calories</label>
+                    <Input
+                      type="number"
+                      value={formData.calories}
+                      onChange={(e) => handleNumericInputChange('calories', e.target.value)}
+                      min={0}
+                      fullWidth
+                    />
+                  </div>
 
-                  <Input
-                    label="Protein (g)"
-                    type="number"
-                    value={formData.protein}
-                    onChange={(e) => handleNumericInputChange('protein', e.target.value)}
-                    min={0}
-                    step={0.1}
-                    fullWidth
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Protein (g)</label>
+                    <Input
+                      type="number"
+                      value={formData.protein}
+                      onChange={(e) => handleNumericInputChange('protein', e.target.value)}
+                      min={0}
+                      step={0.1}
+                      fullWidth
+                    />
+                  </div>
 
-                  <Input
-                    label="Fats (g)"
-                    type="number"
-                    value={formData.fats}
-                    onChange={(e) => handleNumericInputChange('fats', e.target.value)}
-                    min={0}
-                    step={0.1}
-                    fullWidth
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Fats (g)</label>
+                    <Input
+                      type="number"
+                      value={formData.fats}
+                      onChange={(e) => handleNumericInputChange('fats', e.target.value)}
+                      min={0}
+                      step={0.1}
+                      fullWidth
+                    />
+                  </div>
 
-                  <Input
-                    label="Carbs (g)"
-                    type="number"
-                    value={formData.carbs}
-                    onChange={(e) => handleNumericInputChange('carbs', e.target.value)}
-                    min={0}
-                    step={0.1}
-                    fullWidth
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-1">Carbs (g)</label>
+                    <Input
+                      type="number"
+                      value={formData.carbs}
+                      onChange={(e) => handleNumericInputChange('carbs', e.target.value)}
+                      min={0}
+                      step={0.1}
+                      fullWidth
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
