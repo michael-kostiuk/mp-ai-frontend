@@ -19,7 +19,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
 }) => {
   const [keepIngredientId, setKeepIngredientId] = useState<number>(0);
   const [mergeIngredientIds, setMergeIngredientIds] = useState<number[]>([0]);
-  
+
   const { loading: merging, execute: performMerge } = useApi(mergeIngredients);
 
   const addMergeIngredient = () => {
@@ -31,7 +31,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
   };
 
   const updateMergeIngredient = (index: number, ingredientId: number) => {
-    setMergeIngredientIds(prev => 
+    setMergeIngredientIds(prev =>
       prev.map((id, i) => i === index ? ingredientId : id)
     );
   };
@@ -41,17 +41,17 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
     if (mergeIngredientIds.length === 0) return false;
     if (mergeIngredientIds.some(id => id === 0)) return false;
     if (mergeIngredientIds.includes(keepIngredientId)) return false;
-    
+
     // Check for duplicates in merge list
     const uniqueIds = new Set(mergeIngredientIds);
     if (uniqueIds.size !== mergeIngredientIds.length) return false;
-    
+
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       alert('Please select a valid ingredient to keep and at least one ingredient to merge. Make sure there are no duplicates.');
       return;
@@ -61,7 +61,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
       await performMerge(keepIngredientId, mergeIngredientIds);
       onSuccess();
       onClose();
-      
+
       // Reset form
       setKeepIngredientId(0);
       setMergeIngredientIds([0]);
@@ -78,8 +78,8 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
     setMergeIngredientIds([0]);
   };
 
-  const hasConflicts = mergeIngredientIds.includes(keepIngredientId) || 
-                     new Set(mergeIngredientIds).size !== mergeIngredientIds.length;
+  const hasConflicts = mergeIngredientIds.includes(keepIngredientId) ||
+    new Set(mergeIngredientIds).size !== mergeIngredientIds.length;
 
   if (!isOpen) return null;
 
@@ -109,7 +109,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
           </div>
 
           {/* Keep Ingredient */}
-          <Card>
+          <Card allowOverflow>
             <CardHeader>
               <CardTitle className="text-lg text-success-700">Ingredient to Keep</CardTitle>
             </CardHeader>
@@ -133,7 +133,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
           </div>
 
           {/* Merge Ingredients */}
-          <Card>
+          <Card allowOverflow>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg text-error-700">Ingredients to Merge</CardTitle>
@@ -171,7 +171,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
                       </p>
                     )}
                   </div>
-                  
+
                   {mergeIngredientIds.length > 1 && (
                     <Button
                       type="button"
@@ -185,7 +185,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
                   )}
                 </div>
               ))}
-              
+
               <p className="text-sm text-neutral-500">
                 These ingredients will be permanently deleted after merging. All their recipes will be transferred to the kept ingredient.
               </p>
@@ -212,7 +212,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
             <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
               <h4 className="text-sm font-medium text-warning-800 mb-2">⚠️ Merge Summary</h4>
               <p className="text-sm text-warning-700">
-                You are about to merge <strong>{mergeIngredientIds.length} ingredient{mergeIngredientIds.length !== 1 ? 's' : ''}</strong> into 
+                You are about to merge <strong>{mergeIngredientIds.length} ingredient{mergeIngredientIds.length !== 1 ? 's' : ''}</strong> into
                 the kept ingredient. This action cannot be undone.
               </p>
             </div>
@@ -223,8 +223,8 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               isLoading={merging}
               disabled={!validateForm()}
               className="bg-error-600 hover:bg-error-700 focus:ring-error-500"

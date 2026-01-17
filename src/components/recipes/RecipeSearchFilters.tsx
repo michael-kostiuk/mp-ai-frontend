@@ -20,7 +20,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
   const [minCalories, setMinCalories] = useState<number | undefined>(undefined);
   const [maxCalories, setMaxCalories] = useState<number | undefined>(undefined);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const categoryOptions = [
     { value: '', label: 'All Categories' },
     { value: 'breakfast', label: 'Breakfast' },
@@ -29,7 +29,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
     { value: 'dessert', label: 'Dessert' },
     { value: 'snack', label: 'Snack' },
   ];
-  
+
   const dietaryTagOptions = [
     { value: 'vegetarian', label: 'Vegetarian' },
     { value: 'vegan', label: 'Vegan' },
@@ -66,10 +66,10 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
       }
     };
   }, [searchQuery]);
-  
+
   const handleSearch = (query?: string) => {
     const searchTerm = query !== undefined ? query : searchQuery;
-    
+
     // For search, we'd use the search endpoint instead of filters
     if (searchTerm.trim().length >= 3) {
       // This would typically use a different API endpoint for search
@@ -93,7 +93,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
       });
     }
   };
-  
+
   const handleReset = () => {
     setSearchQuery('');
     setCategory(undefined);
@@ -101,14 +101,14 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
     setMaxPrepTime(undefined);
     setMinCalories(undefined);
     setMaxCalories(undefined);
-    
+
     onFilterChange({});
   };
-  
+
   const toggleDietaryTag = (tag: string) => {
-    setDietaryTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag) 
+    setDietaryTags(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
         : [...prev, tag]
     );
   };
@@ -118,9 +118,9 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
   };
 
   const showMinCharMessage = searchQuery.trim().length > 0 && searchQuery.trim().length < 3;
-  
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden transition-all">
+    <div className="bg-white rounded-lg shadow-sm border border-neutral-200 transition-all">
       <div className="p-4">
         <div className="flex items-center space-x-4">
           <div className="flex-1">
@@ -139,16 +139,16 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
               )}
             </div>
           </div>
-          
-          <Button 
+
+          <Button
             onClick={() => handleSearch()}
             className="flex-shrink-0"
             disabled={searchQuery.trim().length > 0 && searchQuery.trim().length < 3}
           >
             Search
           </Button>
-          
-          <Button 
+
+          <Button
             variant="ghost"
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex-shrink-0"
@@ -158,7 +158,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
           </Button>
         </div>
       </div>
-      
+
       {isExpanded && (
         <div className="p-4 border-t border-neutral-200 bg-neutral-50 animate-slideIn">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -169,7 +169,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
               onChange={setCategory}
               fullWidth
             />
-            
+
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
                 Max Prep Time (minutes)
@@ -183,7 +183,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
                 step={5}
               />
             </div>
-            
+
             <div className="md:col-span-1">
               <label className="block text-sm font-medium text-neutral-700 mb-1">
                 Calories
@@ -210,7 +210,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
               </div>
             </div>
           </div>
-          
+
           <div className="mt-4">
             <label className="block text-sm font-medium text-neutral-700 mb-1">
               Dietary Preferences
@@ -235,17 +235,17 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
               ))}
             </div>
           </div>
-          
+
           <div className="mt-4 flex justify-end space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={handleReset}
             >
               Reset
             </Button>
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               onClick={() => handleSearch()}
               disabled={searchQuery.trim().length > 0 && searchQuery.trim().length < 3}
             >

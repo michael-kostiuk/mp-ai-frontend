@@ -433,8 +433,8 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                 type="button"
                 onClick={() => setIsAutoGenerate(false)}
                 className={`px-4 py-2 rounded-md font-medium transition-colors ${!isAutoGenerate
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                   }`}
               >
                 Manual Planning
@@ -443,8 +443,8 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                 type="button"
                 onClick={() => setIsAutoGenerate(true)}
                 className={`px-4 py-2 rounded-md font-medium transition-colors ${isAutoGenerate
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
                   }`}
               >
                 Auto Generate
@@ -645,7 +645,7 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
 
                   <div className="space-y-6">
                     {dates.map((date) => (
-                      <Card key={date}>
+                      <Card key={date} allowOverflow>
                         <CardHeader>
                           <CardTitle className="text-base">{formatDate(date)}</CardTitle>
                         </CardHeader>

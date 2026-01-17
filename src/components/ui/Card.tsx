@@ -6,6 +6,7 @@ interface CardProps {
   onClick?: () => void;
   hoverable?: boolean;
   padding?: 'none' | 'sm' | 'md' | 'lg';
+  allowOverflow?: boolean;
 }
 
 const Card: React.FC<CardProps> = ({
@@ -13,7 +14,8 @@ const Card: React.FC<CardProps> = ({
   className = '',
   onClick,
   hoverable = false,
-  padding = 'md'
+  padding = 'md',
+  allowOverflow = false
 }) => {
   const paddingClasses = {
     none: '',
@@ -21,19 +23,19 @@ const Card: React.FC<CardProps> = ({
     md: 'p-5',
     lg: 'p-8'
   };
-  
+
   const hoverClasses = hoverable
     ? 'transition-transform hover:shadow-lg hover:-translate-y-1 cursor-pointer'
     : '';
-  
+
   const clickableProps = onClick
     ? { onClick, role: 'button', tabIndex: 0 }
     : {};
-  
+
   return (
     <div
       className={`
-        bg-white rounded-lg shadow-md overflow-hidden
+        bg-white rounded-lg shadow-md ${allowOverflow ? '' : 'overflow-hidden'}
         ${paddingClasses[padding]}
         ${hoverClasses}
         ${className}
