@@ -3,7 +3,7 @@ import { Ingredient, IngredientCreate } from '../types';
 
 const BASE_PATH = '/ingredients';
 
-export const getIngredients = async (params?: Record<string, any>): Promise<Ingredient[]> => {
+export const getIngredients = async (params?: Record<string, string | number | boolean | Array<string | number | boolean>>): Promise<Ingredient[]> => {
   return apiClient.get<Ingredient[]>(BASE_PATH, params);
 };
 

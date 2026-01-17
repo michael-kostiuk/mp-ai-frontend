@@ -1,30 +1,27 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ApiError } from '../types';
 
-interface UseApiResult<T> {
+interface UseApiResult<T, TArgs extends unknown[] = unknown[]> {
   data: T | null;
   loading: boolean;
   error: ApiError | null;
-  execute: (...args: any[]) => Promise<T>;
+  execute: (...args: TArgs) => Promise<T>;
   reset: () => void;
   cancel: () => void;
 }
 
-/**
- * Hook to handle API calls with loading and error states
- */
-const useApi = <T>(
-  apiFunc: (...args: any[]) => Promise<T>,
+const useApi = <T, TArgs extends unknown[] = unknown[]>(
+  apiFunc: (...args: TArgs) => Promise<T>,
   immediate = false,
-  initialArgs: any[] = []
-): UseApiResult<T> => {
+  initialArgs: TArgs = [] as unknown as TArgs
+): UseApiResult<T, TArgs> => {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState<boolean>(immediate);
   const [error, setError] = useState<ApiError | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   
   const execute = useCallback(
-    async (...args: any[]): Promise<T> => {
+    async (...args: TArgs): Promise<T> => {
       // Cancel previous request if it exists
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -82,12 +79,9 @@ const useApi = <T>(
 
   useEffect(() => {
     if (immediate) {
-      const args = JSON.parse(initialArgsString);
-      execute(...args).catch(() => {
-        // Prevent unhandled promise rejection warning
-      });
+      const args = JSON.parse(initialArgsString) as TArgs;
+      execute(...args).catch(() => undefined);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [immediate, execute, initialArgsString]);
 
   // Cleanup on unmount

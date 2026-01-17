@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { X, ArrowRight, Trash2, Plus } from 'lucide-react';
-import { Ingredient } from '../../types';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import IngredientSearchSelect from '../recipes/IngredientSearchSelect';
@@ -79,16 +78,6 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
     setMergeIngredientIds([0]);
   };
 
-  const getUsedIngredientIds = () => {
-    const used = new Set<number>();
-    if (keepIngredientId > 0) used.add(keepIngredientId);
-    mergeIngredientIds.forEach(id => {
-      if (id > 0) used.add(id);
-    });
-    return used;
-  };
-
-  const usedIds = getUsedIngredientIds();
   const hasConflicts = mergeIngredientIds.includes(keepIngredientId) || 
                      new Set(mergeIngredientIds).size !== mergeIngredientIds.length;
 

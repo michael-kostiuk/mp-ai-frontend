@@ -7,7 +7,7 @@ export interface Recipe {
   cook_time: number;
   instructions: string;
   category: string;
-  dietary_tags: string[];
+  dietary_tags?: string[];
   calories: number;
   protein: number;
   carbs: number;
@@ -51,6 +51,54 @@ export interface RecipeIngredientCreate {
   ingredient_id: number;
   quantity: number;
   unit: string;
+}
+
+export type RecipeFromImageJobStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'canceled';
+
+export interface ParsedIngredientFromImage {
+  raw_name: string;
+  quantity?: number | null;
+  unit?: string | null;
+  preparation?: string | null;
+  matched_ingredient_id?: number | null;
+  matched_ingredient_name?: string | null;
+  match_confidence: number;
+  match_type: 'exact' | 'fuzzy_high' | 'ai_verified' | 'unmatched';
+  needs_review: boolean;
+}
+
+export interface ParsedRecipeFromImage {
+  name?: string | null;
+  servings?: number | null;
+  prep_time?: number | null;
+  cook_time?: number | null;
+  instructions?: string | null;
+  category?: string | null;
+  ingredients: ParsedIngredientFromImage[];
+  nutrition?: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fats: number;
+  } | null;
+  warnings: string[];
+  raw?: Record<string, unknown> | null;
+}
+
+export interface RecipeFromImageStartResponse {
+  job_id: string;
+}
+
+export interface RecipeFromImageJob {
+  id: string;
+  status: RecipeFromImageJobStatus;
+  current_step: string;
+  step_progress: number;
+  overall_progress: number;
+  result?: ParsedRecipeFromImage | null;
+  error?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Ingredient Types
@@ -159,5 +207,5 @@ export interface RecipeFilterParams extends PaginationParams {
 export type ApiError = {
   message: string;
   status: number;
-  details?: any;
+  details?: unknown;
 };

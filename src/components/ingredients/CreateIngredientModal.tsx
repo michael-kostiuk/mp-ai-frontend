@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
-import { IngredientCreate } from '../../types';
+import { Ingredient, IngredientCreate } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
@@ -12,12 +12,16 @@ interface CreateIngredientModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialName?: string;
+  onCreated?: (ingredient: Ingredient) => void;
 }
 
 const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
   isOpen,
   onClose,
-  onSuccess
+  onSuccess,
+  initialName,
+  onCreated
 }) => {
   const [formData, setFormData] = useState<IngredientCreate>({
     name: '',
@@ -30,6 +34,16 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
   });
 
   const { loading: creating, execute: createNewIngredient } = useApi(createIngredient);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setFormData(prev => {
+      const nextName = (initialName || '').trim();
+      if (!nextName) return prev;
+      if (prev.name.trim()) return prev;
+      return { ...prev, name: nextName };
+    });
+  }, [isOpen, initialName]);
 
   const categoryOptions = [
     { value: 'vegetables', label: 'Vegetables' },
@@ -68,7 +82,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
     { value: 'package', label: 'packages' },
   ];
 
-  const handleInputChange = (field: keyof IngredientCreate, value: any) => {
+  const handleInputChange = <K extends keyof IngredientCreate>(field: K, value: IngredientCreate[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -92,7 +106,8 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
     }
 
     try {
-      await createNewIngredient(formData);
+      const created = await createNewIngredient(formData);
+      onCreated?.(created);
       onSuccess();
       onClose();
       

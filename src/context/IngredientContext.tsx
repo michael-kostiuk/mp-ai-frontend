@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect, useCallback } from 'react';
 import { Ingredient } from '../types';
 import useApi from '../hooks/useApi';
 import { getIngredients } from '../api/ingredientApi';

@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { MAX_FILE_SIZE } from '../../constants';
 
 interface FileUploadProps {
@@ -9,6 +9,7 @@ interface FileUploadProps {
   accept?: string;
   maxSize?: number;
   isUploading?: boolean;
+  showPreview?: boolean;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
@@ -17,7 +18,8 @@ const FileUpload: React.FC<FileUploadProps> = ({
   onRemove,
   accept = "image/*",
   maxSize = MAX_FILE_SIZE,
-  isUploading = false
+  isUploading = false,
+  showPreview = true
 }) => {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,9 +52,13 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   const handleFileSelect = (file: File) => {
     if (validateFile(file)) {
-      const previewUrl = URL.createObjectURL(file);
       setImageError(false);
-      onChange(previewUrl, file);
+      if (showPreview) {
+        const previewUrl = URL.createObjectURL(file);
+        onChange(previewUrl, file);
+      } else {
+        onChange('', file);
+      }
     }
   };
 
@@ -94,7 +100,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   return (
     <div className="w-full">
-      {value ? (
+      {showPreview && value ? (
         <div className="relative min-h-[256px] bg-neutral-100 rounded-lg overflow-hidden">
           {imageError ? (
             <div className="w-full h-64 flex flex-col items-center justify-center rounded-lg bg-neutral-100">

@@ -1,4 +1,3 @@
-import { ApiError } from '../types';
 import { checkResponse, formatApiError } from '../utils/apiUtils';
 
 class ApiClient {
@@ -44,6 +43,18 @@ class ApiClient {
     };
   }
 
+  private buildQueryString(queryParams: Record<string, string | number | boolean | Array<string | number | boolean>>): string {
+    const params = new URLSearchParams();
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach(v => params.append(key, String(v)));
+      } else {
+        params.append(key, String(value));
+      }
+    });
+    return params.toString();
+  }
+
   private async timeoutPromise<T>(ms: number, promise: Promise<T>): Promise<T> {
     return Promise.race([
       promise,
@@ -65,9 +76,9 @@ class ApiClient {
     }
   }
 
-  async get<T>(endpoint: string, queryParams?: Record<string, any>): Promise<T> {
+  async get<T>(endpoint: string, queryParams?: Record<string, string | number | boolean | Array<string | number | boolean>>): Promise<T> {
     const url = this.createUrl(endpoint);
-    const queryString = queryParams ? new URLSearchParams(queryParams as any).toString() : '';
+    const queryString = queryParams ? this.buildQueryString(queryParams) : '';
     const fullUrl = queryString ? `${url}?${queryString}` : url;
 
     return this.handleResponse<T>(
@@ -78,7 +89,7 @@ class ApiClient {
     );
   }
 
-  async post<T>(endpoint: string, data?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
     const url = this.createUrl(endpoint);
 
     return this.handleResponse<T>(
@@ -90,7 +101,7 @@ class ApiClient {
     );
   }
 
-  async put<T>(endpoint: string, data: any): Promise<T> {
+  async put<T>(endpoint: string, data: unknown): Promise<T> {
     const url = this.createUrl(endpoint);
 
     return this.handleResponse<T>(

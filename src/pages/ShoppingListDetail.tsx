@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Download, ArrowLeft } from 'lucide-react';
 import Container from '../components/layout/Container';

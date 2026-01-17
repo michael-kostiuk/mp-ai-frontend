@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Plus, X } from 'lucide-react';
 import { Recipe } from '../../types';
-import Button from '../ui/Button';
 import Input from '../ui/Input';
 import useApi from '../../hooks/useApi';
 import { getRecipes } from '../../api/recipeApi';

@@ -93,6 +93,8 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   if (!isOpen) return null;
 
+  const dietaryTags = Array.isArray(recipe?.dietary_tags) ? recipe.dietary_tags : [];
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -176,14 +178,14 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               </div>
 
               {/* Dietary Tags */}
-              {recipe.dietary_tags.length > 0 && (
+              {dietaryTags.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Dietary Information</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {recipe.dietary_tags.map((tag) => (
+                      {dietaryTags.map((tag) => (
                         <span 
                           key={tag}
                           className="inline-flex items-center rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-800"

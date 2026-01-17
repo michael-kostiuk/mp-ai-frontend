@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Plus, Trash2, Clock, Users, Target, Sparkles } from 'lucide-react';
-import { RecipeCreate, RecipeIngredientCreate, Ingredient, Recipe } from '../../types';
+import { Ingredient, RecipeCreate, RecipeIngredientCreate, Recipe } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
@@ -18,15 +18,20 @@ interface CreateRecipeModalProps {
   onClose: () => void;
   onSuccess: () => void;
   editingRecipe?: Recipe | null;
+  initialRecipe?: Partial<RecipeCreate> | null;
+  initialIngredientNotes?: string[] | null;
 }
 
 const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  editingRecipe = null
+  editingRecipe = null,
+  initialRecipe = null,
+  initialIngredientNotes = null
 }) => {
   const isEditing = !!editingRecipe;
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<RecipeCreate>({
     name: '',
@@ -54,7 +59,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | undefined>();
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageUploadError, setImageUploadError] = useState<string | null>(null);
-  const [originalImageUrl, setOriginalImageUrl] = useState<string | undefined>();
+  const [ingredientNotes, setIngredientNotes] = useState<string[]>([]);
 
   const { ingredients, fetchIngredients } = useIngredientContext();
   const { loading: creating, execute: createNewRecipe } = useApi(createRecipe);
@@ -70,7 +75,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         cook_time: editingRecipe.cook_time,
         instructions: editingRecipe.instructions,
         category: editingRecipe.category,
-        dietary_tags: [...editingRecipe.dietary_tags],
+        dietary_tags: [...(editingRecipe.dietary_tags || [])],
         calories: editingRecipe.calories,
         protein: editingRecipe.protein,
         carbs: editingRecipe.carbs,
@@ -86,10 +91,9 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         image_url: editingRecipe.image_url
       });
       setImagePreviewUrl(editingRecipe.image_url);
-      setOriginalImageUrl(editingRecipe.image_url);
+      setIngredientNotes(editingRecipe.ingredients.map(() => ''));
     } else {
-      // Reset form for new recipe
-      setFormData({
+      const base: RecipeCreate = {
         name: '',
         servings: 4,
         prep_time: 15,
@@ -106,18 +110,38 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         dinner_weight: 0.5,
         ingredients: [],
         image_url: undefined
-      });
+      };
+
+      const merged: RecipeCreate = {
+        ...base,
+        ...(initialRecipe || {}),
+        dietary_tags: initialRecipe?.dietary_tags ?? base.dietary_tags,
+        ingredients: initialRecipe?.ingredients ?? base.ingredients
+      };
+
+      setFormData(merged);
       setImagePreviewUrl(undefined);
       setImageFile(undefined);
-      setOriginalImageUrl(undefined);
+      setIngredientNotes(
+        (initialIngredientNotes && initialIngredientNotes.length === (merged.ingredients?.length || 0))
+          ? initialIngredientNotes
+          : (merged.ingredients || []).map(() => '')
+      );
     }
-  }, [editingRecipe]);
+  }, [editingRecipe, initialRecipe, initialIngredientNotes]);
 
   useEffect(() => {
     if (isOpen) {
       fetchIngredients();
     }
   }, [isOpen, fetchIngredients]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
+  }, [isOpen, editingRecipe, initialRecipe]);
 
   const categoryOptions = [
     { value: 'breakfast', label: 'Breakfast' },
@@ -162,9 +186,8 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   // Helper function to handle numeric input changes
   // Allows empty string during editing, converts properly on valid input
   const handleNumericInputChange = (field: keyof RecipeCreate, stringValue: string) => {
-    // If empty, store empty string to allow user to type new value
     if (stringValue === '') {
-      setFormData(prev => ({ ...prev, [field]: '' as any }));
+      setFormData(prev => ({ ...prev, [field]: 0 }));
       return;
     }
 
@@ -175,7 +198,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     }
   };
 
-  const handleInputChange = (field: keyof RecipeCreate, value: any) => {
+  const handleInputChange = <K extends keyof RecipeCreate>(field: K, value: RecipeCreate[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -198,9 +221,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       ...prev,
       ingredients: [...prev.ingredients, newIngredient]
     }));
+    setIngredientNotes(prev => [...prev, '']);
   };
 
-  const updateIngredient = (index: number, field: keyof RecipeIngredientCreate, value: any) => {
+  const updateIngredient = <K extends keyof RecipeIngredientCreate>(index: number, field: K, value: RecipeIngredientCreate[K]) => {
     setFormData(prev => ({
       ...prev,
       ingredients: prev.ingredients.map((ingredient, i) =>
@@ -212,12 +236,12 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   // Helper function for numeric ingredient fields
   const updateIngredientNumeric = (index: number, field: keyof RecipeIngredientCreate, stringValue: string) => {
     if (stringValue === '') {
-      updateIngredient(index, field, '' as any);
+      updateIngredient(index, field, 0 as RecipeIngredientCreate[typeof field]);
       return;
     }
     const numValue = Number(stringValue);
     if (!isNaN(numValue)) {
-      updateIngredient(index, field, numValue);
+      updateIngredient(index, field, numValue as RecipeIngredientCreate[typeof field]);
     }
   };
 
@@ -226,6 +250,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       ...prev,
       ingredients: prev.ingredients.filter((_, i) => i !== index)
     }));
+    setIngredientNotes(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleImageSelect = (url: string, file?: File) => {
@@ -243,22 +268,20 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     setImageFile(undefined);
     setImageUploadError(null);
     setFormData(prev => ({ ...prev, image_url: undefined }));
-    setOriginalImageUrl(undefined);
   };
 
-  const handleCreateNewIngredient = (name: string, index?: number) => {
+  const handleCreateNewIngredient = (name: string, index: number | null) => {
     setPendingIngredientName(name);
-    setPendingIngredientIndex(index ?? null);
+    setPendingIngredientIndex(index);
     setIsCreateIngredientModalOpen(true);
   };
 
-  const handleIngredientCreated = () => {
-    // Refresh ingredients list
+  const handleIngredientCreated = (ingredient: Ingredient) => {
     fetchIngredients();
-
-    // Reset pending state
-    setPendingIngredientName('');
-    setPendingIngredientIndex(null);
+    if (pendingIngredientIndex !== null) {
+      updateIngredient(pendingIngredientIndex, 'ingredient_id', ingredient.id);
+      setIngredientNotes(prev => prev.map((note, i) => (i === pendingIngredientIndex ? '' : note)));
+    }
   };
 
   const calculateNutrition = () => {
@@ -431,6 +454,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
           ingredients: [],
           image_url: undefined
         });
+        setIngredientNotes([]);
       }
     } catch (error) {
       console.error(`Failed to ${isEditing ? 'update' : 'create'} recipe:`, error);
@@ -461,7 +485,11 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       });
       setImagePreviewUrl(undefined);
       setImageFile(undefined);
+      setIngredientNotes([]);
     }
+    setPendingIngredientName('');
+    setPendingIngredientIndex(null);
+    setIsCreateIngredientModalOpen(false);
   };
 
   if (!isOpen) return null;
@@ -471,7 +499,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div ref={scrollContainerRef} className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between p-6 border-b border-neutral-200">
             <h2 className="text-xl font-semibold text-neutral-900">
               {isEditing ? 'Edit Recipe' : 'Create New Recipe'}
@@ -616,6 +644,12 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 </Button>
               </div>
 
+              {formData.ingredients.some(ing => ing.ingredient_id === 0) && (
+                <div className="mb-4 rounded-md border border-warning-200 bg-warning-50 p-3 text-sm text-warning-800">
+                  Some ingredients are still unmapped. Search or create them before saving.
+                </div>
+              )}
+
               <div className="space-y-4">
                 {formData.ingredients.map((ingredient, index) => (
                   <div key={index} className="bg-neutral-50 rounded-lg p-3 border border-neutral-200">
@@ -627,6 +661,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                           onChange={(ingredientId) => updateIngredient(index, 'ingredient_id', ingredientId)}
                           onCreateNew={(name) => handleCreateNewIngredient(name, index)}
                           placeholder="Search ingredient..."
+                          initialDisplayName={ingredientNotes[index] || ''}
                         />
                       </div>
 
@@ -666,6 +701,23 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                         </Button>
                       </div>
                     </div>
+                    {ingredient.ingredient_id === 0 && ingredientNotes[index] && (
+                      <div className="mt-2 flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2">
+                        <div className="min-w-0 text-xs text-neutral-600">
+                          <span className="font-medium text-neutral-700">Parsed:</span>{' '}
+                          <span className="break-words">{ingredientNotes[index]}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCreateNewIngredient(ingredientNotes[index], index)}
+                          className="shrink-0"
+                        >
+                          Create
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
 
@@ -831,7 +883,12 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
           setPendingIngredientName('');
           setPendingIngredientIndex(null);
         }}
-        onSuccess={handleIngredientCreated}
+        onSuccess={() => {
+          setPendingIngredientName('');
+          setPendingIngredientIndex(null);
+        }}
+        onCreated={handleIngredientCreated}
+        initialName={pendingIngredientName}
       />
     </>
   );

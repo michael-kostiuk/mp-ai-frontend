@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PlusCircle, Calendar, Users, Target } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';

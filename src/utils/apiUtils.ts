@@ -1,15 +1,16 @@
 import { ApiError } from '../types';
 
-/**
- * Creates a query string from an object of parameters
- */
-export const createQueryString = (params: Record<string, any>): string => {
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null;
+};
+
+export const createQueryString = (params: Record<string, unknown>): string => {
   const searchParams = new URLSearchParams();
   
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       if (Array.isArray(value)) {
-        value.forEach(item => searchParams.append(key, item));
+        value.forEach(item => searchParams.append(key, String(item)));
       } else {
         searchParams.append(key, String(value));
       }
@@ -20,16 +21,11 @@ export const createQueryString = (params: Record<string, any>): string => {
   return queryString ? `?${queryString}` : '';
 };
 
-/**
- * Format API error into a consistent error object
- */
-export const formatApiError = (error: any): ApiError => {
-  // If it's already in our format, return it
-  if (error && error.message && error.status) {
+export const formatApiError = (error: unknown): ApiError => {
+  if (isRecord(error) && typeof error.message === 'string' && typeof error.status === 'number') {
     return error as ApiError;
   }
   
-  // Handle fetch errors
   if (error instanceof Error) {
     return {
       message: error.message || 'An unknown error occurred',
@@ -38,18 +34,25 @@ export const formatApiError = (error: any): ApiError => {
     };
   }
   
-  // Handle API response errors
-  if (error && error.detail) {
+  if (isRecord(error) && 'detail' in error) {
+    const detail = error.detail;
+    const message = Array.isArray(detail)
+      ? detail
+          .map(d => {
+            if (isRecord(d) && typeof d.msg === 'string') return d.msg;
+            return String(d);
+          })
+          .join(', ')
+      : typeof detail === 'string'
+          ? detail
+          : String(detail);
     return {
-      message: Array.isArray(error.detail) 
-        ? error.detail.map((d: any) => d.msg).join(', ')
-        : error.detail,
-      status: error.status || 500,
+      message,
+      status: typeof error.status === 'number' ? error.status : 500,
       details: error
     };
   }
   
-  // Default error
   return {
     message: 'An unknown error occurred',
     status: 500,
@@ -63,7 +66,7 @@ export const formatApiError = (error: any): ApiError => {
 export const parseJSON = <T>(text: string): T => {
   try {
     return JSON.parse(text);
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Error parsing JSON:', e);
     throw new Error('Invalid JSON response');
   }
@@ -72,20 +75,22 @@ export const parseJSON = <T>(text: string): T => {
 /**
  * Check if a response is ok and handle errors
  */
-export const checkResponse = async (response: Response): Promise<any> => {
+export const checkResponse = async (response: Response): Promise<unknown> => {
   if (!response.ok) {
     const errorText = await response.text();
-    let errorData;
+    let errorData: unknown;
     
     try {
       errorData = JSON.parse(errorText);
-    } catch (e) {
+    } catch {
       errorData = { detail: errorText };
     }
     
     const error: ApiError = {
       status: response.status,
-      message: errorData.detail || `Error: ${response.status} ${response.statusText}`,
+      message: isRecord(errorData) && typeof errorData.detail === 'string'
+        ? errorData.detail
+        : `Error: ${response.status} ${response.statusText}`,
       details: errorData
     };
     

@@ -41,7 +41,7 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
     if (isOpen && mealPlanId) {
       loadMealPlan();
     }
-  }, [isOpen, mealPlanId]); // Only depend on isOpen and mealPlanId, not the fetch function
+  }, [isOpen, mealPlanId, loadMealPlan]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -49,14 +49,6 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
       weekday: 'long',
       year: 'numeric', 
       month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
-  const formatDateShort = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
       day: 'numeric' 
     });
   };

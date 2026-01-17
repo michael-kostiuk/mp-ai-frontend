@@ -16,10 +16,10 @@ export const deleteShoppingList = async (id: number): Promise<void> => {
   return apiClient.delete<void>(`${BASE_PATH}/${id}`);
 };
 
-export const exportShoppingList = async (id: number, format: string = 'ios_reminders'): Promise<any> => {
+export const exportShoppingList = async (id: number, format: string = 'ios_reminders'): Promise<unknown> => {
   const params = { format };
   const queryString = createQueryString(params);
-  return apiClient.get<any>(`${BASE_PATH}/${id}/export${queryString}`);
+  return apiClient.get<unknown>(`${BASE_PATH}/${id}/export${queryString}`);
 };
 
 export const getShoppingListItemRecipes = async (itemId: number): Promise<Recipe[]> => {

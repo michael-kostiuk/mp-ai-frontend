@@ -61,7 +61,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
             ))}
             {(recipe.dietary_tags || []).length > 2 && (
               <span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600">
-                +{recipe.dietary_tags.length - 2}
+                +{(recipe.dietary_tags || []).length - 2}
               </span>
             )}
           </div>
