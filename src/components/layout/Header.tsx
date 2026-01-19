@@ -1,19 +1,32 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, ChefHat, Wifi, WifiOff } from 'lucide-react';
-import { useApiContext } from '../../context/ApiContext';
+
+interface WindowEnv {
+  VITE_API_URL?: string;
+  VITE_URL?: string;
+  VITE_API_TIMEOUT?: string;
+}
+
+declare global {
+  interface Window {
+    _env_?: WindowEnv;
+  }
+}
 
 const MAX_RETRIES = 5;
-const INITIAL_DELAY = 1000; // 1 second
+const INITIAL_DELAY = 1000;
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const location = useLocation();
-  const { config } = useApiContext();
-  
+  const env: WindowEnv = window._env_ || {};
+  const baseUrl = env.VITE_API_URL || env.VITE_URL || import.meta.env.VITE_API_URL || import.meta.env.VITE_URL || '';
+  const timeout = parseInt(env.VITE_API_TIMEOUT || import.meta.env.VITE_API_TIMEOUT || '10000', 10);
+
   const retryCount = useRef(0);
-  const retryTimeout = useRef<NodeJS.Timeout | null>(null);
+  const retryTimeout = useRef<any>(null);
 
   const navigation = [
     { name: 'Recipes', href: '/recipes' },
@@ -21,11 +34,11 @@ const Header: React.FC = () => {
     { name: 'Shopping Lists', href: '/shopping-lists' },
     { name: 'Ingredients', href: '/ingredients' },
   ];
-  
+
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
   };
-  
+
   const testConnection = useCallback(async (isManual = false) => {
     if (isManual) {
       retryCount.current = 0;
@@ -38,16 +51,16 @@ const Header: React.FC = () => {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), config.timeout);
-      
-      const response = await fetch(`${config.baseUrl}/ingredients/`, {
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+      const response = await fetch(`${baseUrl}/ingredients/`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       if (response.ok) {
         setConnectionStatus('connected');
         retryCount.current = 0;
@@ -58,15 +71,15 @@ const Header: React.FC = () => {
       if ((error as Error).name === 'AbortError') {
         console.warn('API connection test timed out.');
       }
-      
+
       setConnectionStatus('disconnected');
-      
+
       if (!isManual && retryCount.current < MAX_RETRIES) {
         const delay = INITIAL_DELAY * Math.pow(2, retryCount.current);
         console.log(`Connection failed. Retrying in ${delay / 1000}s...`);
-        
+
         retryCount.current++;
-        
+
         retryTimeout.current = setTimeout(() => {
           testConnection(false);
         }, delay);
@@ -74,8 +87,8 @@ const Header: React.FC = () => {
         console.error(`Connection failed after ${MAX_RETRIES} retries. Giving up.`);
       }
     }
-  }, [config.baseUrl, config.timeout]);
-  
+  }, [baseUrl, timeout]);
+
   useEffect(() => {
     testConnection(true); // Initial test on mount or config change
 
@@ -85,7 +98,7 @@ const Header: React.FC = () => {
       }
     };
   }, [testConnection]);
-  
+
   const getStatusIcon = () => {
     switch (connectionStatus) {
       case 'connected':
@@ -96,7 +109,7 @@ const Header: React.FC = () => {
         return <div className="h-4 w-4 border-2 border-warning-500 border-t-transparent rounded-full animate-spin" />;
     }
   };
-  
+
   const getStatusText = () => {
     switch (connectionStatus) {
       case 'connected':
@@ -107,7 +120,7 @@ const Header: React.FC = () => {
         return 'Checking...';
     }
   };
-  
+
   const getStatusColor = () => {
     switch (connectionStatus) {
       case 'connected':
@@ -118,7 +131,7 @@ const Header: React.FC = () => {
         return 'text-warning-600';
     }
   };
-  
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
@@ -132,17 +145,16 @@ const Header: React.FC = () => {
                 </span>
               </Link>
             </div>
-            
+
             <nav className="hidden lg:ml-8 xl:ml-12 lg:flex lg:space-x-6 xl:space-x-8" aria-label="Main navigation">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${
-                    isActive(item.href)
-                      ? 'border-primary-500 text-neutral-900'
-                      : 'border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700'
-                  }`}
+                  className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${isActive(item.href)
+                    ? 'border-primary-500 text-neutral-900'
+                    : 'border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700'
+                    }`}
                   aria-current={isActive(item.href) ? 'page' : undefined}
                 >
                   {item.name}
@@ -150,7 +162,7 @@ const Header: React.FC = () => {
               ))}
             </nav>
           </div>
-          
+
           <div className="flex items-center lg:hidden">
             <button
               type="button"
@@ -166,12 +178,12 @@ const Header: React.FC = () => {
               )}
             </button>
           </div>
-          
+
           <div className="hidden lg:ml-6 lg:flex lg:items-center">
             <button
               onClick={() => testConnection(true)}
               className="flex items-center text-xs xl:text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
-              title={`Click to test connection. Timeout: ${config.timeout}ms`}
+              title={`Click to test connection. Timeout: ${timeout}ms`}
             >
               <span className="mr-2 text-neutral-500 hidden xl:inline">API:</span>
               <span className={`flex items-center ${getStatusColor()}`}>
@@ -182,7 +194,7 @@ const Header: React.FC = () => {
           </div>
         </div>
       </div>
-      
+
       {isMenuOpen && (
         <div className="lg:hidden border-t border-neutral-200 bg-white">
           <div className="space-y-1 pt-2 pb-3">
@@ -190,11 +202,10 @@ const Header: React.FC = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className={`block border-l-4 py-2 pl-3 pr-4 text-base font-medium transition-colors ${
-                  isActive(item.href)
-                    ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-transparent text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700'
-                }`}
+                className={`block border-l-4 py-2 pl-3 pr-4 text-base font-medium transition-colors ${isActive(item.href)
+                  ? 'border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-transparent text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700'
+                  }`}
                 aria-current={isActive(item.href) ? 'page' : undefined}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -202,13 +213,13 @@ const Header: React.FC = () => {
               </Link>
             ))}
           </div>
-          
+
           <div className="border-t border-neutral-200 pt-4 pb-3">
             <div className="flex items-center px-4">
               <button
                 onClick={() => testConnection(true)}
                 className="flex items-center text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
-                title={`Click to test connection. Timeout: ${config.timeout}ms`}
+                title={`Click to test connection. Timeout: ${timeout}ms`}
               >
                 <span className="mr-2 text-neutral-500">API:</span>
                 <span className={`flex items-center ${getStatusColor()}`}>
@@ -219,7 +230,7 @@ const Header: React.FC = () => {
             </div>
             <div className="px-4 mt-2">
               <div className="text-xs text-neutral-500 break-all">
-                {config.baseUrl} • {config.timeout}ms timeout
+                {baseUrl} • {timeout}ms timeout
               </div>
             </div>
           </div>

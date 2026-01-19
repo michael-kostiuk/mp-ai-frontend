@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Search, Plus, X } from 'lucide-react';
 import { Ingredient } from '../../types';
 import Input from '../ui/Input';
@@ -52,6 +52,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   }, [isOpen]);
 
   const { data: ingredients, loading, execute: searchIngredients } = useApi<Ingredient[]>(getIngredients);
+  const ingredientItems = useMemo(() => (Array.isArray(ingredients) ? ingredients : []), [ingredients]);
 
   const setInputToFallbackDisplayName = useCallback((mode: 'force' | 'if-empty' = 'force') => {
     if (mode === 'force') {
@@ -97,7 +98,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   useEffect(() => {
     if (!isUserTyping && value && value !== selectedIngredient?.id) {
       // Check if we already have this ingredient in our current results
-      const existingIngredient = ingredients?.find(ing => ing.id === value);
+      const existingIngredient = ingredientItems.find(ing => ing.id === value);
       if (existingIngredient) {
         setSelectedIngredient(existingIngredient);
         setInputValue(existingIngredient.name);
@@ -110,7 +111,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
       setSelectedIngredient(null);
       setInputToFallbackDisplayName('force');
     }
-  }, [value, ingredients, isUserTyping, selectedIngredient?.id, performSearch, setInputToFallbackDisplayName]);
+  }, [value, ingredientItems, isUserTyping, selectedIngredient?.id, performSearch, setInputToFallbackDisplayName]);
 
   // Handle input changes with debounced search
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -196,7 +197,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     inputRef.current?.focus();
   };
 
-  const filteredIngredients = ingredients || [];
+  const filteredIngredients = ingredientItems;
   const hasExactMatch = filteredIngredients.some(
     ing => ing.name.toLowerCase() === inputValue.toLowerCase()
   );

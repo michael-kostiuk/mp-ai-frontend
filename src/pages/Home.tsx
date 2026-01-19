@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChefHat, CalendarDays, ShoppingCart, List } from 'lucide-react';
 import Container from '../components/layout/Container';
-import ApiConfigPanel from '../components/layout/ApiConfigPanel';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
@@ -87,7 +86,6 @@ const Home: React.FC = () => {
           ))}
         </div>
         
-        <ApiConfigPanel />
       </Container>
     </div>
   );

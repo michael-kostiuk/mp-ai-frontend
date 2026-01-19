@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Recipe, RecipeFilterParams } from '../../types';
 import RecipeCard from './RecipeCard';
 import RecipeSearchFilters from './RecipeSearchFilters';
@@ -23,6 +23,7 @@ const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
   const loadedIdsRef = useRef<Set<number>>(new Set());
 
   const { data: recipes, loading, error, execute: fetchRecipes } = useApi<Recipe[]>(getRecipes);
+  const recipeItems = useMemo(() => (Array.isArray(recipes) ? recipes : []), [recipes]);
 
   const loadRecipes = useCallback((currentFilters: RecipeFilterParams) => {
     fetchRecipes(currentFilters);
@@ -41,17 +42,17 @@ const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
     if (!recipes) return;
 
     if (filters.skip === 0) {
-      setAllRecipes(recipes);
-      loadedIdsRef.current = new Set(recipes.map(r => r.id));
+      setAllRecipes(recipeItems);
+      loadedIdsRef.current = new Set(recipeItems.map(r => r.id));
     } else {
-      const newRecipes = recipes.filter(r => !loadedIdsRef.current.has(r.id));
+      const newRecipes = recipeItems.filter(r => !loadedIdsRef.current.has(r.id));
       if (newRecipes.length > 0) {
         setAllRecipes(prev => [...prev, ...newRecipes]);
         newRecipes.forEach(r => loadedIdsRef.current.add(r.id));
       }
     }
 
-    setHasMore(recipes.length >= (filters.limit || 20));
+    setHasMore(recipeItems.length >= (filters.limit || 20));
   }, [recipes, filters.skip, filters.limit]);
 
   const handleFilterChange = (newFilters: RecipeFilterParams) => {
