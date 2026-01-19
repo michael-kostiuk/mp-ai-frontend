@@ -7,10 +7,12 @@ const MAX_RETRIES = 5;
 const INITIAL_DELAY = 1000; // 1 second
 
 const Header: React.FC = () => {
+  const { config } = useApiContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const location = useLocation();
-  const { config } = useApiContext();
+  const baseUrl = config.baseUrl;
+  const timeout = config.timeout;
   
   const retryCount = useRef(0);
   const retryTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -38,9 +40,9 @@ const Header: React.FC = () => {
 
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
       
-      const response = await fetch(`${config.baseUrl}/ingredients/`, {
+      const response = await fetch(`${baseUrl}/ingredients/`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         signal: controller.signal,
@@ -74,7 +76,7 @@ const Header: React.FC = () => {
         console.error(`Connection failed after ${MAX_RETRIES} retries. Giving up.`);
       }
     }
-  }, [config.baseUrl, config.timeout]);
+  }, [baseUrl, timeout]);
   
   useEffect(() => {
     testConnection(true); // Initial test on mount or config change
@@ -171,7 +173,7 @@ const Header: React.FC = () => {
             <button
               onClick={() => testConnection(true)}
               className="flex items-center text-xs xl:text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
-              title={`Click to test connection. Timeout: ${config.timeout}ms`}
+              title={`Click to test connection. Timeout: ${timeout}ms`}
             >
               <span className="mr-2 text-neutral-500 hidden xl:inline">API:</span>
               <span className={`flex items-center ${getStatusColor()}`}>
@@ -208,7 +210,7 @@ const Header: React.FC = () => {
               <button
                 onClick={() => testConnection(true)}
                 className="flex items-center text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
-                title={`Click to test connection. Timeout: ${config.timeout}ms`}
+                title={`Click to test connection. Timeout: ${timeout}ms`}
               >
                 <span className="mr-2 text-neutral-500">API:</span>
                 <span className={`flex items-center ${getStatusColor()}`}>
@@ -219,7 +221,7 @@ const Header: React.FC = () => {
             </div>
             <div className="px-4 mt-2">
               <div className="text-xs text-neutral-500 break-all">
-                {config.baseUrl} • {config.timeout}ms timeout
+                {baseUrl} • {timeout}ms timeout
               </div>
             </div>
           </div>

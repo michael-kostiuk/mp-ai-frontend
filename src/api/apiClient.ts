@@ -138,13 +138,36 @@ class ApiClient {
   }
 }
 
+const getStoredApiConfig = (): { baseUrl: string; timeout: number } | null => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const storedConfig = window.localStorage.getItem('apiConfig');
+    if (!storedConfig) {
+      return null;
+    }
+
+    const parsed = JSON.parse(storedConfig) as { baseUrl?: unknown; timeout?: unknown };
+    if (typeof parsed.baseUrl === 'string' && typeof parsed.timeout === 'number') {
+      return { baseUrl: parsed.baseUrl, timeout: parsed.timeout };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
 // Create and export a singleton instance
 let apiClient: ApiClient | null = null;
 
 export const getApiClient = (): ApiClient => {
   if (!apiClient) {
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://mealplanner-eu.onrender.com';
-    const timeout = 60000; // 60s for uploads
+    const storedConfig = getStoredApiConfig();
+    const baseUrl = storedConfig?.baseUrl || import.meta.env.VITE_API_URL || 'https://mealplanner-eu.onrender.com';
+    const timeout = storedConfig?.timeout ?? 60000; // 60s for uploads
     apiClient = new ApiClient(baseUrl, timeout);
   }
   return apiClient;

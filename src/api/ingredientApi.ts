@@ -1,10 +1,24 @@
 import apiClient from './apiClient';
-import { Ingredient, IngredientCreate } from '../types';
+import { ApiError, Ingredient, IngredientCreate } from '../types';
 
 const BASE_PATH = '/ingredients';
 
+const normalizeIngredientsResponse = (data: unknown): Ingredient[] => {
+  if (Array.isArray(data)) {
+    return data as Ingredient[];
+  }
+
+  const error: ApiError = {
+    message: 'Invalid ingredients response',
+    status: 0,
+    details: data
+  };
+  throw error;
+};
+
 export const getIngredients = async (params?: Record<string, string | number | boolean | Array<string | number | boolean>>): Promise<Ingredient[]> => {
-  return apiClient.get<Ingredient[]>(BASE_PATH, params);
+  const data = await apiClient.get<unknown>(BASE_PATH, params);
+  return normalizeIngredientsResponse(data);
 };
 
 export const createIngredient = async (ingredient: IngredientCreate): Promise<Ingredient> => {

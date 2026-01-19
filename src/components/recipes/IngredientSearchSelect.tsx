@@ -30,8 +30,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastSearchQueryRef = useRef<string>('');
+  const hasLoadedAllRef = useRef(false);
   const fallbackDisplayName = initialDisplayName || '';
 
   // Calculate dropdown position based on available space
@@ -63,35 +62,25 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     }
   }, [fallbackDisplayName, inputValue]);
 
-  const performSearch = useCallback(async (query: string, loadAll = false) => {
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
+  const loadAllIngredients = useCallback(async () => {
+    if (hasLoadedAllRef.current) {
+      return;
     }
 
-    const executeSearch = async () => {
-      try {
-        const searchKey = loadAll ? '__ALL__' : query.trim();
-        if (lastSearchQueryRef.current === searchKey) {
-          return;
-        }
-        lastSearchQueryRef.current = searchKey;
-
-        if (loadAll) {
-          await searchIngredients();
-        } else if (query.trim().length >= 1) {
-          await searchIngredients({ name: query.trim() });
-        }
-      } catch (error) {
-        console.error('Search error:', error);
-      }
-    };
-
-    if (loadAll) {
-      executeSearch();
-    } else if (query.trim().length >= 1) {
-      debounceTimeoutRef.current = setTimeout(executeSearch, 300);
+    hasLoadedAllRef.current = true;
+    try {
+      await searchIngredients();
+    } catch (error) {
+      hasLoadedAllRef.current = false;
+      console.error('Search error:', error);
     }
   }, [searchIngredients]);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadAllIngredients();
+    }
+  }, [isOpen, loadAllIngredients]);
 
   // Find and set selected ingredient when value changes (only if user is not actively typing)
   useEffect(() => {
@@ -104,13 +93,13 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
       } else if (value > 0) {
         setInputToFallbackDisplayName('if-empty');
         // Need to load all ingredients to find this specific one
-        performSearch('', true);
+        loadAllIngredients();
       }
     } else if (!isUserTyping && value === 0) {
       setSelectedIngredient(null);
       setInputToFallbackDisplayName('force');
     }
-  }, [value, ingredients, isUserTyping, selectedIngredient?.id, performSearch, setInputToFallbackDisplayName]);
+  }, [value, ingredients, isUserTyping, selectedIngredient?.id, loadAllIngredients, setInputToFallbackDisplayName]);
 
   // Handle input changes with debounced search
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,9 +110,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     if (!isOpen) {
       setIsOpen(true);
     }
-
-    // Search based on user input
-    performSearch(newValue);
+    loadAllIngredients();
   };
 
   const handleInputFocus = () => {
@@ -132,8 +119,6 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     // Only clear if there's a selected ingredient, otherwise keep the current input
     if (selectedIngredient) {
       setInputValue('');
-      // Reset last search to allow fresh search
-      lastSearchQueryRef.current = '';
     } else {
       setInputToFallbackDisplayName('if-empty');
     }
@@ -164,10 +149,6 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      // Cleanup timeout
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
     };
   }, [selectedIngredient, setInputToFallbackDisplayName]);
 
@@ -192,11 +173,23 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     setInputValue('');
     setIsUserTyping(false);
     onChange(0);
-    lastSearchQueryRef.current = '';
+    if (!isOpen) {
+      setIsOpen(true);
+    }
+    loadAllIngredients();
     inputRef.current?.focus();
   };
 
-  const filteredIngredients = ingredients || [];
+  const normalizedQuery = inputValue.trim().toLowerCase();
+  const filteredIngredients = (ingredients || []).filter((ingredient) => {
+    if (!normalizedQuery) {
+      return true;
+    }
+    return (
+      ingredient.name.toLowerCase().includes(normalizedQuery) ||
+      ingredient.category.toLowerCase().includes(normalizedQuery)
+    );
+  });
   const hasExactMatch = filteredIngredients.some(
     ing => ing.name.toLowerCase() === inputValue.toLowerCase()
   );
