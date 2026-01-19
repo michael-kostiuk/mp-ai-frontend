@@ -2,6 +2,16 @@ import { expect } from '@playwright/test';
 import type { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
+// Helper to check if pathname matches the API endpoint (handles /api prefix from nginx proxy)
+const matchesApiPath = (pathname: string, endpoint: string): boolean => {
+    const normalizedPath = pathname.replace(/\/+$/, ''); // Remove trailing slashes
+    const normalizedEndpoint = endpoint.replace(/\/+$/, '');
+    return normalizedPath === normalizedEndpoint ||
+        normalizedPath === `/api${normalizedEndpoint}` ||
+        normalizedPath.startsWith(`${normalizedEndpoint}/`) ||
+        normalizedPath.startsWith(`/api${normalizedEndpoint}/`);
+};
+
 export class MealPlanPage extends BasePage {
     readonly createMealPlanButton: Locator;
 
@@ -30,7 +40,7 @@ export class MealPlanPage extends BasePage {
             this.page.waitForResponse(resp => {
                 if (resp.request().method() !== 'GET') return false;
                 const url = new URL(resp.url());
-                if (url.pathname !== '/recipes/' && url.pathname !== '/recipes') return false;
+                if (!matchesApiPath(url.pathname, '/recipes')) return false;
                 const name = url.searchParams.get('name');
                 return name ? name.includes(recipeName) : false;
             }),
@@ -74,7 +84,7 @@ export class MealPlanPage extends BasePage {
             this.page.waitForResponse(resp => {
                 if (resp.request().method() !== 'DELETE') return false;
                 const url = new URL(resp.url());
-                return url.pathname === `/meal-plans/${planId}` && resp.status() >= 200 && resp.status() < 300;
+                return matchesApiPath(url.pathname, `/meal-plans/${planId}`) && resp.status() >= 200 && resp.status() < 300;
             }),
             this.page.getByRole('button', { name: 'Confirm Delete' }).click()
         ]);

@@ -1,5 +1,13 @@
 import { test, expect } from './fixtures/test-setup';
 
+// Helper to check if pathname matches the API endpoint (handles /api prefix from nginx proxy)
+const matchesApiPath = (pathname: string, endpoint: string): boolean => {
+    const normalizedPath = pathname.replace(/\/+$/, ''); // Remove trailing slashes
+    const normalizedEndpoint = endpoint.replace(/\/+$/, '');
+    return normalizedPath === normalizedEndpoint ||
+        normalizedPath === `/api${normalizedEndpoint}`;
+};
+
 test.describe('End-to-End User Journey', () => {
     const formatDateRange = (startDate: string, endDate: string) => {
         const format = (dateString: string) =>
@@ -32,7 +40,7 @@ test.describe('End-to-End User Journey', () => {
                 resp.request().method() === 'POST' &&
                 (() => {
                     const url = new URL(resp.url());
-                    return (url.pathname === '/recipes' || url.pathname === '/recipes/') && resp.status() >= 200 && resp.status() < 300;
+                    return matchesApiPath(url.pathname, '/recipes') && resp.status() >= 200 && resp.status() < 300;
                 })()
             ),
             recipePage.submitRecipe()
@@ -74,7 +82,7 @@ test.describe('End-to-End User Journey', () => {
                 resp.request().method() === 'POST' &&
                 (() => {
                     const url = new URL(resp.url());
-                    return (url.pathname === '/meal-plans' || url.pathname === '/meal-plans/') && resp.status() >= 200 && resp.status() < 300;
+                    return matchesApiPath(url.pathname, '/meal-plans') && resp.status() >= 200 && resp.status() < 300;
                 })()
             ),
             mealPlanPage.submitPlan()
@@ -96,7 +104,8 @@ test.describe('End-to-End User Journey', () => {
             const [listResponse] = await Promise.all([
                 page.waitForResponse(resp =>
                     resp.request().method() === 'GET' &&
-                    resp.url().includes(`/meal-plans/${planData.id}/shopping-list`) &&
+                    (resp.url().includes(`/meal-plans/${planData.id}/shopping-list`) ||
+                        resp.url().includes(`/api/meal-plans/${planData.id}/shopping-list`)) &&
                     resp.status() === 200
                 ),
                 page.getByRole('button', { name: 'Generate List' }).click()
@@ -134,7 +143,7 @@ test.describe('End-to-End User Journey', () => {
                 resp.request().method() === 'POST' &&
                 (() => {
                     const url = new URL(resp.url());
-                    return (url.pathname === '/recipes' || url.pathname === '/recipes/') && resp.status() >= 200 && resp.status() < 300;
+                    return matchesApiPath(url.pathname, '/recipes') && resp.status() >= 200 && resp.status() < 300;
                 })()
             ),
             recipePage.submitRecipe()
@@ -165,3 +174,4 @@ test.describe('End-to-End User Journey', () => {
         createdRecipes.pop();
     });
 });
+

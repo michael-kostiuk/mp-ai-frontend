@@ -43,19 +43,15 @@ test.beforeEach(async ({ page }) => {
     // Enable console logging for debugging
     page.on('console', msg => console.log(`BROWSER(${msg.type()}): ${msg.text()}`));
 
+    // The frontend reads VITE_API_URL from window._env_ which is set by entrypoint.sh
+    // When running in Docker, nginx proxies /api to the backend at http://be:8000
+    // No localStorage injection needed - the environment handles it
     const backendUrl = process.env.BACKEND_URL || 'http://be:8000';
     if (backendUrl.includes('onrender.com')) {
         throw new Error(`Refusing to run E2E tests against production-like URL: ${backendUrl}`);
     }
-    console.log(`TEST SETUP: Using BACKEND_URL=${backendUrl}`);
-
-    await page.addInitScript((url) => {
-        console.log('TEST SETUP: Injecting apiConfig with baseUrl:', url);
-        window.localStorage.setItem('apiConfig', JSON.stringify({
-            baseUrl: url,
-            timeout: 10000
-        }));
-    }, backendUrl);
+    console.log(`TEST SETUP: Frontend will use /api (proxied via nginx to backend)`);
+    console.log(`TEST SETUP: Direct API calls in tests will use BACKEND_URL=${backendUrl}`);
 });
 
 test.afterEach(async ({ request, createdRecipes, createdMealPlanIds, createdShoppingListIds, createdIngredientNames }) => {

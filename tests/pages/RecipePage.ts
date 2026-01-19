@@ -2,6 +2,16 @@ import { expect } from '@playwright/test';
 import type { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
+// Helper to check if pathname matches the API endpoint (handles /api prefix from nginx proxy)
+const matchesApiPath = (pathname: string, endpoint: string): boolean => {
+    const normalizedPath = pathname.replace(/\/+$/, ''); // Remove trailing slashes
+    const normalizedEndpoint = endpoint.replace(/\/+$/, '');
+    return normalizedPath === normalizedEndpoint ||
+        normalizedPath === `/api${normalizedEndpoint}` ||
+        normalizedPath.startsWith(`${normalizedEndpoint}/`) ||
+        normalizedPath.startsWith(`/api${normalizedEndpoint}/`);
+};
+
 export class RecipePage extends BasePage {
     readonly addRecipeButton: Locator;
     readonly createRecipeButton: Locator;
@@ -84,7 +94,7 @@ export class RecipePage extends BasePage {
                 this.page.waitForResponse(resp => {
                     if (resp.request().method() !== 'POST') return false;
                     const url = new URL(resp.url());
-                    return url.pathname === '/ingredients' || url.pathname === '/ingredients/';
+                    return matchesApiPath(url.pathname, '/ingredients');
                 }),
                 ingredientModal.getByRole('button', { name: 'Add Ingredient' }).click()
             ]);
@@ -135,7 +145,7 @@ export class RecipePage extends BasePage {
             this.page.waitForResponse(resp => {
                 if (resp.request().method() !== 'DELETE') return false;
                 const url = new URL(resp.url());
-                return url.pathname.startsWith('/recipes/');
+                return matchesApiPath(url.pathname, '/recipes');
             }),
             this.page.getByRole('button', { name: 'Confirm Delete' }).click()
         ]);

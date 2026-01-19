@@ -145,7 +145,7 @@ export const getApiClient = (): ApiClient => {
   if (!apiClient) {
     // Check for runtime environment variables first, then fall back to build-time
     const env = (window as any)._env_ || {};
-    const baseUrl = env.VITE_API_URL || env.VITE_URL || import.meta.env.VITE_API_URL || import.meta.env.VITE_URL || 'http://localhost:8000';
+    const baseUrl = env.VITE_API_URL || import.meta.env.VITE_API_URL;
     const timeout = 60000; // 60s for uploads
     apiClient = new ApiClient(baseUrl, timeout);
   }

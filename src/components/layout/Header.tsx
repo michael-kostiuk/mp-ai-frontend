@@ -4,7 +4,6 @@ import { Menu, X, ChefHat, Wifi, WifiOff } from 'lucide-react';
 
 interface WindowEnv {
   VITE_API_URL?: string;
-  VITE_URL?: string;
   VITE_API_TIMEOUT?: string;
 }
 
@@ -22,7 +21,7 @@ const Header: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const location = useLocation();
   const env: WindowEnv = window._env_ || {};
-  const baseUrl = env.VITE_API_URL || env.VITE_URL || import.meta.env.VITE_API_URL || import.meta.env.VITE_URL || '';
+  const baseUrl = env.VITE_API_URL || import.meta.env.VITE_API_URL || '';
   const timeout = parseInt(env.VITE_API_TIMEOUT || import.meta.env.VITE_API_TIMEOUT || '10000', 10);
 
   const retryCount = useRef(0);
