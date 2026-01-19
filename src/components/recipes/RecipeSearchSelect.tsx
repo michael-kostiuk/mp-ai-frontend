@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, Plus, X } from 'lucide-react';
 import { Recipe } from '../../types';
 import Input from '../ui/Input';
@@ -34,6 +34,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   const lastSearchQueryRef = useRef<string>('');
 
   const { data: recipes, loading, execute: searchRecipes } = useApi<Recipe[]>(getRecipes);
+  const recipeItems = useMemo(() => (Array.isArray(recipes) ? recipes : []), [recipes]);
 
   // Calculate dropdown position based on available space
   useEffect(() => {
@@ -85,7 +86,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   useEffect(() => {
     if (!isUserTyping && value && value !== selectedRecipe?.id) {
       // Check if we already have this recipe in our current results
-      const existingRecipe = recipes?.find(rec => rec.id === value);
+      const existingRecipe = recipeItems.find(rec => rec.id === value);
       if (existingRecipe) {
         setSelectedRecipe(existingRecipe);
         setInputValue(existingRecipe.name);
@@ -97,7 +98,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
       setSelectedRecipe(null);
       setInputValue('');
     }
-  }, [value, recipes, isUserTyping, initialDisplayName]);
+  }, [value, isUserTyping, initialDisplayName]);
 
   // Debounced search function
   const performSearch = async (query: string, loadAll = false) => {
@@ -218,7 +219,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     inputRef.current?.focus();
   };
 
-  const filteredRecipes = recipes || [];
+  const filteredRecipes = recipeItems;
   const hasExactMatch = filteredRecipes.some(
     rec => rec.name.toLowerCase() === inputValue.toLowerCase()
   );

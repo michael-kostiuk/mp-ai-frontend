@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import RecipeDetailModal from '../components/recipes/RecipeDetailModal';
 import CreateRecipeModal from '../components/recipes/CreateRecipeModal';
 import { Recipe } from '../types';
@@ -7,10 +7,16 @@ import { Recipe } from '../types';
 const RecipeDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const recipeId = id ? parseInt(id, 10) : null;
+  const searchParams = new URLSearchParams(location.search);
+  const fromMealPlanId = Number(searchParams.get('fromMealPlan'));
+  const returnPath = Number.isFinite(fromMealPlanId) && fromMealPlanId > 0
+    ? `/meal-plans/${fromMealPlanId}`
+    : null;
 
   useEffect(() => {
     // If no valid ID, redirect to recipes list
@@ -20,7 +26,7 @@ const RecipeDetail: React.FC = () => {
   }, [recipeId, navigate]);
 
   const handleClose = () => {
-    navigate('/recipes');
+    navigate(returnPath || '/recipes');
   };
 
   const handleEdit = (recipe: Recipe) => {
@@ -35,7 +41,7 @@ const RecipeDetail: React.FC = () => {
   };
 
   const handleDelete = () => {
-    navigate('/recipes');
+    navigate(returnPath || '/recipes');
   };
 
   const handleEditModalClose = () => {
@@ -55,6 +61,8 @@ const RecipeDetail: React.FC = () => {
         recipeId={recipeId}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        backTo={returnPath || undefined}
+        backLabel="Back to Meal Plan"
       />
 
       <CreateRecipeModal

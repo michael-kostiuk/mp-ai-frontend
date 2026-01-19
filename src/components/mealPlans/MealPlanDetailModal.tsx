@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { X, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2 } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
 import Button from '../ui/Button';
@@ -248,9 +249,12 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
                                         {entry.servings} serving{entry.servings !== 1 ? 's' : ''}
                                       </span>
                                     </div>
-                                    <h5 className="font-medium text-neutral-900 mb-1">
+                                    <Link
+                                      to={`/recipes/${entry.recipe.id}?fromMealPlan=${mealPlan.id}`}
+                                      className="font-medium text-neutral-900 mb-1 block hover:text-primary-700 transition-colors"
+                                    >
                                       {entry.recipe.name}
-                                    </h5>
+                                    </Link>
                                     <div className="text-sm text-neutral-500">
                                       {entry.recipe.calories * entry.servings} calories
                                     </div>
