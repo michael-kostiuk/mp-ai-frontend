@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Clock, Users, Target, Edit, Trash2, ChefHat } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { X, Clock, Users, Target, Edit, Trash2, ChefHat, ArrowLeft } from 'lucide-react';
 import { Recipe } from '../../types';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -14,6 +15,8 @@ interface RecipeDetailModalProps {
   recipeId: number | null;
   onEdit?: (recipe: Recipe) => void;
   onDelete?: () => void;
+  backTo?: string;
+  backLabel?: string;
 }
 
 const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
@@ -21,7 +24,9 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   onClose,
   recipeId,
   onEdit,
-  onDelete
+  onDelete,
+  backTo,
+  backLabel = 'Back'
 }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
@@ -99,7 +104,16 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-          <h2 className="text-xl font-semibold text-neutral-900">Recipe Details</h2>
+          <div className="flex items-center gap-4">
+            {backTo && (
+              <Link to={backTo}>
+                <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+                  {backLabel}
+                </Button>
+              </Link>
+            )}
+            <h2 className="text-xl font-semibold text-neutral-900">Recipe Details</h2>
+          </div>
           <button
             onClick={onClose}
             className="text-neutral-400 hover:text-neutral-600 transition-colors"
