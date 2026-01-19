@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Plus, X } from 'lucide-react';
 import { Ingredient } from '../../types';
 import Input from '../ui/Input';
-import useApi from '../../hooks/useApi';
+
 import { getIngredients } from '../../api/ingredientApi';
 
 interface IngredientSearchSelectProps {
@@ -29,9 +29,12 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   const [dropdownPosition, setDropdownPosition] = useState<'below' | 'above'>('below');
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSearchQueryRef = useRef<string>('');
+  const searchAbortControllerRef = useRef<AbortController | null>(null);
   const fallbackDisplayName = initialDisplayName || '';
 
   // Calculate dropdown position based on available space
@@ -51,8 +54,6 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     }
   }, [isOpen]);
 
-  const { data: ingredients, loading, execute: searchIngredients } = useApi<Ingredient[]>(getIngredients);
-
   const setInputToFallbackDisplayName = useCallback((mode: 'force' | 'if-empty' = 'force') => {
     if (mode === 'force') {
       setInputValue(fallbackDisplayName);
@@ -63,7 +64,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     }
   }, [fallbackDisplayName, inputValue]);
 
-  const performSearch = useCallback(async (query: string, loadAll = false) => {
+  const performSearch = useCallback((query: string, loadAll = false) => {
     if (debounceTimeoutRef.current) {
       clearTimeout(debounceTimeoutRef.current);
     }
@@ -76,13 +77,38 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
         }
         lastSearchQueryRef.current = searchKey;
 
-        if (loadAll) {
-          await searchIngredients();
-        } else if (query.trim().length >= 1) {
-          await searchIngredients({ name: query.trim() });
+        // Abort previous request if active
+        if (searchAbortControllerRef.current) {
+          searchAbortControllerRef.current.abort();
+        }
+
+        // Create new controller
+        const controller = new AbortController();
+        searchAbortControllerRef.current = controller;
+
+        setLoading(true);
+
+        const params: Record<string, string | number | boolean> = loadAll ? {} : { name: query.trim() };
+
+        try {
+          const data = await getIngredients(params);
+          if (!controller.signal.aborted) {
+            setIngredients(data || []);
+          }
+        } catch (err) {
+          if (!controller.signal.aborted) {
+            console.error('Search error:', err);
+            setIngredients([]);
+          }
+        } finally {
+          if (!controller.signal.aborted) {
+            setLoading(false);
+            searchAbortControllerRef.current = null;
+          }
         }
       } catch (error) {
-        console.error('Search error:', error);
+        console.error('Search execution error:', error);
+        setLoading(false);
       }
     };
 
@@ -91,7 +117,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
     } else if (query.trim().length >= 1) {
       debounceTimeoutRef.current = setTimeout(executeSearch, 300);
     }
-  }, [searchIngredients]);
+  }, []);
 
   // Find and set selected ingredient when value changes (only if user is not actively typing)
   useEffect(() => {

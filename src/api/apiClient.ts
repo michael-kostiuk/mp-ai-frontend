@@ -143,8 +143,28 @@ let apiClient: ApiClient | null = null;
 
 export const getApiClient = (): ApiClient => {
   if (!apiClient) {
-    const baseUrl = import.meta.env.VITE_API_URL || 'https://mealplanner-eu.onrender.com';
-    const timeout = 60000; // 60s for uploads
+    let baseUrl = import.meta.env.VITE_API_URL || 'https://mealplanner-eu.onrender.com';
+    let timeout = 60000; // 60s for uploads
+
+    // Check localStorage for override - vital for E2E testing
+    try {
+      const storedConfig = localStorage.getItem('apiConfig');
+      console.log('API_CLIENT_FACTORY: storedConfig from localStorage:', storedConfig);
+      if (storedConfig) {
+        const config = JSON.parse(storedConfig);
+        if (config.baseUrl) {
+          console.log('API_CLIENT_FACTORY: Overriding baseUrl with:', config.baseUrl);
+          baseUrl = config.baseUrl;
+        }
+        if (config.timeout) timeout = config.timeout;
+      } else {
+        console.log('API_CLIENT_FACTORY: No storedConfig found.');
+      }
+    } catch (e) {
+      console.warn('API_CLIENT_FACTORY: Failed to load apiConfig from localStorage', e);
+    }
+
+    console.log(`API_CLIENT_FACTORY: Final baseUrl: ${baseUrl}`);
     apiClient = new ApiClient(baseUrl, timeout);
   }
   return apiClient;

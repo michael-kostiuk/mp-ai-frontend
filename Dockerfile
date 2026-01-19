@@ -12,7 +12,9 @@ RUN npm install
 # Copy rest of the application source code
 COPY . .
 
-# Build the application
+# Build the application with relative API URL (nginx will proxy)
+ARG VITE_API_URL=
+ENV VITE_API_URL=${VITE_API_URL:-/api}
 RUN npm run build
 
 # Stage 2: Serve the application with Nginx
