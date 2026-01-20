@@ -44,7 +44,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
           </div>
         </div>
         
-        <CardContent className="p-3 sm:p-4 lg:p-5">
+        <CardContent className="px-0 py-3 sm:py-4 lg:py-5">
           <h3 className="text-base sm:text-lg font-semibold text-neutral-900 mb-2 sm:mb-3 line-clamp-2 group-hover:text-primary-700 transition-colors">
             {recipe.name}
           </h3>
@@ -66,7 +66,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
             )}
           </div>
           
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 text-xs sm:text-sm text-neutral-500">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm text-neutral-500 whitespace-nowrap">
             <div className="flex items-center justify-center sm:justify-start">
               <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
               <span className="truncate">{totalTime}m</span>
