@@ -38,38 +38,29 @@ export class MealPlansPage extends BasePage {
   }
 
   async getMealPlanCount(): Promise<number> {
-    return await this.page.locator('article').count();
+    return await this.page.locator('[data-testid="meal-plan-card"]').count();
   }
 
-  async isMealPlanVisible(planName: string): Promise<boolean> {
-    return await this.page.isVisible(`text=${planName}`);
+  async isMealPlanVisible(planText: string): Promise<boolean> {
+    return await this.page.locator('[data-testid="meal-plan-card"]').filter({ hasText: planText }).first().isVisible();
   }
 
-  async openMealPlanDetail(planName: string) {
-    const cards = this.page.locator('article');
-    const count = await cards.count();
-    
-    for (let i = 0; i < count; i++) {
-      const card = cards.nth(i);
-      const text = await card.textContent();
-      if (text && text.includes(planName)) {
-        await card.click();
-        break;
-      }
-    }
-    
+  async openMealPlanDetail(planIdentifier: string) {
+    const card = this.page.locator('[data-testid="meal-plan-card"]').filter({ hasText: planIdentifier }).first();
+    await expect(card).toBeVisible({ timeout: 10000 });
+    await card.click();
     await this.waitForElement('div.fixed.inset-0');
   }
 
   async clickEditButton() {
-    await this.page.click('button:has-text("Edit")');
+    await this.page.click('button:has-text("Edit Plan")');
   }
 
   async clickDeleteButton() {
-    await this.page.click('button:has-text("Delete")');
+    await this.page.click('button:has-text("Delete Plan")');
   }
 
   async confirmDelete() {
-    await this.page.click('button:has-text("Confirm"), button:has-text("Delete")');
+    await this.page.click('button:has-text("Confirm Delete"), button:has-text("Confirm")');
   }
 }

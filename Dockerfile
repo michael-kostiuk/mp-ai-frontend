@@ -24,6 +24,16 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Copy custom nginx config for SPA routing
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Inject runtime API URL for the frontend
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Default; can be overridden at container runtime
+ENV VITE_API_URL=http://localhost:8000
+
+# Ensure runtime config script runs before nginx
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
 # Expose port 80
 EXPOSE 80
 

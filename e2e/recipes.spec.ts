@@ -1,7 +1,6 @@
-import { test, expect, setupBackend, generateTestRecipe, deleteResource, BACKEND_URL, createRecipeViaApi } from './fixtures/testFixtures';
+import { test, expect, setupBackend, generateTestRecipe, createRecipeViaApi } from './fixtures/testFixtures';
 
 test.describe('Recipe Management - CRUD Operations', () => {
-  let recipeId: number | null = null;
   let initialRecipeCount: number;
 
   test.beforeEach(async ({ page, recipesPage }) => {
@@ -15,51 +14,39 @@ test.describe('Recipe Management - CRUD Operations', () => {
     expect(currentCount).toBeGreaterThanOrEqual(0);
   });
 
-  test('should create a new recipe via API and view in UI', async ({ recipesPage, page }) => {
+  test('should create a new recipe via API and view in UI', async ({ recipesPage, page, resourceTracker }) => {
     const testRecipe = generateTestRecipe();
     const created = await createRecipeViaApi(testRecipe);
-    recipeId = created.id;
-    console.log(`Created recipe with ID: ${recipeId}, Name: ${testRecipe.name}`);
-    const recipeName = testRecipe.name;
+    resourceTracker.track('recipes', created.id);
 
     await recipesPage.goto();
-    await expect(page.locator('div.fixed.inset-0')).not.toBeVisible();
-
-    await page.waitForTimeout(3000);
-
-    const pageContent = await page.content();
-    console.log('Page has recipes content:', pageContent.includes('article'));
+    const recipeCard = page.locator('[data-testid="recipe-card"]').filter({ hasText: testRecipe.name });
+    await expect(recipeCard).toBeVisible({ timeout: 10000 });
 
     const newCount = await recipesPage.getRecipeCount();
-    console.log(`Recipe count - Initial: ${initialRecipeCount}, New: ${newCount}`);
     expect(newCount).toBeGreaterThanOrEqual(initialRecipeCount + 1);
-
-    const isRecipeVisible = await recipesPage.isRecipeVisible(recipeName);
-    expect(isRecipeVisible).toBeTruthy();
   });
 
-  test('should view recipe details', async ({ recipesPage, page }) => {
+  test('should view recipe details', async ({ recipesPage, page, resourceTracker }) => {
     const testRecipe = generateTestRecipe();
     const created = await createRecipeViaApi(testRecipe);
-    recipeId = created.id;
-    const recipeName = testRecipe.name;
+    resourceTracker.track('recipes', created.id);
 
     await recipesPage.goto();
-    await recipesPage.openRecipeDetail(recipeName);
+    await recipesPage.openRecipeDetail(testRecipe.name);
 
-    await expect(page.locator('h1, h2').filter({ hasText: recipeName })).toBeVisible();
+    await expect(page.locator('h1, h2').filter({ hasText: testRecipe.name })).toBeVisible();
     await expect(page.locator('text=Instructions')).toBeVisible();
   });
 
-  test('should edit an existing recipe', async ({ recipesPage, page }) => {
+  test('should edit an existing recipe', async ({ recipesPage, page, resourceTracker }) => {
     const testRecipe = generateTestRecipe();
     const created = await createRecipeViaApi(testRecipe);
-    recipeId = created.id;
-    const originalName = testRecipe.name;
-    const updatedName = `${originalName}_Updated`;
+    resourceTracker.track('recipes', created.id);
+    const updatedName = `${testRecipe.name}_Updated`;
 
     await recipesPage.goto();
-    await recipesPage.openRecipeDetail(originalName);
+    await recipesPage.openRecipeDetail(testRecipe.name);
     await recipesPage.clickEditButton();
 
     await page.getByLabel('Recipe Name').fill(updatedName);
@@ -68,23 +55,22 @@ test.describe('Recipe Management - CRUD Operations', () => {
     await expect(page.locator('div.fixed.inset-0')).not.toBeVisible({ timeout: 10000 });
     await recipesPage.goto();
 
-    const isOriginalVisible = await recipesPage.isRecipeVisible(originalName);
+    const isOriginalVisible = await recipesPage.isRecipeVisible(testRecipe.name);
     const isUpdatedVisible = await recipesPage.isRecipeVisible(updatedName);
     expect(isOriginalVisible).toBeFalsy();
     expect(isUpdatedVisible).toBeTruthy();
   });
 
-  test('should delete a recipe', async ({ recipesPage, page }) => {
+  test('should delete a recipe', async ({ recipesPage, page, resourceTracker }) => {
     const testRecipe = generateTestRecipe();
     const created = await createRecipeViaApi(testRecipe);
-    recipeId = created.id;
-    const recipeName = testRecipe.name;
+    resourceTracker.track('recipes', created.id);
 
     await recipesPage.goto();
     const afterCreateCount = await recipesPage.getRecipeCount();
     expect(afterCreateCount).toBeGreaterThanOrEqual(initialRecipeCount + 1);
 
-    await recipesPage.openRecipeDetail(recipeName);
+    await recipesPage.openRecipeDetail(testRecipe.name);
     await recipesPage.clickDeleteButton();
     await recipesPage.confirmDelete();
 
@@ -94,29 +80,28 @@ test.describe('Recipe Management - CRUD Operations', () => {
     const afterDeleteCount = await recipesPage.getRecipeCount();
     expect(afterDeleteCount).toBe(initialRecipeCount);
 
-    const isRecipeVisible = await recipesPage.isRecipeVisible(recipeName);
+    const isRecipeVisible = await recipesPage.isRecipeVisible(testRecipe.name);
     expect(isRecipeVisible).toBeFalsy();
   });
 
-  test('should search for recipes', async ({ recipesPage, page }) => {
+  test('should search for recipes', async ({ recipesPage, page, resourceTracker }) => {
     const testRecipe = generateTestRecipe();
     const created = await createRecipeViaApi(testRecipe);
-    recipeId = created.id;
-    const recipeName = testRecipe.name;
+    resourceTracker.track('recipes', created.id);
 
     await recipesPage.goto();
-    await recipesPage.searchRecipes(recipeName);
+    await recipesPage.searchRecipes(testRecipe.name);
 
     const searchResultsCount = await recipesPage.getRecipeCount();
     expect(searchResultsCount).toBeGreaterThanOrEqual(1);
-    expect(await recipesPage.isRecipeVisible(recipeName)).toBeTruthy();
+    await expect(page.locator('[data-testid="recipe-card"]').filter({ hasText: testRecipe.name })).toBeVisible();
 
     await recipesPage.searchRecipes('NonexistentRecipeXYZ123');
+    await expect(page.locator('text=No recipes found matching your criteria.')).toBeVisible();
 
-    const noResultsCount = await recipesPage.getRecipeCount();
-    expect(noResultsCount).toBe(0);
-
-    await recipesPage.goto();
+    await recipesPage.searchRecipes('');
+    const resetCount = await recipesPage.getRecipeCount();
+    expect(resetCount).toBeGreaterThanOrEqual(initialRecipeCount + 1);
   });
 
   test('should validate required recipe fields', async ({ recipesPage, page }) => {
@@ -131,16 +116,5 @@ test.describe('Recipe Management - CRUD Operations', () => {
 
     const otherErrors = await page.isVisible('text=required');
     expect(otherErrors).toBeTruthy();
-  });
-
-  test.afterEach(async ({ page, recipesPage }) => {
-    if (recipeId) {
-      try {
-        await deleteResource(`${BACKEND_URL}/recipes/${recipeId}`);
-      } catch (e) {
-        console.log('Failed to cleanup recipe:', e);
-      }
-      recipeId = null;
-    }
   });
 });

@@ -31,7 +31,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
     : { to: `/meal-plans/${mealPlan.id}` };
   
   return (
-    <CardWrapper {...cardProps} className={onClick ? '' : 'block'}>
+    <CardWrapper {...cardProps} className={onClick ? '' : 'block'} data-testid="meal-plan-card">
       <Card
         className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group cursor-pointer"
         hoverable

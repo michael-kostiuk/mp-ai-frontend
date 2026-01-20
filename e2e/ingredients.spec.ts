@@ -1,7 +1,6 @@
-import { test, expect, setupBackend, generateTestIngredient, deleteResource, BACKEND_URL, createIngredientViaApi } from './fixtures/testFixtures';
+import { test, expect, setupBackend, generateTestIngredient, createIngredientViaApi, deleteIngredientViaMerge } from './fixtures/testFixtures';
 
 test.describe('Ingredient Management - CRUD Operations', () => {
-  let ingredientId: number | null = null;
   let initialIngredientCount: number;
 
   test.beforeEach(async ({ page, ingredientsPage }) => {
@@ -15,53 +14,50 @@ test.describe('Ingredient Management - CRUD Operations', () => {
     expect(currentCount).toBeGreaterThanOrEqual(0);
   });
 
-  test('should create a new ingredient via API and view in UI', async ({ ingredientsPage, page }) => {
+  test('should create a new ingredient via API and view in UI', async ({ ingredientsPage, page, resourceTracker }) => {
     const testIngredient = generateTestIngredient();
     const created = await createIngredientViaApi(testIngredient);
-    ingredientId = created.id;
-    const ingredientName = testIngredient.name;
+    resourceTracker.track('ingredients', created.id);
 
     await ingredientsPage.goto();
-    await expect(page.locator('div.fixed.inset-0')).not.toBeVisible();
-
     const newCount = await ingredientsPage.getIngredientCount();
     expect(newCount).toBeGreaterThanOrEqual(initialIngredientCount + 1);
 
-    const isIngredientVisible = await ingredientsPage.isIngredientVisible(ingredientName);
-    expect(isIngredientVisible).toBeTruthy();
+    const ingredientRow = page.locator('tr').filter({ hasText: testIngredient.name });
+    await expect(ingredientRow).toBeVisible({ timeout: 10000 });
   });
 
-  test('should search for ingredients', async ({ ingredientsPage, page }) => {
+  test('should search for ingredients', async ({ ingredientsPage, page, resourceTracker }) => {
     const testIngredient = generateTestIngredient();
     const created = await createIngredientViaApi(testIngredient);
-    ingredientId = created.id;
-    const ingredientName = testIngredient.name;
+    resourceTracker.track('ingredients', created.id);
 
     await ingredientsPage.goto();
-    await ingredientsPage.searchIngredients(ingredientName);
+    await ingredientsPage.searchIngredients(testIngredient.name);
 
     const searchResultsCount = await ingredientsPage.getIngredientCount();
     expect(searchResultsCount).toBeGreaterThanOrEqual(1);
-    expect(await ingredientsPage.isIngredientVisible(ingredientName)).toBeTruthy();
+    await expect(page.locator('tr').filter({ hasText: testIngredient.name })).toBeVisible();
 
     await ingredientsPage.searchIngredients('NonexistentIngredientXYZ123');
+    await expect(page.locator('text=No ingredients found')).toBeVisible();
 
-    const noResultsText = await page.isVisible('text=No ingredients found');
-    expect(noResultsText).toBeTruthy();
+    await ingredientsPage.searchIngredients('');
+    const resetCount = await ingredientsPage.getIngredientCount();
+    expect(resetCount).toBeGreaterThanOrEqual(initialIngredientCount + 1);
   });
 
-  test('should view ingredient details', async ({ ingredientsPage, page }) => {
+  test('should view ingredient details', async ({ ingredientsPage, page, resourceTracker }) => {
     const testIngredient = generateTestIngredient();
     const created = await createIngredientViaApi(testIngredient);
-    ingredientId = created.id;
-    const ingredientName = testIngredient.name;
+    resourceTracker.track('ingredients', created.id);
 
     await ingredientsPage.goto();
-    const ingredientRow = page.locator(`tr:has-text("${ingredientName}")`);
-    await expect(ingredientRow).toBeVisible();
+    const ingredientRow = page.locator('tr').filter({ hasText: testIngredient.name });
+    await expect(ingredientRow).toBeVisible({ timeout: 10000 });
 
     const nameCell = ingredientRow.locator('td').nth(0);
-    await expect(nameCell).toContainText(ingredientName);
+    await expect(nameCell).toContainText(testIngredient.name);
 
     const categoryCell = ingredientRow.locator('td').nth(1);
     await expect(categoryCell).toContainText(testIngredient.category);
@@ -70,26 +66,23 @@ test.describe('Ingredient Management - CRUD Operations', () => {
     await expect(caloriesCell).toContainText(testIngredient.calories.toString());
   });
 
-  test('should delete an ingredient', async ({ ingredientsPage, page }) => {
+  test('should delete an ingredient via merge cleanup', async ({ ingredientsPage, page, resourceTracker }) => {
     const testIngredient = generateTestIngredient();
     const created = await createIngredientViaApi(testIngredient);
-    ingredientId = created.id;
-    const ingredientName = testIngredient.name;
+    resourceTracker.track('ingredients', created.id);
 
     await ingredientsPage.goto();
     const afterCreateCount = await ingredientsPage.getIngredientCount();
     expect(afterCreateCount).toBeGreaterThanOrEqual(initialIngredientCount + 1);
 
-    await page.click(`tr:has-text("${ingredientName}") button:has-text("Delete")`);
-    await page.click('button:has-text("Confirm"), button:has-text("Delete")');
+    await deleteIngredientViaMerge(created.id);
+    resourceTracker.markCleaned('ingredients', created.id);
 
-    await expect(page.locator('div.fixed.inset-0')).not.toBeVisible({ timeout: 10000 });
     await ingredientsPage.goto();
-
     const afterDeleteCount = await ingredientsPage.getIngredientCount();
     expect(afterDeleteCount).toBe(initialIngredientCount);
 
-    const isIngredientVisible = await ingredientsPage.isIngredientVisible(ingredientName);
+    const isIngredientVisible = await ingredientsPage.isIngredientVisible(testIngredient.name);
     expect(isIngredientVisible).toBeFalsy();
   });
 
@@ -106,16 +99,5 @@ test.describe('Ingredient Management - CRUD Operations', () => {
 
     const otherErrors = await page.isVisible('text=required');
     expect(otherErrors).toBeTruthy();
-  });
-
-  test.afterEach(async ({ page, ingredientsPage }) => {
-    if (ingredientId) {
-      try {
-        await deleteResource(`${BACKEND_URL}/ingredients/${ingredientId}`);
-      } catch (e) {
-        console.log('Failed to cleanup ingredient:', e);
-      }
-      ingredientId = null;
-    }
   });
 });

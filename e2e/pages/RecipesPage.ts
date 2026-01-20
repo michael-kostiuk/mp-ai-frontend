@@ -63,7 +63,9 @@ export class RecipesPage extends BasePage {
   }
 
   async openRecipeDetail(recipeName: string) {
-    await this.page.click(`text=${recipeName}`);
+    const card = this.page.locator('[data-testid="recipe-card"]').filter({ hasText: recipeName }).first();
+    await expect(card).toBeVisible({ timeout: 10000 });
+    await card.click();
     await this.waitForElement('div.fixed.inset-0');
   }
 
@@ -96,10 +98,10 @@ export class RecipesPage extends BasePage {
   }
 
   async getRecipeCount(): Promise<number> {
-    return await this.page.locator('article, div[data-testid*="recipe"]').count();
+    return await this.page.locator('[data-testid="recipe-card"]').count();
   }
 
   async isRecipeVisible(recipeName: string): Promise<boolean> {
-    return await this.page.isVisible(`text=${recipeName}`);
+    return await this.page.locator('[data-testid="recipe-card"]').filter({ hasText: recipeName }).first().isVisible();
   }
 }

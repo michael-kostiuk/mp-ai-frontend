@@ -18,7 +18,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
     : { to: `/recipes/${recipe.id}` };
   
   return (
-    <CardWrapper {...cardProps} className={onClick ? '' : 'block'}>
+    <CardWrapper {...cardProps} className={onClick ? '' : 'block'} data-testid="recipe-card">
       <Card 
         className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group cursor-pointer"
         hoverable

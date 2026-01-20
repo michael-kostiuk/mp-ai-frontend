@@ -1,4 +1,4 @@
-import { test, expect, setupBackend } from './fixtures/testFixtures';
+import { test, expect, setupBackend, generateTestRecipe, createRecipeViaApi, generateTestMealPlan, createMealPlanViaApi, generateTestIngredient, createIngredientViaApi } from './fixtures/testFixtures';
 
 test.describe('Navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -54,28 +54,24 @@ test.describe('Navigation', () => {
     await expect(page).toHaveURL(homeUrl);
   });
 
-  test('should navigate to recipe detail page', async ({ page, recipesPage }) => {
+  test('should navigate to recipe detail page', async ({ page, recipesPage, resourceTracker }) => {
+    const recipe = generateTestRecipe();
+    const created = await createRecipeViaApi(recipe);
+    resourceTracker.track('recipes', created.id);
+
     await recipesPage.goto();
-
-    const cards = page.locator('article, div[data-testid*="recipe"]');
-    const count = await cards.count();
-
-    if (count > 0) {
-      await cards.first().click();
-      await expect(page.locator('div.fixed.inset-0')).toBeVisible();
-    }
+    await recipesPage.openRecipeDetail(recipe.name);
+    await expect(page.locator('div.fixed.inset-0')).toBeVisible();
   });
 
-  test('should navigate to meal plan detail page', async ({ page, mealPlansPage }) => {
+  test('should navigate to meal plan detail page', async ({ page, mealPlansPage, resourceTracker }) => {
+    const mealPlan = generateTestMealPlan();
+    const created = await createMealPlanViaApi(mealPlan);
+    resourceTracker.track('meal-plans', created.id);
+
     await mealPlansPage.goto();
-
-    const cards = page.locator('article');
-    const count = await cards.count();
-
-    if (count > 0) {
-      await cards.first().click();
-      await expect(page.locator('div.fixed.inset-0')).toBeVisible();
-    }
+    await mealPlansPage.openMealPlanDetail(mealPlan.dietary_preferences[0]);
+    await expect(page.locator('div.fixed.inset-0')).toBeVisible();
   });
 
   test('should handle browser back and forward navigation', async ({ page }) => {
@@ -104,44 +100,54 @@ test.describe('Search and Filtering', () => {
     await setupBackend(page);
   });
 
-  test('should filter recipes by name', async ({ page, recipesPage }) => {
+  test('should filter recipes by name', async ({ page, recipesPage, resourceTracker }) => {
+    const recipe = generateTestRecipe();
+    const created = await createRecipeViaApi(recipe);
+    resourceTracker.track('recipes', created.id);
+
     await recipesPage.goto();
+    const initialCount = await recipesPage.getRecipeCount();
 
-    const cards = page.locator('article, div[data-testid*="recipe"]');
-    const initialCount = await cards.count();
+    await recipesPage.searchRecipes(recipe.name);
 
-    await recipesPage.searchRecipes('Chicken');
-
-    const filteredCount = await cards.count();
-
+    const filteredCount = await recipesPage.getRecipeCount();
+    expect(filteredCount).toBeGreaterThanOrEqual(1);
     expect(filteredCount).toBeLessThanOrEqual(initialCount);
+    await expect(page.locator('[data-testid="recipe-card"]').filter({ hasText: recipe.name })).toBeVisible();
   });
 
-  test('should filter ingredients by name or category', async ({ page, ingredientsPage }) => {
+  test('should filter ingredients by name or category', async ({ page, ingredientsPage, resourceTracker }) => {
+    const ingredient = generateTestIngredient();
+    const created = await createIngredientViaApi(ingredient);
+    resourceTracker.track('ingredients', created.id);
+
     await ingredientsPage.goto();
+    const initialCount = await ingredientsPage.getIngredientCount();
 
-    const rows = page.locator('tbody tr');
-    const initialCount = await rows.count();
+    await ingredientsPage.searchIngredients(ingredient.name);
 
-    await ingredientsPage.searchIngredients('Vegetable');
-
-    const filteredCount = await rows.count();
-
+    const filteredCount = await ingredientsPage.getIngredientCount();
+    expect(filteredCount).toBeGreaterThanOrEqual(1);
     expect(filteredCount).toBeLessThanOrEqual(initialCount);
+    await expect(page.locator('tr').filter({ hasText: ingredient.name })).toBeVisible();
   });
 
-  test('should clear search and show all results', async ({ page, recipesPage }) => {
-    await recipesPage.goto();
+  test('should clear search and show all results', async ({ page, recipesPage, resourceTracker }) => {
+    const recipe = generateTestRecipe();
+    const created = await createRecipeViaApi(recipe);
+    resourceTracker.track('recipes', created.id);
 
-    const cards = page.locator('article, div[data-testid*="recipe"]');
-    const initialCount = await cards.count();
+    await recipesPage.goto();
+    const totalBeforeFilter = await recipesPage.getRecipeCount();
+    await expect(page.locator('[data-testid="recipe-card"]').filter({ hasText: recipe.name })).toBeVisible();
 
     await recipesPage.searchRecipes('NonexistentRecipe123');
-    const emptyCount = await cards.count();
+    await expect(page.locator('text=No recipes found matching your criteria.')).toBeVisible();
+    const emptyCount = await recipesPage.getRecipeCount();
     expect(emptyCount).toBe(0);
 
     await recipesPage.searchRecipes('');
-    const afterClearCount = await cards.count();
-    expect(afterClearCount).toBe(initialCount);
+    const afterClearCount = await recipesPage.getRecipeCount();
+    expect(afterClearCount).toBe(totalBeforeFilter);
   });
 });

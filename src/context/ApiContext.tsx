@@ -1,24 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { ApiConfig } from '../config/apiConfig';
+import { ApiConfig, persistApiConfig, resolveApiConfig } from '../config/apiConfig';
 import { getApiClient } from '../api/apiClient';
-
-// Function to get config from localStorage
-const getConfigFromStorage = (): ApiConfig => {
-  const storedConfig = localStorage.getItem('apiConfig');
-  if (storedConfig) {
-    return JSON.parse(storedConfig);
-  }
-  // Default config if nothing is in storage
-  return {
-    baseUrl: import.meta.env.VITE_API_URL || 'https://mealplanner-eu.onrender.com',
-    timeout: 10000,
-  };
-};
-
-// Function to set config in localStorage
-const setConfigInStorage = (config: ApiConfig) => {
-  localStorage.setItem('apiConfig', JSON.stringify(config));
-};
 
 interface ApiContextType {
   config: ApiConfig;
@@ -28,11 +10,11 @@ interface ApiContextType {
 const ApiContext = createContext<ApiContextType | undefined>(undefined);
 
 export const ApiProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [config, setConfig] = useState<ApiConfig>(getConfigFromStorage);
+  const [config, setConfig] = useState<ApiConfig>(resolveApiConfig);
 
   const updateConfig = (newConfig: ApiConfig) => {
     setConfig(newConfig);
-    setConfigInStorage(newConfig);
+    persistApiConfig(newConfig);
 
     // Update the API client immediately
     const client = getApiClient();

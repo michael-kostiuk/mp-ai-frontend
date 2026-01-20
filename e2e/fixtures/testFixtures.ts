@@ -2,15 +2,21 @@ import { test as base, Page, expect } from '@playwright/test';
 import { RecipesPage } from '../pages/RecipesPage';
 import { IngredientsPage } from '../pages/IngredientsPage';
 import { MealPlansPage } from '../pages/MealPlansPage';
-import { configureBackendUrl, generateUniqueName, waitForApiResponse, createRecipeViaApi, createIngredientViaApi, createMealPlanViaApi, deleteResource, BACKEND_URL } from '../utils/testHelpers';
+import { configureBackendUrl, generateUniqueName, waitForApiResponse, createRecipeViaApi, createIngredientViaApi, createMealPlanViaApi, ResourceTracker, BACKEND_URL, deleteIngredientViaMerge } from '../utils/testHelpers';
 
 type TestFixtures = {
   recipesPage: RecipesPage;
   ingredientsPage: IngredientsPage;
   mealPlansPage: MealPlansPage;
+  resourceTracker: ResourceTracker;
 };
 
 const test = base.extend<TestFixtures>({
+  resourceTracker: async ({}, use) => {
+    const tracker = new ResourceTracker();
+    await use(tracker);
+    await tracker.cleanupAll();
+  },
   recipesPage: async ({ page }, use) => {
     const recipesPage = new RecipesPage(page);
     await use(recipesPage);
@@ -62,14 +68,14 @@ const generateTestMealPlan = () => {
   endDate.setDate(endDate.getDate() + 7);
 
   return {
-    start_date: startDate.toISOString().split('T')[0],
-    end_date: endDate.toISOString().split('T')[0],
+    start_date: startDate.toISOString(),
+    end_date: endDate.toISOString(),
     people_count: 2,
     target_calories: 2000,
-    dietary_preferences: [],
+    dietary_preferences: [generateUniqueName('E2E Preference')],
     entries: []
   };
 };
 
-export { test, expect, setupBackend, generateTestRecipe, generateTestIngredient, generateTestMealPlan, createRecipeViaApi, createIngredientViaApi, createMealPlanViaApi, deleteResource, BACKEND_URL };
+export { test, expect, setupBackend, generateTestRecipe, generateTestIngredient, generateTestMealPlan, createRecipeViaApi, createIngredientViaApi, createMealPlanViaApi, ResourceTracker, BACKEND_URL, deleteIngredientViaMerge };
 export type { TestFixtures };
