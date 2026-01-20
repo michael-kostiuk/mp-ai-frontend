@@ -62,16 +62,18 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
   };
 
-  const getTotalCalories = () => {
+  const getTotalPlanCalories = () => {
     if (!mealPlan) return 0;
     return mealPlan.entries.reduce((total, entry) => {
       return total + (entry.recipe.calories * entry.servings);
     }, 0);
   };
 
-  const getCaloriesPerDay = () => {
+  const getCaloriesPerDayPerPerson = () => {
+    if (!mealPlan) return 0;
     const days = getDaysDifference();
-    return days > 0 ? Math.round(getTotalCalories() / days) : 0;
+    const people = Math.max(mealPlan.people_count, 1);
+    return days > 0 ? Math.round(getTotalPlanCalories() / (days * people)) : 0;
   };
 
   const groupEntriesByDate = () => {
@@ -169,15 +171,15 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
                   <CardContent className="p-4 text-center">
                     <Target className="h-8 w-8 text-secondary-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-neutral-900">{mealPlan.target_calories}</div>
-                    <div className="text-sm text-neutral-500">Target Cal/Day</div>
+                    <div className="text-sm text-neutral-500">Target Cal/Day (per person)</div>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardContent className="p-4 text-center">
                     <Clock className="h-8 w-8 text-warning-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{getCaloriesPerDay()}</div>
-                    <div className="text-sm text-neutral-500">Actual Cal/Day</div>
+                    <div className="text-2xl font-bold text-neutral-900">{getCaloriesPerDayPerPerson()}</div>
+                    <div className="text-sm text-neutral-500">Actual Cal/Day (per person)</div>
                   </CardContent>
                 </Card>
               </div>
@@ -256,7 +258,7 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
                                       {entry.recipe.name}
                                     </Link>
                                     <div className="text-sm text-neutral-500">
-                                      {entry.recipe.calories * entry.servings} calories
+                                      {entry.recipe.calories * entry.servings} calories ({entry.servings} x {entry.recipe.calories})
                                     </div>
                                   </div>
                                 ))}
