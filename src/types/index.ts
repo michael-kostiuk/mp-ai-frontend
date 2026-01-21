@@ -111,6 +111,7 @@ export interface Ingredient {
   protein: number;
   carbs: number;
   fats: number;
+  nutrition_source?: string;
 }
 
 export interface IngredientCreate {
@@ -121,6 +122,23 @@ export interface IngredientCreate {
   protein: number;
   carbs: number;
   fats: number;
+}
+
+export interface IngredientNutritionEstimateResponse {
+  ingredient: Ingredient;
+  nutrition_source?: string;
+}
+
+export interface IngredientNutritionBulkFailure {
+  id: number;
+  reason: string;
+}
+
+export interface IngredientNutritionBulkResponse {
+  updated: number;
+  skipped: number;
+  failed: IngredientNutritionBulkFailure[];
+  ingredients?: Ingredient[];
 }
 
 // Meal Plan Types
