@@ -7,6 +7,7 @@ import Select from '../ui/Select';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import useApi from '../../hooks/useApi';
 import { createIngredient } from '../../api/ingredientApi';
+import { UNIT_OPTIONS, coerceUnit } from '../../utils/unitUtils';
 
 interface CreateIngredientModalProps {
   isOpen: boolean;
@@ -45,6 +46,14 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
     });
   }, [isOpen, initialName]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setFormData((prev) => ({
+      ...prev,
+      base_unit: coerceUnit(prev.base_unit, 'g'),
+    }));
+  }, [isOpen]);
+
   const categoryOptions = [
     { value: 'vegetables', label: 'Vegetables' },
     { value: 'fruits', label: 'Fruits' },
@@ -66,21 +75,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
     { value: 'other', label: 'Other' },
   ];
 
-  const unitOptions = [
-    { value: 'g', label: 'grams (g)' },
-    { value: 'kg', label: 'kilograms (kg)' },
-    { value: 'ml', label: 'milliliters (ml)' },
-    { value: 'l', label: 'liters (l)' },
-    { value: 'cup', label: 'cups' },
-    { value: 'tbsp', label: 'tablespoons' },
-    { value: 'tsp', label: 'teaspoons' },
-    { value: 'piece', label: 'pieces' },
-    { value: 'slice', label: 'slices' },
-    { value: 'clove', label: 'cloves' },
-    { value: 'bunch', label: 'bunches' },
-    { value: 'can', label: 'cans' },
-    { value: 'package', label: 'packages' },
-  ];
+  const unitOptions = UNIT_OPTIONS;
 
   const handleInputChange = <K extends keyof IngredientCreate>(field: K, value: IngredientCreate[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));

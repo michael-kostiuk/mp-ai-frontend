@@ -12,6 +12,7 @@ import useApi from '../../hooks/useApi';
 import { useIngredientContext } from '../../context/IngredientContext';
 import { createRecipe, updateRecipe, uploadRecipeImage } from '../../api/recipeApi';
 import { estimateNutrition, IngredientInput } from '../../api/nutritionApi';
+import { UNIT_OPTIONS, coerceUnit } from '../../utils/unitUtils';
 
 interface CreateRecipeModalProps {
   isOpen: boolean;
@@ -83,12 +84,12 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         breakfast_weight: editingRecipe.breakfast_weight,
         lunch_weight: editingRecipe.lunch_weight,
         dinner_weight: editingRecipe.dinner_weight,
-        ingredients: editingRecipe.ingredients.map(ing => ({
+        ingredients: editingRecipe.ingredients.map((ing) => ({
           ingredient_id: ing.ingredient_id,
           quantity: ing.quantity,
-          unit: ing.unit
+          unit: coerceUnit(ing.unit, 'piece'),
         })),
-        image_url: editingRecipe.image_url
+        image_url: editingRecipe.image_url,
       });
       setImagePreviewUrl(editingRecipe.image_url);
       setIngredientNotes(editingRecipe.ingredients.map(() => ''));
@@ -116,7 +117,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         ...base,
         ...(initialRecipe || {}),
         dietary_tags: initialRecipe?.dietary_tags ?? base.dietary_tags,
-        ingredients: initialRecipe?.ingredients ?? base.ingredients
+        ingredients: (initialRecipe?.ingredients ?? base.ingredients).map((ing) => ({
+          ...ing,
+          unit: coerceUnit((ing as { unit?: unknown }).unit, 'piece'),
+        })),
       };
 
       setFormData(merged);
@@ -167,21 +171,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     { value: 'mediterranean', label: 'Mediterranean' },
   ];
 
-  const unitOptions = [
-    { value: 'g', label: 'grams (g)' },
-    { value: 'kg', label: 'kilograms (kg)' },
-    { value: 'ml', label: 'milliliters (ml)' },
-    { value: 'l', label: 'liters (l)' },
-    { value: 'cup', label: 'cups' },
-    { value: 'tbsp', label: 'tablespoons' },
-    { value: 'tsp', label: 'teaspoons' },
-    { value: 'piece', label: 'pieces' },
-    { value: 'slice', label: 'slices' },
-    { value: 'clove', label: 'cloves' },
-    { value: 'bunch', label: 'bunches' },
-    { value: 'can', label: 'cans' },
-    { value: 'package', label: 'packages' },
-  ];
+  const unitOptions = UNIT_OPTIONS;
 
   // Helper function to handle numeric input changes
   // Allows empty string during editing, converts properly on valid input

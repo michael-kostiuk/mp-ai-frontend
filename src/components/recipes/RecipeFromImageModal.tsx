@@ -5,6 +5,7 @@ import FileUpload from '../ui/FileUpload';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { RecipeCreate, RecipeFromImageJob } from '../../types';
 import { cancelRecipeParseFromImageJob, getRecipeParseFromImageJob, startRecipeParseFromImage } from '../../api/recipeApi';
+import { coerceUnit } from '../../utils/unitUtils';
 
 type ModalStep = 'select' | 'uploading' | 'processing' | 'error';
 
@@ -27,7 +28,7 @@ const buildDraftFromJob = (job: RecipeFromImageJob): { recipe: Partial<RecipeCre
   const ingredients = (result.ingredients || []).map(i => ({
     ingredient_id: i.matched_ingredient_id || 0,
     quantity: typeof i.quantity === 'number' ? i.quantity : 1,
-    unit: i.unit || 'piece'
+    unit: coerceUnit(i.unit, 'piece')
   }));
 
   const calories = result.nutrition?.calories ?? 0;
