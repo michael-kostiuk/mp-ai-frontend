@@ -3,6 +3,7 @@ import { X, Plus, Trash2, Clock, Users, Target, Sparkles } from 'lucide-react';
 import { Ingredient, RecipeCreate, RecipeIngredientCreate, Recipe } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import NumericInput from '../ui/NumericInput';
 import Select from '../ui/Select';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import IngredientSearchSelect from './IngredientSearchSelect';
@@ -173,21 +174,6 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
   const unitOptions = UNIT_OPTIONS;
 
-  // Helper function to handle numeric input changes
-  // Allows empty string during editing, converts properly on valid input
-  const handleNumericInputChange = (field: keyof RecipeCreate, stringValue: string) => {
-    if (stringValue === '') {
-      setFormData(prev => ({ ...prev, [field]: 0 }));
-      return;
-    }
-
-    // Convert to number if valid
-    const numValue = Number(stringValue);
-    if (!isNaN(numValue)) {
-      setFormData(prev => ({ ...prev, [field]: numValue }));
-    }
-  };
-
   const handleInputChange = <K extends keyof RecipeCreate>(field: K, value: RecipeCreate[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -221,18 +207,6 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         i === index ? { ...ingredient, [field]: value } : ingredient
       )
     }));
-  };
-
-  // Helper function for numeric ingredient fields
-  const updateIngredientNumeric = (index: number, field: keyof RecipeIngredientCreate, stringValue: string) => {
-    if (stringValue === '') {
-      updateIngredient(index, field, 0 as RecipeIngredientCreate[typeof field]);
-      return;
-    }
-    const numValue = Number(stringValue);
-    if (!isNaN(numValue)) {
-      updateIngredient(index, field, numValue as RecipeIngredientCreate[typeof field]);
-    }
   };
 
   const removeIngredient = (index: number) => {
@@ -542,11 +516,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
             {/* Time and Servings */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Input
+              <NumericInput
                 label="Servings"
-                type="number"
                 value={formData.servings}
-                onChange={(e) => handleNumericInputChange('servings', e.target.value)}
+                onChange={(val) => handleInputChange('servings', val)}
                 leftIcon={<Users className="h-5 w-5" />}
                 min={1}
                 max={20}
@@ -554,11 +527,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 fullWidth
               />
 
-              <Input
+              <NumericInput
                 label="Prep Time (minutes)"
-                type="number"
                 value={formData.prep_time}
-                onChange={(e) => handleNumericInputChange('prep_time', e.target.value)}
+                onChange={(val) => handleInputChange('prep_time', val)}
                 leftIcon={<Clock className="h-5 w-5" />}
                 min={0}
                 max={480}
@@ -566,11 +538,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 fullWidth
               />
 
-              <Input
+              <NumericInput
                 label="Cook Time (minutes)"
-                type="number"
                 value={formData.cook_time}
-                onChange={(e) => handleNumericInputChange('cook_time', e.target.value)}
+                onChange={(val) => handleInputChange('cook_time', val)}
                 leftIcon={<Clock className="h-5 w-5" />}
                 min={0}
                 max={480}
@@ -657,10 +628,9 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
                       {/* Quantity */}
                       <div className="col-span-6 sm:col-span-3 lg:col-span-2">
-                        <Input
-                          type="number"
+                        <NumericInput
                           value={ingredient.quantity}
-                          onChange={(e) => updateIngredientNumeric(index, 'quantity', e.target.value)}
+                          onChange={(val) => updateIngredient(index, 'quantity', val)}
                           min={0}
                           step={0.1}
                           placeholder="Qty"
@@ -749,52 +719,40 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Calories</label>
-                    <Input
-                      type="number"
-                      value={formData.calories}
-                      onChange={(e) => handleNumericInputChange('calories', e.target.value)}
-                      min={0}
-                      fullWidth
-                    />
-                  </div>
+                  <NumericInput
+                    label="Calories"
+                    value={formData.calories}
+                    onChange={(val) => handleInputChange('calories', val)}
+                    min={0}
+                    fullWidth
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Protein (g)</label>
-                    <Input
-                      type="number"
-                      value={formData.protein}
-                      onChange={(e) => handleNumericInputChange('protein', e.target.value)}
-                      min={0}
-                      step={0.1}
-                      fullWidth
-                    />
-                  </div>
+                  <NumericInput
+                    label="Protein (g)"
+                    value={formData.protein}
+                    onChange={(val) => handleInputChange('protein', val)}
+                    min={0}
+                    step={0.1}
+                    fullWidth
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Fats (g)</label>
-                    <Input
-                      type="number"
-                      value={formData.fats}
-                      onChange={(e) => handleNumericInputChange('fats', e.target.value)}
-                      min={0}
-                      step={0.1}
-                      fullWidth
-                    />
-                  </div>
+                  <NumericInput
+                    label="Fats (g)"
+                    value={formData.fats}
+                    onChange={(val) => handleInputChange('fats', val)}
+                    min={0}
+                    step={0.1}
+                    fullWidth
+                  />
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">Carbs (g)</label>
-                    <Input
-                      type="number"
-                      value={formData.carbs}
-                      onChange={(e) => handleNumericInputChange('carbs', e.target.value)}
-                      min={0}
-                      step={0.1}
-                      fullWidth
-                    />
-                  </div>
+                  <NumericInput
+                    label="Carbs (g)"
+                    value={formData.carbs}
+                    onChange={(val) => handleInputChange('carbs', val)}
+                    min={0}
+                    step={0.1}
+                    fullWidth
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -806,11 +764,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Input
+                  <NumericInput
                     label="Breakfast Weight"
-                    type="number"
                     value={formData.breakfast_weight}
-                    onChange={(e) => handleNumericInputChange('breakfast_weight', e.target.value)}
+                    onChange={(val) => handleInputChange('breakfast_weight', val)}
                     min={0}
                     max={1}
                     step={0.1}
@@ -818,11 +775,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     fullWidth
                   />
 
-                  <Input
+                  <NumericInput
                     label="Lunch Weight"
-                    type="number"
                     value={formData.lunch_weight}
-                    onChange={(e) => handleNumericInputChange('lunch_weight', e.target.value)}
+                    onChange={(val) => handleInputChange('lunch_weight', val)}
                     min={0}
                     max={1}
                     step={0.1}
@@ -830,11 +786,10 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     fullWidth
                   />
 
-                  <Input
+                  <NumericInput
                     label="Dinner Weight"
-                    type="number"
                     value={formData.dinner_weight}
-                    onChange={(e) => handleNumericInputChange('dinner_weight', e.target.value)}
+                    onChange={(val) => handleInputChange('dinner_weight', val)}
                     min={0}
                     max={1}
                     step={0.1}

@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { Ingredient, IngredientCreate } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import NumericInput from '../ui/NumericInput';
 import Select from '../ui/Select';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import useApi from '../../hooks/useApi';
@@ -213,44 +214,40 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Input
+                <NumericInput
                   label="Calories"
-                  type="number"
                   value={formData.calories}
-                  onChange={(e) => handleInputChange('calories', Number(e.target.value))}
+                  onChange={(val) => handleInputChange('calories', val)}
                   min={0}
                   step={1}
                   placeholder="0"
                   fullWidth
                 />
                 
-                <Input
+                <NumericInput
                   label="Protein (g)"
-                  type="number"
                   value={formData.protein}
-                  onChange={(e) => handleInputChange('protein', Number(e.target.value))}
+                  onChange={(val) => handleInputChange('protein', val)}
                   min={0}
                   step={0.1}
                   placeholder="0.0"
                   fullWidth
                 />
                 
-                <Input
+                <NumericInput
                   label="Carbs (g)"
-                  type="number"
                   value={formData.carbs}
-                  onChange={(e) => handleInputChange('carbs', Number(e.target.value))}
+                  onChange={(val) => handleInputChange('carbs', val)}
                   min={0}
                   step={0.1}
                   placeholder="0.0"
                   fullWidth
                 />
                 
-                <Input
+                <NumericInput
                   label="Fats (g)"
-                  type="number"
                   value={formData.fats}
-                  onChange={(e) => handleInputChange('fats', Number(e.target.value))}
+                  onChange={(val) => handleInputChange('fats', val)}
                   min={0}
                   step={0.1}
                   placeholder="0.0"

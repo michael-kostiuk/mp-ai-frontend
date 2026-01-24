@@ -5,6 +5,129 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/recipes/parse-from-image": {
+      "post": {
+        "tags": [
+          "recipes"
+        ],
+        "summary": "Parse Recipe From Image",
+        "operationId": "parse_recipe_from_image_recipes_parse_from_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_parse_recipe_from_image_recipes_parse_from_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeImportStartResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/parse-from-image/{job_id}": {
+      "get": {
+        "tags": [
+          "recipes"
+        ],
+        "summary": "Get Parse From Image Job",
+        "operationId": "get_parse_from_image_job_recipes_parse_from_image__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeImportJob"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/parse-from-image/{job_id}/cancel": {
+      "post": {
+        "tags": [
+          "recipes"
+        ],
+        "summary": "Cancel Parse From Image Job",
+        "operationId": "cancel_parse_from_image_job_recipes_parse_from_image__job_id__cancel_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/recipes/": {
       "get": {
         "tags": [
@@ -63,25 +186,6 @@
                 }
               ],
               "title": "Name"
-            }
-          },
-          {
-            "name": "dietary_tags",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dietary Tags"
             }
           },
           {
@@ -183,6 +287,55 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/recipes/bulk-import": {
+      "post": {
+        "tags": [
+          "recipes"
+        ],
+        "summary": "Bulk Import Recipes",
+        "operationId": "bulk_import_recipes_recipes_bulk_import_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/RecipeCreate"
+                },
+                "type": "array",
+                "title": "Recipes"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Recipe"
+                  },
+                  "type": "array",
+                  "title": "Response Bulk Import Recipes Recipes Bulk Import Post"
                 }
               }
             }
@@ -330,39 +483,40 @@
         }
       }
     },
-    "/recipes/bulk-import": {
+    "/recipes/{recipe_id}/upload-image": {
       "post": {
         "tags": [
           "recipes"
         ],
-        "summary": "Bulk Import Recipes",
-        "operationId": "bulk_import_recipes_recipes_bulk_import_post",
+        "summary": "Upload Recipe Image",
+        "operationId": "upload_recipe_image_recipes__recipe_id__upload_image_post",
+        "parameters": [
+          {
+            "name": "recipe_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Recipe Id"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "items": {
-                  "$ref": "#/components/schemas/RecipeCreate"
-                },
-                "type": "array",
-                "title": "Recipes"
+                "$ref": "#/components/schemas/Body_upload_recipe_image_recipes__recipe_id__upload_image_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Recipe"
-                  },
-                  "type": "array",
-                  "title": "Response Bulk Import Recipes Recipes Bulk Import Post"
-                }
+                "schema": {}
               }
             }
           },
@@ -435,25 +589,6 @@
                 }
               ],
               "title": "Category"
-            }
-          },
-          {
-            "name": "dietary_tags",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dietary Tags"
             }
           },
           {
@@ -629,37 +764,65 @@
           {
             "name": "start_date",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "string",
-              "format": "date-time",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Start Date"
             }
           },
           {
             "name": "days",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "integer",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Days"
             }
           },
           {
             "name": "target_calories",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "integer",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "Target Calories"
             }
           },
           {
             "name": "people_count",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "integer",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "People Count"
             }
           },
@@ -679,10 +842,33 @@
           {
             "name": "user_id",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "integer",
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
               "title": "User Id"
+            }
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Id"
             }
           }
         ],
@@ -1237,6 +1423,71 @@
         }
       }
     },
+    "/ingredients/{ingredient_id}/estimate-nutrition": {
+      "post": {
+        "tags": [
+          "ingredients"
+        ],
+        "summary": "Estimate Ingredient Nutrition",
+        "description": "Estimate nutrition for a single ingredient (per 100 base_unit) using FDC first, AI fallback.",
+        "operationId": "estimate_ingredient_nutrition_ingredients__ingredient_id__estimate_nutrition_post",
+        "parameters": [
+          {
+            "name": "ingredient_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ingredient Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ingredient"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ingredients/estimate-missing": {
+      "post": {
+        "tags": [
+          "ingredients"
+        ],
+        "summary": "Estimate Missing Ingredients",
+        "description": "Estimate nutrition for all ingredients where all nutrition fields are zero or null.\nProcesses sequentially to avoid rate limits, using FDC first then AI fallback.",
+        "operationId": "estimate_missing_ingredients_ingredients_estimate_missing_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngredientBulkEstimateResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/ingredients/merge": {
       "post": {
         "tags": [
@@ -1345,10 +1596,97 @@
           }
         }
       }
+    },
+    "/health/": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Basic Healthcheck",
+        "description": "Lightweight healthcheck for load balancers.",
+        "operationId": "basic_healthcheck_health__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/extended": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Extended Healthcheck",
+        "description": "Extended healthcheck that verifies dependencies.\nReturns per-service status plus aggregate state.",
+        "operationId": "extended_healthcheck_health_extended_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "BaseUnit": {
+        "type": "string",
+        "enum": [
+          "g",
+          "kg",
+          "ml",
+          "l",
+          "cup",
+          "tbsp",
+          "tsp",
+          "piece",
+          "slice",
+          "clove",
+          "bunch",
+          "can",
+          "package"
+        ],
+        "title": "BaseUnit"
+      },
+      "Body_parse_recipe_from_image_recipes_parse_from_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_parse_recipe_from_image_recipes_parse_from_image_post"
+      },
+      "Body_upload_recipe_image_recipes__recipe_id__upload_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_recipe_image_recipes__recipe_id__upload_image_post"
+      },
       "EstimateNutritionRequest": {
         "properties": {
           "ingredients": {
@@ -1357,6 +1695,11 @@
             },
             "type": "array",
             "title": "Ingredients"
+          },
+          "servings": {
+            "type": "integer",
+            "title": "Servings",
+            "default": 1
           }
         },
         "type": "object",
@@ -1458,8 +1801,7 @@
             "title": "Category"
           },
           "base_unit": {
-            "type": "string",
-            "title": "Base Unit"
+            "$ref": "#/components/schemas/BaseUnit"
           },
           "calories": {
             "type": "number",
@@ -1495,6 +1837,40 @@
         ],
         "title": "Ingredient"
       },
+      "IngredientBulkEstimateResponse": {
+        "properties": {
+          "updated": {
+            "items": {
+              "$ref": "#/components/schemas/Ingredient"
+            },
+            "type": "array",
+            "title": "Updated"
+          },
+          "updated_count": {
+            "type": "integer",
+            "title": "Updated Count"
+          },
+          "skipped_count": {
+            "type": "integer",
+            "title": "Skipped Count"
+          },
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientNutritionEstimateFailure"
+            },
+            "type": "array",
+            "title": "Failed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "updated",
+          "updated_count",
+          "skipped_count",
+          "failed"
+        ],
+        "title": "IngredientBulkEstimateResponse"
+      },
       "IngredientCreate": {
         "properties": {
           "name": {
@@ -1506,8 +1882,7 @@
             "title": "Category"
           },
           "base_unit": {
-            "type": "string",
-            "title": "Base Unit"
+            "$ref": "#/components/schemas/BaseUnit"
           },
           "calories": {
             "type": "number",
@@ -1538,6 +1913,95 @@
         ],
         "title": "IngredientCreate"
       },
+      "IngredientImportDraft": {
+        "properties": {
+          "raw_name": {
+            "type": "string",
+            "title": "Raw Name"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "preparation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preparation"
+          },
+          "matched_ingredient_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Ingredient Id"
+          },
+          "matched_ingredient_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Ingredient Name"
+          },
+          "match_confidence": {
+            "type": "number",
+            "title": "Match Confidence",
+            "default": 0.0
+          },
+          "match_type": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "fuzzy_high",
+              "ai_verified",
+              "unmatched"
+            ],
+            "title": "Match Type",
+            "default": "unmatched"
+          },
+          "needs_review": {
+            "type": "boolean",
+            "title": "Needs Review",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "raw_name"
+        ],
+        "title": "IngredientImportDraft"
+      },
       "IngredientInput": {
         "properties": {
           "name": {
@@ -1561,6 +2025,29 @@
         ],
         "title": "IngredientInput",
         "description": "Input model for a single ingredient with quantity."
+      },
+      "IngredientNutritionEstimateFailure": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "rate_limited": {
+            "type": "boolean",
+            "title": "Rate Limited",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reason"
+        ],
+        "title": "IngredientNutritionEstimateFailure"
       },
       "MealPlan": {
         "properties": {
@@ -1768,14 +2255,6 @@
             "type": "string",
             "title": "Category"
           },
-          "dietary_tags": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Dietary Tags",
-            "default": []
-          },
           "calories": {
             "type": "integer",
             "title": "Calories"
@@ -1803,6 +2282,17 @@
           "dinner_weight": {
             "type": "number",
             "title": "Dinner Weight"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
           },
           "id": {
             "type": "integer",
@@ -1868,14 +2358,6 @@
             "type": "string",
             "title": "Category"
           },
-          "dietary_tags": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Dietary Tags",
-            "default": []
-          },
           "calories": {
             "type": "integer",
             "title": "Calories"
@@ -1904,6 +2386,17 @@
             "type": "number",
             "title": "Dinner Weight"
           },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
           "ingredients": {
             "items": {
               "$ref": "#/components/schemas/RecipeIngredientCreate"
@@ -1930,6 +2423,194 @@
           "ingredients"
         ],
         "title": "RecipeCreate"
+      },
+      "RecipeImportDraft": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "servings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servings"
+          },
+          "prep_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Time"
+          },
+          "cook_time": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Time"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/IngredientImportDraft"
+            },
+            "type": "array",
+            "title": "Ingredients",
+            "default": []
+          },
+          "nutrition": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nutrition"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "RecipeImportDraft"
+      },
+      "RecipeImportJob": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "processing",
+              "completed",
+              "failed",
+              "canceled"
+            ],
+            "title": "Status",
+            "default": "queued"
+          },
+          "current_step": {
+            "type": "string",
+            "title": "Current Step",
+            "default": ""
+          },
+          "step_progress": {
+            "type": "integer",
+            "title": "Step Progress",
+            "default": 0
+          },
+          "overall_progress": {
+            "type": "integer",
+            "title": "Overall Progress",
+            "default": 0
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecipeImportDraft"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RecipeImportJob"
+      },
+      "RecipeImportStartResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "RecipeImportStartResponse"
       },
       "RecipeIngredient": {
         "properties": {

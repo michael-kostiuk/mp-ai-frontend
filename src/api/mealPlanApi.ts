@@ -49,3 +49,7 @@ export const autoGenerateMealPlan = async (
   const queryString = createQueryString(params);
   return apiClient.post<MealPlan>(`${BASE_PATH}/auto-generate${queryString}`);
 };
+
+export const regenerateMealPlan = async (mealPlanId: number): Promise<MealPlan> => {
+  return apiClient.post<MealPlan>(`${BASE_PATH}/auto-generate?id=${mealPlanId}`);
+};

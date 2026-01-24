@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2 } from 'lucide-react';
+import { X, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
-import { getMealPlan, deleteMealPlan, generateShoppingList } from '../../api/mealPlanApi';
+import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
 
 interface MealPlanDetailModalProps {
   isOpen: boolean;
@@ -29,6 +29,7 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
   const { data: mealPlan, loading, error, execute: fetchMealPlan } = useApi<MealPlan>(getMealPlan);
   const { loading: deleting, execute: deletePlan } = useApi(deleteMealPlan);
   const { data: shoppingList, loading: generatingList, execute: generateList } = useApi<ShoppingList>(generateShoppingList);
+  const { loading: regenerating, execute: regenerate } = useApi<MealPlan>(regenerateMealPlan);
 
   // Memoize the fetch function to prevent unnecessary re-renders
   const loadMealPlan = useCallback(() => {
@@ -107,13 +108,25 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
     }
   };
 
-  const handleGenerateShoppingList = async () => {
+const handleGenerateShoppingList = async () => {
     if (!mealPlanId) return;
     
     try {
       await generateList(mealPlanId);
     } catch (error) {
       console.error('Failed to generate shopping list:', error);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!mealPlanId || regenerating) return;
+    
+    try {
+      await regenerate(mealPlanId);
+      // Refresh the meal plan data after regeneration
+      loadMealPlan();
+    } catch (error) {
+      console.error('Failed to regenerate meal plan:', error);
     }
   };
 
@@ -349,9 +362,18 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
                   )}
                 </div>
 
-                <div className="flex space-x-3">
+<div className="flex space-x-3">
                   <Button variant="outline" onClick={onClose}>
                     Close
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleRegenerate}
+                    isLoading={regenerating}
+                    disabled={regenerating}
+                    leftIcon={<RefreshCw className="h-4 w-4" />}
+                  >
+                    Regenerate
                   </Button>
                   {onEdit && (
                     <Button
