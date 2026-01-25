@@ -56,13 +56,16 @@ test.describe('Ingredient Management - CRUD Operations', () => {
     const ingredientRow = page.locator('tr').filter({ hasText: testIngredient.name });
     await expect(ingredientRow).toBeVisible({ timeout: 10000 });
 
+    // Column 0: Name
     const nameCell = ingredientRow.locator('td').nth(0);
     await expect(nameCell).toContainText(testIngredient.name);
 
+    // Column 1: Category
     const categoryCell = ingredientRow.locator('td').nth(1);
     await expect(categoryCell).toContainText(testIngredient.category);
 
-    const caloriesCell = ingredientRow.locator('td').nth(2);
+    // Column 3: Calories (column 2 is Unit which is hidden on mobile)
+    const caloriesCell = ingredientRow.locator('td').nth(3);
     await expect(caloriesCell).toContainText(testIngredient.calories.toString());
   });
 
@@ -88,16 +91,21 @@ test.describe('Ingredient Management - CRUD Operations', () => {
 
   test('should validate required ingredient fields', async ({ ingredientsPage, page }) => {
     await ingredientsPage.clickAddIngredient();
-    await page.click('button[type="submit"]');
+    
+    // Modal should be visible with title
+    await expect(page.locator('h2:has-text("Add New Ingredient")')).toBeVisible();
+    
+    // Submit button should be disabled when form has empty name
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeDisabled();
 
-    const nameError = await page.isVisible('text=Name is required') ||
-                      await page.isVisible('text=required');
-    expect(nameError).toBeTruthy();
-
-    await ingredientsPage.fillInput(ingredientsPage.nameInput, 'Test Ingredient');
-    await page.click('button[type="submit"]');
-
-    const otherErrors = await page.isVisible('text=required');
-    expect(otherErrors).toBeTruthy();
+    // Fill in the name field using label
+    await page.getByLabel('Ingredient Name').fill('Test Ingredient');
+    
+    // After filling name, submit button should be enabled (other fields have defaults)
+    await expect(submitButton).toBeEnabled();
+    
+    // Cancel to close modal
+    await page.click('button:has-text("Cancel")');
   });
 });

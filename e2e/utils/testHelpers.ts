@@ -1,6 +1,6 @@
 import { Page } from '@playwright/test';
 
-export const BACKEND_URL = 'http://be:8000';
+export const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8800';
 export const API_CONFIG_KEY = 'apiConfig';
 const API_TIMEOUT = 15000;
 

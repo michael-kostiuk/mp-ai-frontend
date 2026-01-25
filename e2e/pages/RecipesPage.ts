@@ -70,15 +70,15 @@ export class RecipesPage extends BasePage {
   }
 
   async clickEditButton() {
-    await this.page.click('button:has-text("Edit")');
+    await this.page.click('button:has-text("Edit Recipe")');
   }
 
   async clickDeleteButton() {
-    await this.page.click('button:has-text("Delete")');
+    await this.page.click('button:has-text("Delete Recipe")');
   }
 
   async confirmDelete() {
-    await this.page.click('button:has-text("Confirm"), button:has-text("Delete")');
+    await this.page.click('button:has-text("Confirm Delete")');
   }
 
   async addIngredient(ingredientName: string) {

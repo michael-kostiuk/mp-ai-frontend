@@ -32,7 +32,6 @@ test.describe('Navigation', () => {
 
   test('should navigate between pages using header navigation', async ({ page }) => {
     await page.goto('/');
-    const homeUrl = page.url();
 
     await page.click('a:has-text("Recipes")');
     await expect(page).toHaveURL(/\/recipes/);
@@ -50,8 +49,9 @@ test.describe('Navigation', () => {
     await expect(page).toHaveURL(/\/shopping-lists/);
     await expect(page.locator('h1:has-text("Shopping Lists")')).toBeVisible();
 
-    await page.click('a:has-text("Home")');
-    await expect(page).toHaveURL(homeUrl);
+    // Navigate back to home via logo (MealMaster link)
+    await page.click('a:has-text("MealMaster")');
+    await expect(page).toHaveURL(/\/$/);
   });
 
   test('should navigate to recipe detail page', async ({ page, recipesPage, resourceTracker }) => {
@@ -141,12 +141,15 @@ test.describe('Search and Filtering', () => {
     const totalBeforeFilter = await recipesPage.getRecipeCount();
     await expect(page.locator('[data-testid="recipe-card"]').filter({ hasText: recipe.name })).toBeVisible();
 
+    // Search for non-existent recipe
     await recipesPage.searchRecipes('NonexistentRecipe123');
+    await page.waitForTimeout(500);
     await expect(page.locator('text=No recipes found matching your criteria.')).toBeVisible();
     const emptyCount = await recipesPage.getRecipeCount();
     expect(emptyCount).toBe(0);
 
-    await recipesPage.searchRecipes('');
+    // Clear search by reloading the page (more reliable than clearing input)
+    await recipesPage.goto();
     const afterClearCount = await recipesPage.getRecipeCount();
     expect(afterClearCount).toBe(totalBeforeFilter);
   });

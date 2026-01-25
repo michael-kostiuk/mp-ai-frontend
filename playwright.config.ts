@@ -7,9 +7,9 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: 1,
   globalSetup: './e2e/global-setup.ts',
-  reporter: ['list'],
+  reporter: 'list',
   use: {
-    baseURL: process.env.BASE_URL || 'http://localhost:8111',
+    baseURL: process.env.BASE_URL || 'http://localhost:8080',
     storageState: './e2e/storage-state.json',
     trace: 'off',
     screenshot: 'off',
