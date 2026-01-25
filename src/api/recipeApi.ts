@@ -54,3 +54,18 @@ export const getRecipeParseFromImageJob = async (jobId: string): Promise<RecipeF
 export const cancelRecipeParseFromImageJob = async (jobId: string): Promise<{ status: string }> => {
   return apiClient.post<{ status: string }>(`${BASE_PATH}/parse-from-image/${jobId}/cancel`);
 };
+
+export interface RecipeSuggestionsParams {
+  meal_type: 'breakfast' | 'lunch' | 'dinner';
+  exclude_ids?: number[];
+  limit?: number;
+}
+
+export const getRecipeSuggestions = async (params: RecipeSuggestionsParams): Promise<Recipe[]> => {
+  const queryString = createQueryString({
+    meal_type: params.meal_type,
+    exclude_ids: params.exclude_ids,
+    limit: params.limit
+  });
+  return apiClient.get<Recipe[]>(`${BASE_PATH}/suggestions${queryString}`);
+};

@@ -143,8 +143,7 @@ test.describe('Search and Filtering', () => {
 
     // Search for non-existent recipe
     await recipesPage.searchRecipes('NonexistentRecipe123');
-    await page.waitForTimeout(500);
-    await expect(page.locator('text=No recipes found matching your criteria.')).toBeVisible();
+    await expect(page.locator('text=No recipes found matching your criteria.')).toBeVisible({ timeout: 5000 });
     const emptyCount = await recipesPage.getRecipeCount();
     expect(emptyCount).toBe(0);
 

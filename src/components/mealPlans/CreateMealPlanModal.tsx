@@ -260,6 +260,17 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
     return '';
   };
 
+  // Get recipe IDs to exclude from suggestions (recipes already used on the same day)
+  const getExcludeIdsForDate = (date: string, currentEntryIndex: number): number[] => {
+    return formData.entries
+      .filter((entry, idx) => 
+        entry.date === date && 
+        idx !== currentEntryIndex && 
+        entry.recipe_id > 0
+      )
+      .map(entry => entry.recipe_id);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -643,6 +654,8 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                                             onChange={(recipeId) => updateMealEntry(entry.originalIndex, 'recipe_id', recipeId)}
                                             placeholder="Search for recipe..."
                                             initialDisplayName={getRecipeName(entry.recipe_id)}
+                                            mealType={['breakfast', 'lunch', 'dinner'].includes(mealType) ? mealType as 'breakfast' | 'lunch' | 'dinner' : undefined}
+                                            excludeIds={getExcludeIdsForDate(date, entry.originalIndex)}
                                           />
                                         </div>
 

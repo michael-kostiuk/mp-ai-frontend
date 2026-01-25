@@ -85,14 +85,13 @@ test.describe('Meal Plan Management - CRUD Operations', () => {
     expect(isPlanVisible).toBeFalsy();
   });
 
-  test('should validate required meal plan fields', async ({ mealPlansPage, page }) => {
+  test('should display create meal plan form with required fields', async ({ mealPlansPage, page }) => {
     await mealPlansPage.clickAddMealPlan();
     
     // Modal should be visible
     await expect(page.locator('h2:has-text("Create Meal Plan")')).toBeVisible();
     
-    // The form has default dates pre-filled, so submit should work if defaults are valid
-    // Just verify the form elements are present
+    // Verify form elements are present
     await expect(page.getByLabel('Start Date')).toBeVisible();
     await expect(page.getByLabel('People Count')).toBeVisible();
     await expect(page.getByLabel('Target Calories per Day')).toBeVisible();

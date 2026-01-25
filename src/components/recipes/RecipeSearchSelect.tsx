@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Plus, X } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Search, Plus, X, Lightbulb } from 'lucide-react';
 import { Recipe } from '../../types';
 import Input from '../ui/Input';
 import useApi from '../../hooks/useApi';
-import { getRecipes } from '../../api/recipeApi';
+import { getRecipes, getRecipeSuggestions, RecipeSuggestionsParams } from '../../api/recipeApi';
+
+type MealType = 'breakfast' | 'lunch' | 'dinner';
 
 interface RecipeSearchSelectProps {
   value: number;
@@ -12,7 +14,13 @@ interface RecipeSearchSelectProps {
   placeholder?: string;
   disabled?: boolean;
   initialDisplayName?: string; // Add this prop to show existing recipe name
+  mealType?: MealType; // For showing suggestions
+  excludeIds?: number[]; // Recipe IDs to exclude from suggestions (e.g., already used that day)
 }
+
+// Cache for suggestions per meal type
+const suggestionsCache: Record<string, { recipes: Recipe[], timestamp: number }> = {};
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   value,
@@ -20,13 +28,18 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   onCreateNew,
   placeholder = "Search recipes...",
   disabled = false,
-  initialDisplayName = ''
+  initialDisplayName = '',
+  mealType,
+  excludeIds = []
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState<'below' | 'above'>('below');
+  const [showingSuggestions, setShowingSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<Recipe[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -34,6 +47,38 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   const lastSearchQueryRef = useRef<string>('');
 
   const { data: recipes, loading, execute: searchRecipes } = useApi<Recipe[]>(getRecipes);
+
+  // Fetch suggestions for the meal type
+  const fetchSuggestions = useCallback(async () => {
+    if (!mealType) return;
+    
+    const sortedIds = [...excludeIds].sort((a, b) => a - b);
+    const cacheKey = `${mealType}-${sortedIds.join(',')}-limit:10`;
+    const cached = suggestionsCache[cacheKey];
+    
+    // Use cache if valid
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      setSuggestions(cached.recipes);
+      return;
+    }
+    
+    setLoadingSuggestions(true);
+    try {
+      const params: RecipeSuggestionsParams = {
+        meal_type: mealType,
+        exclude_ids: excludeIds,
+        limit: 10
+      };
+      const result = await getRecipeSuggestions(params);
+      setSuggestions(result);
+      suggestionsCache[cacheKey] = { recipes: result, timestamp: Date.now() };
+    } catch (error) {
+      console.error('Failed to fetch suggestions:', error);
+      setSuggestions([]);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, [mealType, excludeIds]);
 
   // Calculate dropdown position based on available space
   useEffect(() => {
@@ -136,7 +181,7 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     }
   };
 
-  // Handle input changes with debounced search
+// Handle input changes with debounced search
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
@@ -146,18 +191,39 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
       setIsOpen(true);
     }
 
-    // Search based on user input
-    performSearch(newValue);
+    // Switch from suggestions to search results when user types
+    if (newValue.trim()) {
+      setShowingSuggestions(false);
+      performSearch(newValue);
+    } else {
+      // Show suggestions again when input is cleared
+      if (mealType) {
+        setShowingSuggestions(true);
+        fetchSuggestions();
+      }
+    }
   };
 
-  const handleInputFocus = () => {
+const handleInputFocus = () => {
     setIsOpen(true);
     setIsUserTyping(true);
+    
+    // Determine if we should show suggestions:
+    // - If there's a selected recipe, we're about to clear the input, so show suggestions
+    // - If input is already empty, show suggestions
+    const shouldShowSuggestions = mealType && (selectedRecipe || !inputValue.trim());
+    
     // Only clear if there's a selected recipe, otherwise keep the current input
     if (selectedRecipe) {
       setInputValue('');
       // Reset last search to allow fresh search
       lastSearchQueryRef.current = '';
+    }
+    
+    // Show suggestions when focusing on field (empty or has selected recipe that will be cleared)
+    if (shouldShowSuggestions) {
+      setShowingSuggestions(true);
+      fetchSuggestions();
     }
   };
 
@@ -193,10 +259,11 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     };
   }, [selectedRecipe]);
 
-  const handleSelectRecipe = (recipe: Recipe) => {
+const handleSelectRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
     setInputValue(recipe.name);
     setIsUserTyping(false);
+    setShowingSuggestions(false);
     onChange(recipe.id);
     setIsOpen(false);
   };
@@ -209,12 +276,17 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     }
   };
 
-  const handleClear = () => {
+const handleClear = () => {
     setSelectedRecipe(null);
     setInputValue('');
     setIsUserTyping(false);
     onChange(0);
     lastSearchQueryRef.current = '';
+    // Show suggestions when clearing the field
+    if (mealType) {
+      setShowingSuggestions(true);
+      fetchSuggestions();
+    }
     inputRef.current?.focus();
   };
 
@@ -262,55 +334,106 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
             : 'top-full mt-1'
             }`}
         >
-          {loading && (
-            <div className="px-3 py-2 text-sm text-neutral-500 text-center">
-              Searching recipes...
-            </div>
-          )}
-
-          {showNoResults && (
-            <div className="px-3 py-2 text-sm text-neutral-500 text-center">
-              No recipes found
-            </div>
-          )}
-
-          {!loading && !showMinCharMessage && (inputValue.trim().length >= 1 || inputValue.trim().length === 0) && filteredRecipes.map((recipe) => (
-            <button
-              key={recipe.id}
-              type="button"
-              onClick={() => handleSelectRecipe(recipe)}
-              className="w-full px-3 py-2 text-left hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-neutral-900">{recipe.name}</div>
-                  <div className="text-xs text-neutral-500 capitalize">
-                    {recipe.category} • {recipe.calories} cal • {recipe.servings} servings
+          {/* Suggestions mode */}
+          {showingSuggestions && mealType && (
+            <>
+              {loadingSuggestions && (
+                <div className="px-3 py-2 text-sm text-neutral-500 text-center">
+                  Loading suggestions...
+                </div>
+              )}
+              
+              {!loadingSuggestions && suggestions.length === 0 && (
+                <div className="px-3 py-2 text-sm text-neutral-500 text-center">
+                  No suggestions available
+                </div>
+              )}
+              
+              {!loadingSuggestions && suggestions.length > 0 && (
+                <>
+                  <div className="px-3 py-2 text-xs font-medium text-neutral-500 bg-neutral-50 border-b border-neutral-100 flex items-center gap-1">
+                    <Lightbulb className="h-3 w-3" />
+                    Suggested for {mealType}
                   </div>
-                </div>
-                <div className="text-xs text-neutral-400">
-                  {recipe.prep_time + recipe.cook_time}m
-                </div>
-              </div>
-            </button>
-          ))}
+                  {suggestions.map((recipe) => (
+                    <button
+                      key={recipe.id}
+                      type="button"
+                      onClick={() => handleSelectRecipe(recipe)}
+                      className="w-full px-3 py-2 text-left hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-neutral-900">{recipe.name}</div>
+                          <div className="text-xs text-neutral-500 capitalize">
+                            {recipe.category} • {recipe.calories} cal • {recipe.servings} servings
+                          </div>
+                        </div>
+                        <div className="text-xs text-neutral-400">
+                          {recipe.prep_time + recipe.cook_time}m
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </>
+              )}
+            </>
+          )}
 
-          {showCreateOption && (
-            <div className="border-t border-neutral-200">
-              <button
-                type="button"
-                onClick={handleCreateNew}
-                className="w-full px-3 py-2 text-left hover:bg-primary-50 focus:bg-primary-50 focus:outline-none transition-colors text-primary-600"
-              >
-                <div className="flex items-center">
-                  <Plus className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Create "{inputValue}"</span>
+          {/* Search results mode */}
+          {!showingSuggestions && (
+            <>
+              {loading && (
+                <div className="px-3 py-2 text-sm text-neutral-500 text-center">
+                  Searching recipes...
                 </div>
-                <div className="text-xs text-primary-500 mt-1">
-                  Add this recipe to your database
+              )}
+
+              {showNoResults && (
+                <div className="px-3 py-2 text-sm text-neutral-500 text-center">
+                  No recipes found
                 </div>
-              </button>
-            </div>
+              )}
+
+              {!loading && !showMinCharMessage && (inputValue.trim().length >= 1 || inputValue.trim().length === 0) && filteredRecipes.map((recipe) => (
+                <button
+                  key={recipe.id}
+                  type="button"
+                  onClick={() => handleSelectRecipe(recipe)}
+                  className="w-full px-3 py-2 text-left hover:bg-neutral-50 focus:bg-neutral-50 focus:outline-none transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-neutral-900">{recipe.name}</div>
+                      <div className="text-xs text-neutral-500 capitalize">
+                        {recipe.category} • {recipe.calories} cal • {recipe.servings} servings
+                      </div>
+                    </div>
+                    <div className="text-xs text-neutral-400">
+                      {recipe.prep_time + recipe.cook_time}m
+                    </div>
+                  </div>
+                </button>
+              ))}
+
+              {showCreateOption && (
+                <div className="border-t border-neutral-200">
+                  <button
+                    type="button"
+                    onClick={handleCreateNew}
+                    className="w-full px-3 py-2 text-left hover:bg-primary-50 focus:bg-primary-50 focus:outline-none transition-colors text-primary-600"
+                  >
+                    <div className="flex items-center">
+                      <Plus className="h-4 w-4 mr-2" />
+                      <span className="font-medium">Create "{inputValue}"</span>
+                    </div>
+                    <div className="text-xs text-primary-500 mt-1">
+                      Add this recipe to your database
+                    </div>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
