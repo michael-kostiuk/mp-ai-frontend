@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Download, ArrowLeft } from 'lucide-react';
@@ -8,10 +8,12 @@ import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
+import ExportShoppingListModal from '../components/shoppingLists/ExportShoppingListModal';
 import { ShoppingList, ShoppingListItem as ShoppingListItemType } from '../types';
 import useApi from '../hooks/useApi';
 import { getShoppingList, exportShoppingList } from '../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../utils/i18nUtils';
+import { copyTextToClipboard } from '../utils/clipboardUtils';
 
 // Helper function to normalize category name (capitalize first letter)
 const normalizeCategory = (category: string): string => {
@@ -35,6 +37,11 @@ const ShoppingListDetail: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportModalTitle, setExportModalTitle] = useState('');
+  const [exportModalContent, setExportModalContent] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   const shoppingListId = id ? parseInt(id, 10) : null;
 
@@ -61,18 +68,27 @@ const ShoppingListDetail: React.FC = () => {
     navigate('/shopping-lists');
   };
 
-  const handleExport = () => {
-    if (shoppingList) {
-      exportShoppingList(shoppingList.id)
-        .then(async (result) => {
-          const text = typeof (result as any)?.content === 'string' ? (result as any).content : JSON.stringify(result, null, 2);
-          await navigator.clipboard.writeText(text);
-          alert(t('common.copiedToClipboard'));
-        })
-        .catch((err) => {
-          console.error('Failed to export shopping list:', err);
-          alert(t('shoppingLists.exportFailed'));
-        });
+  const handleExport = async () => {
+    if (!shoppingList) return;
+
+    setExporting(true);
+    try {
+      const result = await exportShoppingList(shoppingList.id);
+      const text = typeof (result as any)?.content === 'string' ? (result as any).content : JSON.stringify(result, null, 2);
+      const copied = await copyTextToClipboard(text);
+      if (copied) {
+        alert(t('common.copiedToClipboard'));
+        return;
+      }
+
+      setExportModalTitle(`${t('shoppingLists.shoppingListNumber', { id: shoppingList.id })} - ${t('common.export')}`);
+      setExportModalContent(text);
+      setExportModalOpen(true);
+    } catch (err) {
+      console.error('Failed to export shopping list:', err);
+      alert(t('shoppingLists.exportFailed'));
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -120,6 +136,7 @@ const ShoppingListDetail: React.FC = () => {
               variant="outline"
               leftIcon={<Download className="h-4 w-4" />}
               onClick={handleExport}
+              isLoading={exporting}
             >
               {t('shoppingLists.exportList')}
             </Button>
@@ -176,6 +193,13 @@ const ShoppingListDetail: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      <ExportShoppingListModal
+        isOpen={exportModalOpen}
+        title={exportModalTitle}
+        content={exportModalContent}
+        onClose={() => setExportModalOpen(false)}
+      />
     </Container>
   );
 };

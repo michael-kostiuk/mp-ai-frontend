@@ -33,7 +33,10 @@
     "day": "day",
     "people": "people",
     "person": "person",
-    "copiedToClipboard": "Copied to clipboard"
+    "copiedToClipboard": "Copied to clipboard",
+    "copy": "Copy",
+    "share": "Share",
+    "copyFailed": "Copy failed. Please select and copy manually."
   },
   "nav": {
     "recipes": "Recipes",

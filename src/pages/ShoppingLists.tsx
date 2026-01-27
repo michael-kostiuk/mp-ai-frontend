@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -9,9 +9,11 @@ import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
+import ExportShoppingListModal from '../components/shoppingLists/ExportShoppingListModal';
 import { ShoppingList as ShoppingListType, ShoppingListItem as ShoppingListItemType } from '../types';
 import useApi from '../hooks/useApi';
 import { getShoppingLists, deleteShoppingList, exportShoppingList } from '../api/shoppingListApi';
+import { copyTextToClipboard } from '../utils/clipboardUtils';
 
 // Helper function to normalize category name (capitalize first letter)
 const normalizeCategory = (category: string): string => {
@@ -84,20 +86,37 @@ const ShoppingLists: React.FC = () => {
   const { t } = useTranslation();
   const { data: shoppingLists, loading, error, execute: fetchShoppingLists } = useApi<ShoppingListType[]>(getShoppingLists);
 
+  const [exportingId, setExportingId] = useState<number | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportModalTitle, setExportModalTitle] = useState('');
+  const [exportModalContent, setExportModalContent] = useState('');
+
   // Load shopping lists only once on mount
   useEffect(() => {
     fetchShoppingLists();
   }, [fetchShoppingLists]);
 
   const handleExportList = async (id: number) => {
+    setExportingId(id);
     try {
       const result = await exportShoppingList(id);
       const text = typeof (result as any)?.content === 'string' ? (result as any).content : JSON.stringify(result, null, 2);
-      await navigator.clipboard.writeText(text);
-      alert(t('common.copiedToClipboard'));
+      const copied = await copyTextToClipboard(text);
+      if (copied) {
+        alert(t('common.copiedToClipboard'));
+        return;
+      }
+
+      // Mobile browsers often block clipboard writes after awaited async work.
+      // Show the exported content so the user can copy/share from a direct gesture.
+      setExportModalTitle(`${t('shoppingLists.shoppingListNumber', { id })} - ${t('common.export')}`);
+      setExportModalContent(text);
+      setExportModalOpen(true);
     } catch (err) {
       console.error('Failed to export shopping list:', err);
       alert(t('shoppingLists.exportFailed'));
+    } finally {
+      setExportingId(null);
     }
   };
 
@@ -165,15 +184,16 @@ const ShoppingLists: React.FC = () => {
                       </Button>
                     </Link>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      leftIcon={<Download size={16} />}
-                      onClick={() => handleExportList(list.id)}
-                    >
-                      {t('common.export')}
-                    </Button>
+                   <div className="flex items-center gap-2">
+                     <Button
+                       variant="outline"
+                       size="sm"
+                       leftIcon={<Download size={16} />}
+                       onClick={() => handleExportList(list.id)}
+                       isLoading={exportingId === list.id}
+                     >
+                       {t('common.export')}
+                     </Button>
                     <Button
                       variant="danger"
                       size="sm"
@@ -193,6 +213,13 @@ const ShoppingLists: React.FC = () => {
           ))}
         </div>
       )}
+
+      <ExportShoppingListModal
+        isOpen={exportModalOpen}
+        title={exportModalTitle}
+        content={exportModalContent}
+        onClose={() => setExportModalOpen(false)}
+      />
     </Container>
   );
 };
