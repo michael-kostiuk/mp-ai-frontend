@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, ShoppingBag, ChefHat, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, ChefHat, ChevronDown, ChevronUp } from 'lucide-react';
 import { ShoppingListItem as ShoppingListItemType, Recipe } from '../../types';
 import Button from '../ui/Button';
 import Card, { CardContent } from '../ui/Card';
@@ -44,10 +44,6 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
     setShowRecipes(!showRecipes);
   };
   
-  const getCategoryIcon = () => {
-    return <ShoppingBag className="h-4 w-4 text-neutral-400" />;
-  };
-  
   return (
     <div className="space-y-2">
       <div className={`
@@ -71,19 +67,11 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
           <p className={`
             text-sm font-medium ${isChecked ? 'text-neutral-500 line-through' : 'text-neutral-900'}
           `}>
-            {item.quantity} {item.unit} {item.ingredient.name}
+            {item.ingredient.name} - {item.quantity} {item.unit}
           </p>
         </div>
         
-        <div className="ml-3 flex items-center space-x-2">
-          <span className={`
-            inline-flex items-center rounded-full px-2 py-0.5 text-xs
-            ${isChecked ? 'bg-neutral-100 text-neutral-500' : 'bg-neutral-100 text-neutral-700'}
-          `}>
-            {getCategoryIcon()}
-            <span className="ml-1 capitalize">{item.category}</span>
-          </span>
-          
+        <div className="ml-3 flex items-center">
           <Button
             variant="ghost"
             size="sm"

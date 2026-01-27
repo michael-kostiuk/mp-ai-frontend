@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -9,9 +9,76 @@ import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
-import { ShoppingList as ShoppingListType } from '../types';
+import { ShoppingList as ShoppingListType, ShoppingListItem as ShoppingListItemType } from '../types';
 import useApi from '../hooks/useApi';
 import { getShoppingLists, deleteShoppingList, exportShoppingList } from '../api/shoppingListApi';
+
+// Helper function to normalize category name (capitalize first letter)
+const normalizeCategory = (category: string): string => {
+  if (!category) return 'Other';
+  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+};
+
+// Helper function to group items by category (case-insensitive)
+const groupItemsByCategory = (items: ShoppingListItemType[]): Record<string, ShoppingListItemType[]> => {
+  return items.reduce((acc, item) => {
+    const category = normalizeCategory(item.category || 'other');
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
+    return acc;
+  }, {} as Record<string, ShoppingListItemType[]>);
+};
+
+// Preview component that shows grouped items with a limit
+const ShoppingListPreview: React.FC<{ items: ShoppingListItemType[] }> = ({ items }) => {
+  const { t } = useTranslation();
+  
+  const groupedItems = useMemo(() => groupItemsByCategory(items), [items]);
+  const sortedCategories = useMemo(() => 
+    Object.keys(groupedItems).sort((a, b) => a.localeCompare(b)), 
+    [groupedItems]
+  );
+  
+  // Limit to show first 5 items total across all categories
+  const MAX_PREVIEW_ITEMS = 5;
+  let itemCount = 0;
+  
+  return (
+    <div className="space-y-4 max-h-64 overflow-y-auto">
+      {sortedCategories.map((category) => {
+        if (itemCount >= MAX_PREVIEW_ITEMS) return null;
+        
+        const categoryItems = groupedItems[category];
+        const remainingSlots = MAX_PREVIEW_ITEMS - itemCount;
+        const itemsToShow = categoryItems.slice(0, remainingSlots);
+        itemCount += itemsToShow.length;
+        
+        return (
+          <div key={category}>
+            <h4 className="text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">
+              {category}
+            </h4>
+            <div className="space-y-1">
+              {itemsToShow.map((item) => (
+                <ShoppingListItem
+                  key={item.id}
+                  item={item}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      {items.length > MAX_PREVIEW_ITEMS && (
+        <div className="text-center py-2 text-sm text-neutral-500 border-t border-neutral-200">
+          {t('common.moreItems', { count: items.length - MAX_PREVIEW_ITEMS })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ShoppingLists: React.FC = () => {
   const { t } = useTranslation();
@@ -120,19 +187,7 @@ const ShoppingLists: React.FC = () => {
               </CardHeader>
 
               <CardContent>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {list.items.slice(0, 5).map((item) => (
-                    <ShoppingListItem
-                      key={item.id}
-                      item={item}
-                    />
-                  ))}
-                  {list.items.length > 5 && (
-                    <div className="text-center py-2 text-sm text-neutral-500 border-t border-neutral-200">
-                      {t('common.moreItems', { count: list.items.length - 5 })}
-                    </div>
-                  )}
-                </div>
+                <ShoppingListPreview items={list.items} />
               </CardContent>
             </Card>
           ))}

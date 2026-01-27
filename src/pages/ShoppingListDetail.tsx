@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Download, ArrowLeft } from 'lucide-react';
@@ -8,10 +8,28 @@ import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
-import { ShoppingList } from '../types';
+import { ShoppingList, ShoppingListItem as ShoppingListItemType } from '../types';
 import useApi from '../hooks/useApi';
 import { getShoppingList, exportShoppingList } from '../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../utils/i18nUtils';
+
+// Helper function to normalize category name (capitalize first letter)
+const normalizeCategory = (category: string): string => {
+  if (!category) return 'Other';
+  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+};
+
+// Helper function to group items by category (case-insensitive)
+const groupItemsByCategory = (items: ShoppingListItemType[]): Record<string, ShoppingListItemType[]> => {
+  return items.reduce((acc, item) => {
+    const category = normalizeCategory(item.category || 'other');
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
+    return acc;
+  }, {} as Record<string, ShoppingListItemType[]>);
+};
 
 const ShoppingListDetail: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -57,6 +75,17 @@ const ShoppingListDetail: React.FC = () => {
         });
     }
   };
+
+  // Group items by category
+  const groupedItems = useMemo(() => {
+    if (!shoppingList?.items) return {};
+    return groupItemsByCategory(shoppingList.items);
+  }, [shoppingList?.items]);
+
+  // Sort categories alphabetically
+  const sortedCategories = useMemo(() => {
+    return Object.keys(groupedItems).sort((a, b) => a.localeCompare(b));
+  }, [groupedItems]);
 
   if (!shoppingListId) {
     return null;
@@ -126,12 +155,21 @@ const ShoppingListDetail: React.FC = () => {
                 {t('shoppingLists.emptyList')}
               </div>
             ) : (
-              <div className="space-y-2">
-                {shoppingList.items.map((item) => (
-                  <ShoppingListItem
-                    key={item.id}
-                    item={item}
-                  />
+              <div className="space-y-6">
+                {sortedCategories.map((category) => (
+                  <div key={category}>
+                    <h3 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide mb-3 pb-2 border-b border-neutral-200">
+                      {category}
+                    </h3>
+                    <div className="space-y-2">
+                      {groupedItems[category].map((item) => (
+                        <ShoppingListItem
+                          key={item.id}
+                          item={item}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
