@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Plus, X } from 'lucide-react';
 import { Ingredient } from '../../types';
 import Input from '../ui/Input';
@@ -18,10 +19,12 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
   value,
   onChange,
   onCreateNew,
-  placeholder = "Search ingredients...",
+  placeholder,
   disabled = false,
   initialDisplayName = ''
 }) => {
+  const { t } = useTranslation();
+  const actualPlaceholder = placeholder || t('ingredients.searchIngredients');
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
@@ -207,7 +210,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
-          placeholder={placeholder}
+          placeholder={actualPlaceholder}
           leftIcon={<Search className="h-4 w-4" />}
           rightIcon={
             selectedIngredient ? (
@@ -235,13 +238,13 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
         >
           {loading && (
             <div className="px-3 py-2 text-sm text-neutral-500 text-center">
-              Searching ingredients...
+              {t('ingredients.searchingIngredients')}
             </div>
           )}
 
           {showNoResults && (
             <div className="px-3 py-2 text-sm text-neutral-500 text-center">
-              No ingredients found
+              {t('ingredients.noIngredientsFound')}
             </div>
           )}
 
@@ -256,7 +259,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
                 <div>
                   <div className="font-medium text-neutral-900">{ingredient.name}</div>
                   <div className="text-xs text-neutral-500 capitalize">
-                    {ingredient.category} • {ingredient.calories} cal per 100{ingredient.base_unit}
+                    {ingredient.category} • {t('ingredients.calPer100', { calories: ingredient.calories, unit: ingredient.base_unit })}
                   </div>
                 </div>
                 <div className="text-xs text-neutral-400">
@@ -275,10 +278,10 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
               >
                 <div className="flex items-center">
                   <Plus className="h-4 w-4 mr-2" />
-                  <span className="font-medium">Create "{inputValue}"</span>
+                  <span className="font-medium">{t('ingredients.createIngredient', { name: inputValue })}</span>
                 </div>
                 <div className="text-xs text-primary-500 mt-1">
-                  Add this ingredient to your database
+                  {t('ingredients.addToDatabase')}
                 </div>
               </button>
             </div>

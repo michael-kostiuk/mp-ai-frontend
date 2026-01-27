@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PlusCircle, ImageUp } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -10,6 +11,7 @@ import Button from '../components/ui/Button';
 import { Recipe, RecipeCreate } from '../types';
 
 const Recipes: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -53,8 +55,8 @@ const Recipes: React.FC = () => {
   return (
     <Container className="py-8">
       <PageHeader
-        title="Recipes"
-        description="Browse, search, and manage your recipes"
+        title={t('recipes.title')}
+        description={t('recipes.description')}
         actions={
           <div className="flex items-center gap-3">
             <Button
@@ -62,7 +64,7 @@ const Recipes: React.FC = () => {
               leftIcon={<ImageUp size={18} />}
               onClick={() => setIsFromImageModalOpen(true)}
             >
-              Add from Image
+              {t('recipes.addFromImage')}
             </Button>
             <Button
               leftIcon={<PlusCircle size={18} />}
@@ -73,7 +75,7 @@ const Recipes: React.FC = () => {
                 setIsCreateModalOpen(true);
               }}
             >
-              Add Recipe
+              {t('recipes.addRecipe')}
             </Button>
           </div>
         }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Plus, X, Lightbulb } from 'lucide-react';
 import { Recipe } from '../../types';
 import Input from '../ui/Input';
@@ -26,12 +27,14 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
   value,
   onChange,
   onCreateNew,
-  placeholder = "Search recipes...",
+  placeholder,
   disabled = false,
   initialDisplayName = '',
   mealType,
   excludeIds = []
 }) => {
+  const { t } = useTranslation();
+  const actualPlaceholder = placeholder || t('recipeSearch.searchRecipes');
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -308,7 +311,7 @@ const handleClear = () => {
           onChange={handleInputChange}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
-          placeholder={placeholder}
+          placeholder={actualPlaceholder}
           leftIcon={<Search className="h-4 w-4" />}
           rightIcon={
             selectedRecipe ? (
@@ -339,13 +342,13 @@ const handleClear = () => {
             <>
               {loadingSuggestions && (
                 <div className="px-3 py-2 text-sm text-neutral-500 text-center">
-                  Loading suggestions...
+                  {t('recipeSearch.loadingSuggestions')}
                 </div>
               )}
               
               {!loadingSuggestions && suggestions.length === 0 && (
                 <div className="px-3 py-2 text-sm text-neutral-500 text-center">
-                  No suggestions available
+                  {t('recipeSearch.noSuggestions')}
                 </div>
               )}
               
@@ -353,7 +356,7 @@ const handleClear = () => {
                 <>
                   <div className="px-3 py-2 text-xs font-medium text-neutral-500 bg-neutral-50 border-b border-neutral-100 flex items-center gap-1">
                     <Lightbulb className="h-3 w-3" />
-                    Suggested for {mealType}
+                    {t('recipeSearch.suggestedFor', { mealType: t(`mealPlans.mealTypes.${mealType}`) })}
                   </div>
                   {suggestions.map((recipe) => (
                     <button
@@ -366,7 +369,7 @@ const handleClear = () => {
                         <div>
                           <div className="font-medium text-neutral-900">{recipe.name}</div>
                           <div className="text-xs text-neutral-500 capitalize">
-                            {recipe.category} • {recipe.calories} cal • {recipe.servings} servings
+                            {t('recipeSearch.recipeInfo', { category: recipe.category, calories: recipe.calories, servings: recipe.servings })}
                           </div>
                         </div>
                         <div className="text-xs text-neutral-400">
@@ -385,13 +388,13 @@ const handleClear = () => {
             <>
               {loading && (
                 <div className="px-3 py-2 text-sm text-neutral-500 text-center">
-                  Searching recipes...
+                  {t('recipeSearch.searchingRecipes')}
                 </div>
               )}
 
               {showNoResults && (
                 <div className="px-3 py-2 text-sm text-neutral-500 text-center">
-                  No recipes found
+                  {t('recipeSearch.noRecipesFound')}
                 </div>
               )}
 
@@ -406,7 +409,7 @@ const handleClear = () => {
                     <div>
                       <div className="font-medium text-neutral-900">{recipe.name}</div>
                       <div className="text-xs text-neutral-500 capitalize">
-                        {recipe.category} • {recipe.calories} cal • {recipe.servings} servings
+                        {t('recipeSearch.recipeInfo', { category: recipe.category, calories: recipe.calories, servings: recipe.servings })}
                       </div>
                     </div>
                     <div className="text-xs text-neutral-400">
@@ -425,10 +428,10 @@ const handleClear = () => {
                   >
                     <div className="flex items-center">
                       <Plus className="h-4 w-4 mr-2" />
-                      <span className="font-medium">Create "{inputValue}"</span>
+                      <span className="font-medium">{t('recipeSearch.createRecipe', { name: inputValue })}</span>
                     </div>
                     <div className="text-xs text-primary-500 mt-1">
-                      Add this recipe to your database
+                      {t('recipeSearch.addRecipeToDatabase')}
                     </div>
                   </button>
                 </div>

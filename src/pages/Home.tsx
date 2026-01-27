@@ -1,39 +1,42 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ChefHat, CalendarDays, ShoppingCart, List } from 'lucide-react';
 import Container from '../components/layout/Container';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 
 const Home: React.FC = () => {
+  const { t } = useTranslation();
+  
   const features = [
     {
-      title: 'Recipes',
-      description: 'Browse, search, and filter recipes. View detailed nutritional information and cooking instructions.',
+      title: t('home.features.recipes.title'),
+      description: t('home.features.recipes.description'),
       icon: <ChefHat className="h-8 w-8 lg:h-10 lg:w-10 text-primary-600" />,
       link: '/recipes',
-      linkText: 'Explore Recipes',
+      linkText: t('home.features.recipes.linkText'),
     },
     {
-      title: 'Meal Plans',
-      description: 'Create and manage weekly meal plans. Automatically generate meal plans based on your preferences.',
+      title: t('home.features.mealPlans.title'),
+      description: t('home.features.mealPlans.description'),
       icon: <CalendarDays className="h-8 w-8 lg:h-10 lg:w-10 text-accent-500" />,
       link: '/meal-plans',
-      linkText: 'Plan Your Meals',
+      linkText: t('home.features.mealPlans.linkText'),
     },
     {
-      title: 'Shopping Lists',
-      description: 'Generate shopping lists from your meal plans. Export to various formats for easy shopping.',
+      title: t('home.features.shoppingLists.title'),
+      description: t('home.features.shoppingLists.description'),
       icon: <ShoppingCart className="h-8 w-8 lg:h-10 lg:w-10 text-secondary-500" />,
       link: '/shopping-lists',
-      linkText: 'View Shopping Lists',
+      linkText: t('home.features.shoppingLists.linkText'),
     },
     {
-      title: 'Ingredients',
-      description: 'Browse the ingredient database. View nutritional information for each ingredient.',
+      title: t('home.features.ingredients.title'),
+      description: t('home.features.ingredients.description'),
       icon: <List className="h-8 w-8 lg:h-10 lg:w-10 text-neutral-600" />,
       link: '/ingredients',
-      linkText: 'Manage Ingredients',
+      linkText: t('home.features.ingredients.linkText'),
     },
   ];
   
@@ -49,10 +52,10 @@ const Home: React.FC = () => {
               <ChefHat className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 mx-auto mb-4 sm:mb-6 text-white/90" />
             </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bold tracking-tight mb-4 sm:mb-6">
-              MealMaster
+              {t('home.title')}
             </h1>
             <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-              A powerful tool for meal planning, recipe management, and grocery shopping.
+              {t('home.subtitle')}
             </p>
           </div>
         </Container>

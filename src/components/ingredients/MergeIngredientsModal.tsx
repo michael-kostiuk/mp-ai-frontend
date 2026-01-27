@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import { X, ArrowRight, Trash2, Plus } from 'lucide-react';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -17,6 +18,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
   onClose,
   onSuccess
 }) => {
+  const { t } = useTranslation();
   const [keepIngredientId, setKeepIngredientId] = useState<number>(0);
   const [mergeIngredientIds, setMergeIngredientIds] = useState<number[]>([0]);
 
@@ -53,7 +55,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
     e.preventDefault();
 
     if (!validateForm()) {
-      alert('Please select a valid ingredient to keep and at least one ingredient to merge. Make sure there are no duplicates.');
+      alert(t('ingredients.merge.validationError'));
       return;
     }
 
@@ -67,7 +69,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
       setMergeIngredientIds([0]);
     } catch (error) {
       console.error('Failed to merge ingredients:', error);
-      alert('Failed to merge ingredients. Please try again.');
+      alert(t('ingredients.merge.mergeFailed'));
     }
   };
 
@@ -87,7 +89,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-          <h2 className="text-xl font-semibold text-neutral-900">Merge Ingredients</h2>
+          <h2 className="text-xl font-semibold text-neutral-900">{t('ingredients.merge.title')}</h2>
           <button
             onClick={handleClose}
             className="text-neutral-400 hover:text-neutral-600 transition-colors"
@@ -99,28 +101,28 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Instructions */}
           <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-primary-800 mb-2">How Merging Works</h3>
+            <h3 className="text-sm font-medium text-primary-800 mb-2">{t('ingredients.merge.howMergingWorks')}</h3>
             <ul className="text-sm text-primary-700 space-y-1">
-              <li>• Select the ingredient you want to <strong>keep</strong> (this will remain in your database)</li>
-              <li>• Select one or more ingredients to <strong>merge into</strong> the kept ingredient</li>
-              <li>• All recipes using the merged ingredients will be updated to use the kept ingredient</li>
-              <li>• The merged ingredients will be permanently deleted</li>
+              <li>• <Trans i18nKey="ingredients.merge.keepDescription" components={{ strong: <strong /> }} /></li>
+              <li>• <Trans i18nKey="ingredients.merge.mergeDescription" components={{ strong: <strong /> }} /></li>
+              <li>• {t('ingredients.merge.recipesUpdated')}</li>
+              <li>• {t('ingredients.merge.permanentlyDeleted')}</li>
             </ul>
           </div>
 
           {/* Keep Ingredient */}
           <Card allowOverflow>
             <CardHeader>
-              <CardTitle className="text-lg text-success-700">Ingredient to Keep</CardTitle>
+              <CardTitle className="text-lg text-success-700">{t('ingredients.merge.ingredientToKeep')}</CardTitle>
             </CardHeader>
             <CardContent>
               <IngredientSearchSelect
                 value={keepIngredientId}
                 onChange={setKeepIngredientId}
-                placeholder="Search for ingredient to keep..."
+                placeholder={t('ingredients.merge.searchToKeep')}
               />
               <p className="text-sm text-neutral-500 mt-2">
-                This ingredient will remain in your database and inherit all recipes from merged ingredients.
+                {t('ingredients.merge.keepWillRemain')}
               </p>
             </CardContent>
           </Card>
@@ -136,7 +138,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
           <Card allowOverflow>
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg text-error-700">Ingredients to Merge</CardTitle>
+                <CardTitle className="text-lg text-error-700">{t('ingredients.merge.ingredientsToMerge')}</CardTitle>
                 <Button
                   type="button"
                   variant="outline"
@@ -144,7 +146,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
                   onClick={addMergeIngredient}
                   leftIcon={<Plus className="h-4 w-4" />}
                 >
-                  Add Ingredient
+                  {t('ingredients.addIngredient')}
                 </Button>
               </div>
             </CardHeader>
@@ -153,21 +155,21 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
                 <div key={index} className="flex items-end space-x-3">
                   <div className="flex-1">
                     <label className="block text-sm font-medium text-neutral-700 mb-1">
-                      Ingredient {index + 1}
+                      {t('ingredients.merge.ingredientNumber', { number: index + 1 })}
                     </label>
                     <IngredientSearchSelect
                       value={ingredientId}
                       onChange={(id) => updateMergeIngredient(index, id)}
-                      placeholder="Search for ingredient to merge..."
+                      placeholder={t('ingredients.merge.searchToMerge')}
                     />
                     {ingredientId > 0 && ingredientId === keepIngredientId && (
                       <p className="text-xs text-error-600 mt-1">
-                        ⚠️ Cannot merge an ingredient into itself
+                        ⚠️ {t('ingredients.merge.cannotMergeIntoSelf')}
                       </p>
                     )}
                     {ingredientId > 0 && mergeIngredientIds.filter(id => id === ingredientId).length > 1 && (
                       <p className="text-xs text-error-600 mt-1">
-                        ⚠️ Duplicate ingredient selected
+                        ⚠️ {t('ingredients.merge.duplicateSelected')}
                       </p>
                     )}
                   </div>
@@ -187,7 +189,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
               ))}
 
               <p className="text-sm text-neutral-500">
-                These ingredients will be permanently deleted after merging. All their recipes will be transferred to the kept ingredient.
+                {t('ingredients.merge.willBeDeleted')}
               </p>
             </CardContent>
           </Card>
@@ -195,13 +197,13 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
           {/* Validation Summary */}
           {hasConflicts && (
             <div className="bg-error-50 border border-error-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-error-800 mb-2">⚠️ Issues Found</h4>
+              <h4 className="text-sm font-medium text-error-800 mb-2">⚠️ {t('ingredients.merge.issuesFound')}</h4>
               <ul className="text-sm text-error-700 space-y-1">
                 {mergeIngredientIds.includes(keepIngredientId) && (
-                  <li>• Cannot merge an ingredient into itself</li>
+                  <li>• {t('ingredients.merge.cannotMergeIntoSelf')}</li>
                 )}
                 {new Set(mergeIngredientIds).size !== mergeIngredientIds.length && (
-                  <li>• Duplicate ingredients selected for merging</li>
+                  <li>• {t('ingredients.merge.duplicatesInMerge')}</li>
                 )}
               </ul>
             </div>
@@ -210,10 +212,13 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
           {/* Summary */}
           {validateForm() && (
             <div className="bg-warning-50 border border-warning-200 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-warning-800 mb-2">⚠️ Merge Summary</h4>
+              <h4 className="text-sm font-medium text-warning-800 mb-2">⚠️ {t('ingredients.merge.mergeSummary')}</h4>
               <p className="text-sm text-warning-700">
-                You are about to merge <strong>{mergeIngredientIds.length} ingredient{mergeIngredientIds.length !== 1 ? 's' : ''}</strong> into
-                the kept ingredient. This action cannot be undone.
+                <Trans
+                  i18nKey="ingredients.merge.aboutToMerge"
+                  values={{ count: mergeIngredientIds.length }}
+                  components={{ strong: <strong /> }}
+                />
               </p>
             </div>
           )}
@@ -221,7 +226,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
           {/* Form Actions */}
           <div className="flex justify-end space-x-3 pt-6 border-t border-neutral-200">
             <Button type="button" variant="outline" onClick={handleClose}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="submit"
@@ -229,7 +234,7 @@ const MergeIngredientsModal: React.FC<MergeIngredientsModalProps> = ({
               disabled={!validateForm()}
               className="bg-error-600 hover:bg-error-700 focus:ring-error-500"
             >
-              {merging ? 'Merging...' : 'Merge Ingredients'}
+              {merging ? t('ingredients.merge.merging') : t('ingredients.mergeIngredients')}
             </Button>
           </div>
         </form>

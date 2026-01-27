@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Clock, Users, Tag } from 'lucide-react';
 import { Recipe } from '../../types';
 import Card, { CardContent } from '../ui/Card';
@@ -10,6 +11,7 @@ interface RecipeCardProps {
 }
 
 const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) => {
+  const { t } = useTranslation();
   const totalTime = recipe.prep_time + recipe.cook_time;
   
   const CardWrapper = onClick ? 'div' : Link;
@@ -79,7 +81,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
             
             <div className="flex items-center justify-center sm:justify-end">
               <span className="font-medium">{recipe.calories}</span>
-              <span className="ml-1 hidden sm:inline">cal</span>
+              <span className="ml-1 hidden sm:inline">{t('common.cal')}</span>
             </div>
           </div>
         </CardContent>

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Sliders } from 'lucide-react';
 import { RecipeFilterParams } from '../../types';
 import Input from '../ui/Input';
@@ -12,6 +13,7 @@ interface RecipeSearchFiltersProps {
 const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
   onFilterChange
 }) => {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [category, setCategory] = useState<string | undefined>(undefined);
@@ -22,22 +24,22 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const categoryOptions = [
-    { value: '', label: 'All Categories' },
-    { value: 'breakfast', label: 'Breakfast' },
-    { value: 'lunch', label: 'Lunch' },
-    { value: 'dinner', label: 'Dinner' },
-    { value: 'dessert', label: 'Dessert' },
-    { value: 'snack', label: 'Snack' },
+    { value: '', label: t('recipes.filters.allCategories') },
+    { value: 'breakfast', label: t('categories.breakfast') },
+    { value: 'lunch', label: t('categories.lunch') },
+    { value: 'dinner', label: t('categories.dinner') },
+    { value: 'dessert', label: t('categories.dessert') },
+    { value: 'snack', label: t('categories.snack') },
   ];
 
   const dietaryTagOptions = [
-    { value: 'vegetarian', label: 'Vegetarian' },
-    { value: 'vegan', label: 'Vegan' },
-    { value: 'gluten-free', label: 'Gluten Free' },
-    { value: 'dairy-free', label: 'Dairy Free' },
-    { value: 'keto', label: 'Keto' },
-    { value: 'low-carb', label: 'Low Carb' },
-    { value: 'high-protein', label: 'High Protein' },
+    { value: 'vegetarian', label: t('dietary.vegetarian') },
+    { value: 'vegan', label: t('dietary.vegan') },
+    { value: 'gluten-free', label: t('dietary.glutenFree') },
+    { value: 'dairy-free', label: t('dietary.dairyFree') },
+    { value: 'keto', label: t('dietary.keto') },
+    { value: 'low-carb', label: t('dietary.lowCarb') },
+    { value: 'high-protein', label: t('dietary.highProtein') },
   ];
 
   // Debounced search function
@@ -70,19 +72,16 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
   const handleSearch = (query?: string) => {
     const searchTerm = query !== undefined ? query : searchQuery;
 
-    // For search, we'd use the search endpoint instead of filters
-    if (searchTerm.trim().length >= 3) {
-      // This would typically use a different API endpoint for search
-      console.log('Searching for:', searchTerm);
-      onFilterChange({
-        name: searchTerm.trim(),
-        category: category || undefined,
-        dietary_tags: dietaryTags.length > 0 ? dietaryTags : undefined,
-        max_prep_time: maxPrepTime,
-        min_calories: minCalories,
-        max_calories: maxCalories,
-      });
-    } else if (searchTerm.trim().length === 0) {
+      if (searchTerm.trim().length >= 3) {
+        onFilterChange({
+          name: searchTerm.trim(),
+          category: category || undefined,
+          dietary_tags: dietaryTags.length > 0 ? dietaryTags : undefined,
+          max_prep_time: maxPrepTime,
+          min_calories: minCalories,
+          max_calories: maxCalories,
+        });
+      } else if (searchTerm.trim().length === 0) {
       // Apply filters without search term
       onFilterChange({
         category: category || undefined,
@@ -126,7 +125,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
           <div className="flex-1">
             <div className="relative">
               <Input
-                placeholder="Search recipes..."
+                placeholder={t('recipes.filters.searchRecipes')}
                 value={searchQuery}
                 onChange={handleSearchInputChange}
                 leftIcon={<Search className="h-5 w-5" />}
@@ -134,7 +133,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
               />
               {showMinCharMessage && (
                 <div className="absolute top-full left-0 right-0 mt-1 px-3 py-2 bg-white border border-neutral-200 rounded-md shadow-sm text-sm text-neutral-400 z-10">
-                  Type at least 3 characters to search
+                  {t('recipes.filters.typeAtLeast3Chars')}
                 </div>
               )}
             </div>
@@ -145,7 +144,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
             className="flex-shrink-0"
             disabled={searchQuery.trim().length > 0 && searchQuery.trim().length < 3}
           >
-            Search
+            {t('common.search')}
           </Button>
 
           <Button
@@ -154,7 +153,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
             className="flex-shrink-0"
           >
             <Sliders className="h-5 w-5 mr-1" />
-            Filters
+            {t('recipes.filters.filters')}
           </Button>
         </div>
       </div>
@@ -163,7 +162,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
         <div className="p-4 border-t border-neutral-200 bg-neutral-50 animate-slideIn">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Select
-              label="Category"
+              label={t('recipes.form.category')}
               options={categoryOptions}
               value={category || ''}
               onChange={setCategory}
@@ -172,7 +171,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Max Prep Time (minutes)
+                {t('recipes.filters.maxPrepTime')}
               </label>
               <Input
                 type="number"
@@ -186,7 +185,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
 
             <div className="md:col-span-1">
               <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Calories
+                {t('recipes.filters.calories')}
               </label>
               <div className="flex space-x-2">
                 <Input
@@ -213,7 +212,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
 
           <div className="mt-4">
             <label className="block text-sm font-medium text-neutral-700 mb-1">
-              Dietary Preferences
+              {t('mealPlans.form.dietaryPreferences')}
             </label>
             <div className="flex flex-wrap gap-2">
               {dietaryTagOptions.map((option) => (
@@ -242,14 +241,14 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
               variant="outline"
               onClick={handleReset}
             >
-              Reset
+              {t('recipes.filters.reset')}
             </Button>
             <Button
               type="button"
               onClick={() => handleSearch()}
               disabled={searchQuery.trim().length > 0 && searchQuery.trim().length < 3}
             >
-              Apply Filters
+              {t('recipes.filters.applyFilters')}
             </Button>
           </div>
         </div>

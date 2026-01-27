@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, ImageUp, Ban } from 'lucide-react';
 import Button from '../ui/Button';
 import FileUpload from '../ui/FileUpload';
@@ -53,6 +54,7 @@ const buildDraftFromJob = (job: RecipeFromImageJob): { recipe: Partial<RecipeCre
 };
 
 const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onClose, onUseDraft }) => {
+  const { t } = useTranslation();
   const [step, setStep] = useState<ModalStep>('select');
   const [job, setJob] = useState<RecipeFromImageJob | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -206,7 +208,7 @@ const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onC
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
           <div className="flex items-center gap-3">
             <ImageUp className="h-6 w-6 text-primary-600" />
-            <h2 className="text-xl font-semibold text-neutral-900">Add Recipe from Image</h2>
+            <h2 className="text-xl font-semibold text-neutral-900">{t('recipes.fromImage.title')}</h2>
           </div>
           <button
             onClick={onClose}
@@ -220,7 +222,7 @@ const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onC
         <div className="p-6 space-y-6">
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-2">
-              Recipe Image
+              {t('recipes.fromImage.recipeImage')}
             </label>
             <FileUpload
               value={undefined}
@@ -234,7 +236,7 @@ const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onC
           {showProgress && (
             <Card>
               <CardHeader>
-                <CardTitle>Parsing Progress</CardTitle>
+                <CardTitle>{t('recipes.fromImage.parsingProgress')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
@@ -254,7 +256,7 @@ const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onC
                       leftIcon={<Ban size={16} />}
                       onClick={handleCancel}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </div>
@@ -274,7 +276,7 @@ const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onC
               onClick={onClose}
               disabled={step === 'uploading' || step === 'processing'}
             >
-              Close
+              {t('common.close')}
             </Button>
           </div>
         </div>

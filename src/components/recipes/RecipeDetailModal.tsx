@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { X, Clock, Users, Target, Edit, Trash2, ChefHat, ArrowLeft } from 'lucide-react';
 import { Recipe } from '../../types';
 import Button from '../ui/Button';
@@ -8,6 +9,7 @@ import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
 import { getRecipe, deleteRecipe } from '../../api/recipeApi';
+import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
 interface RecipeDetailModalProps {
   isOpen: boolean;
@@ -26,8 +28,9 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   onEdit,
   onDelete,
   backTo,
-  backLabel = 'Back'
+  backLabel
 }) => {
+  const { t, i18n } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const { data: recipe, loading, error, execute: fetchRecipe } = useApi<Recipe>(getRecipe);
@@ -49,11 +52,11 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   const formatTime = (minutes: number) => {
     if (minutes < 60) {
-      return `${minutes} min`;
+      return `${minutes} ${t('common.minutes')}`;
     }
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+    return remainingMinutes > 0 ? `${hours}${t('common.hours')} ${remainingMinutes}${t('common.minutes')}` : `${hours}${t('common.hours')}`;
   };
 
   const getTotalTime = () => {
@@ -108,11 +111,11 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
             {backTo && (
               <Link to={backTo}>
                 <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
-                  {backLabel}
+                  {backLabel || t('common.back')}
                 </Button>
               </Link>
             )}
-            <h2 className="text-xl font-semibold text-neutral-900">Recipe Details</h2>
+            <h2 className="text-xl font-semibold text-neutral-900">{t('recipes.recipeDetails')}</h2>
           </div>
           <button
             onClick={onClose}
@@ -125,13 +128,13 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
         <div className="p-6">
           {loading && (
             <div className="py-12">
-              <Loader centered label="Loading recipe..." />
+              <Loader centered label={t('recipes.loadingRecipe')} />
             </div>
           )}
 
           {error && (
             <ErrorMessage 
-              title="Failed to load recipe" 
+              title={t('recipes.failedToLoad')} 
               message={error.message}
               onRetry={loadRecipe} 
             />
@@ -162,7 +165,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <CardContent className="p-4 text-center">
                     <Users className="h-8 w-8 text-primary-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-neutral-900">{recipe.servings}</div>
-                    <div className="text-sm text-neutral-500">Servings</div>
+                    <div className="text-sm text-neutral-500">{t('recipes.detail.servings')}</div>
                   </CardContent>
                 </Card>
 
@@ -170,7 +173,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <CardContent className="p-4 text-center">
                     <Clock className="h-8 w-8 text-accent-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-neutral-900">{formatTime(recipe.prep_time)}</div>
-                    <div className="text-sm text-neutral-500">Prep Time</div>
+                    <div className="text-sm text-neutral-500">{t('recipes.detail.prepTime')}</div>
                   </CardContent>
                 </Card>
 
@@ -178,7 +181,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <CardContent className="p-4 text-center">
                     <Clock className="h-8 w-8 text-secondary-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-neutral-900">{formatTime(recipe.cook_time)}</div>
-                    <div className="text-sm text-neutral-500">Cook Time</div>
+                    <div className="text-sm text-neutral-500">{t('recipes.detail.cookTime')}</div>
                   </CardContent>
                 </Card>
 
@@ -186,7 +189,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <CardContent className="p-4 text-center">
                     <Target className="h-8 w-8 text-warning-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-neutral-900">{recipe.calories}</div>
-                    <div className="text-sm text-neutral-500">Calories</div>
+                    <div className="text-sm text-neutral-500">{t('recipes.detail.calories')}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -195,7 +198,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {dietaryTags.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Dietary Information</CardTitle>
+                    <CardTitle>{t('recipes.detail.dietaryInfo')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
@@ -215,25 +218,25 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {/* Nutrition Information */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Nutrition (per serving)</CardTitle>
+                  <CardTitle>{t('recipes.detail.nutritionPerServing')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-neutral-900">{recipe.calories}</div>
-                      <div className="text-sm text-neutral-500">Calories</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.calories')}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-primary-600">{recipe.protein}g</div>
-                      <div className="text-sm text-neutral-500">Protein</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.protein')}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-accent-600">{recipe.carbs}g</div>
-                      <div className="text-sm text-neutral-500">Carbs</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.carbs')}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-secondary-600">{recipe.fats}g</div>
-                      <div className="text-sm text-neutral-500">Fats</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.fats')}</div>
                     </div>
                   </div>
                 </CardContent>
@@ -242,12 +245,12 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {/* Ingredients */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Ingredients</CardTitle>
+                  <CardTitle>{t('recipes.detail.ingredients')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {Object.keys(groupIngredientsByCategory()).length === 0 ? (
                     <div className="text-center py-8 text-neutral-500">
-                      No ingredients listed for this recipe.
+                      {t('recipes.noIngredientsListed')}
                     </div>
                   ) : (
                     <div className="space-y-6">
@@ -278,7 +281,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {/* Instructions */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Instructions</CardTitle>
+                  <CardTitle>{t('recipes.detail.instructions')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {recipe.instructions ? (
@@ -296,7 +299,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     </div>
                   ) : (
                     <div className="text-center py-8 text-neutral-500">
-                      No instructions provided for this recipe.
+                      {t('recipes.noInstructionsProvided')}
                     </div>
                   )}
                 </CardContent>
@@ -305,22 +308,22 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {/* Recipe Meta */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Recipe Information</CardTitle>
+                  <CardTitle>{t('recipes.detail.recipeInfo')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
-                      <span className="font-medium text-neutral-700">Total Time:</span>
+                      <span className="font-medium text-neutral-700">{t('recipes.detail.totalTime')}:</span>
                       <span className="ml-2 text-neutral-600">{formatTime(getTotalTime())}</span>
                     </div>
                     <div>
-                      <span className="font-medium text-neutral-700">Category:</span>
+                      <span className="font-medium text-neutral-700">{t('recipes.detail.category')}:</span>
                       <span className="ml-2 text-neutral-600 capitalize">{recipe.category}</span>
                     </div>
                     <div>
-                      <span className="font-medium text-neutral-700">Created:</span>
+                      <span className="font-medium text-neutral-700">{t('recipes.detail.created')}:</span>
                       <span className="ml-2 text-neutral-600">
-                        {new Date(recipe.created_at).toLocaleDateString()}
+                        {new Date(recipe.created_at).toLocaleDateString(getLocaleFromLanguage(i18n.language))}
                       </span>
                     </div>
                   </div>
@@ -330,7 +333,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {/* Meal Type Weights (for developers/advanced users) */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Meal Planning Weights</CardTitle>
+                  <CardTitle>{t('recipes.detail.mealPlanningWeights')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-3 gap-4">
@@ -338,23 +341,23 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       <div className="text-lg font-semibold text-neutral-900">
                         {(recipe.breakfast_weight * 100).toFixed(0)}%
                       </div>
-                      <div className="text-sm text-neutral-500">Breakfast</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.breakfast')}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-semibold text-neutral-900">
                         {(recipe.lunch_weight * 100).toFixed(0)}%
                       </div>
-                      <div className="text-sm text-neutral-500">Lunch</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.lunch')}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-lg font-semibold text-neutral-900">
                         {(recipe.dinner_weight * 100).toFixed(0)}%
                       </div>
-                      <div className="text-sm text-neutral-500">Dinner</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.dinner')}</div>
                     </div>
                   </div>
                   <p className="text-xs text-neutral-500 mt-3 text-center">
-                    Likelihood of this recipe being selected for each meal type during auto-generation
+                    {t('recipes.detail.weightDescription')}
                   </p>
                 </CardContent>
               </Card>
@@ -369,7 +372,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       leftIcon={<Trash2 className="h-4 w-4" />}
                       className="text-error-600 border-error-300 hover:bg-error-50"
                     >
-                      Delete Recipe
+                      {t('recipes.deleteRecipe')}
                     </Button>
                   ) : (
                     <div className="flex space-x-2">
@@ -378,7 +381,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                         size="sm"
                         onClick={() => setShowDeleteConfirm(false)}
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                       <Button
                         variant="outline"
@@ -387,7 +390,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                         isLoading={deleting}
                         className="text-error-600 border-error-300 hover:bg-error-50"
                       >
-                        Confirm Delete
+                        {t('recipes.confirmDelete')}
                       </Button>
                     </div>
                   )}
@@ -395,14 +398,14 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                 <div className="flex space-x-3">
                   <Button variant="outline" onClick={onClose}>
-                    Close
+                    {t('common.close')}
                   </Button>
                   {onEdit && (
                     <Button
                       onClick={() => onEdit(recipe)}
                       leftIcon={<Edit className="h-4 w-4" />}
                     >
-                      Edit Recipe
+                      {t('recipes.editRecipe')}
                     </Button>
                   )}
                 </div>

@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Calendar, Users, Target } from 'lucide-react';
 import { MealPlan } from '../../types';
 import Card, { CardContent } from '../ui/Card';
+import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
 interface MealPlanCardProps {
   mealPlan: MealPlan;
@@ -13,9 +15,11 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
   mealPlan,
   onClick
 }) => {
+  const { t, i18n } = useTranslation();
+  
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return date.toLocaleDateString(getLocaleFromLanguage(i18n.language), { month: 'short', day: 'numeric', year: 'numeric' });
   };
   
   const daysDifference = () => {
@@ -40,7 +44,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
           <div className="flex items-center">
             <Calendar className="h-4 w-4 sm:h-5 sm:w-5 text-accent-700 mr-2" />
             <span className="font-medium text-accent-900 text-sm sm:text-base">
-              {daysDifference()} Days
+              {daysDifference()} {t('mealPlans.card.days')}
             </span>
           </div>
           
@@ -52,7 +56,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
         
         <CardContent className="p-3 sm:p-4 lg:p-5 space-y-3 sm:space-y-4">
           <div>
-            <div className="text-xs sm:text-sm text-neutral-500 mb-1">Date Range</div>
+            <div className="text-xs sm:text-sm text-neutral-500 mb-1">{t('mealPlans.card.dateRange')}</div>
             <div className="font-medium text-sm sm:text-base text-neutral-900">
               {formatDate(mealPlan.start_date)} - {formatDate(mealPlan.end_date)}
             </div>
@@ -60,17 +64,17 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
           
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs sm:text-sm text-neutral-500 mb-1">Target Calories</div>
+              <div className="text-xs sm:text-sm text-neutral-500 mb-1">{t('mealPlans.card.targetCalories')}</div>
               <div className="font-medium text-sm sm:text-base flex items-center">
                 <Target className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-secondary-600" />
-                {mealPlan.target_calories} cal/day
+                {mealPlan.target_calories} {t('common.cal')}/{t('common.day')}
               </div>
             </div>
           </div>
           
           {mealPlan.dietary_preferences.length > 0 && (
             <div>
-              <div className="text-xs sm:text-sm text-neutral-500 mb-2">Preferences</div>
+              <div className="text-xs sm:text-sm text-neutral-500 mb-2">{t('mealPlans.card.preferences')}</div>
               <div className="flex flex-wrap gap-1">
                 {mealPlan.dietary_preferences.slice(0, 3).map((pref) => (
                   <span 

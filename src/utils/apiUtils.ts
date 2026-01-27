@@ -67,7 +67,6 @@ export const parseJSON = <T>(text: string): T => {
   try {
     return JSON.parse(text);
   } catch (e: unknown) {
-    console.error('Error parsing JSON:', e);
     throw new Error('Invalid JSON response');
   }
 };

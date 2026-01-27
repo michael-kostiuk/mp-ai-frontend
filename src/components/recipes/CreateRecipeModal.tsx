@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Plus, Trash2, Clock, Users, Target, Sparkles } from 'lucide-react';
 import { Ingredient, RecipeCreate, RecipeIngredientCreate, Recipe } from '../../types';
 import Button from '../ui/Button';
@@ -32,6 +33,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   initialRecipe = null,
   initialIngredientNotes = null
 }) => {
+  const { t } = useTranslation();
   const isEditing = !!editingRecipe;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -149,27 +151,27 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   }, [isOpen, editingRecipe, initialRecipe]);
 
   const categoryOptions = [
-    { value: 'breakfast', label: 'Breakfast' },
-    { value: 'lunch', label: 'Lunch' },
-    { value: 'dinner', label: 'Dinner' },
-    { value: 'dessert', label: 'Dessert' },
-    { value: 'snack', label: 'Snack' },
-    { value: 'appetizer', label: 'Appetizer' },
-    { value: 'side', label: 'Side Dish' },
-    { value: 'beverage', label: 'Beverage' },
+    { value: 'breakfast', label: t('categories.breakfast') },
+    { value: 'lunch', label: t('categories.lunch') },
+    { value: 'dinner', label: t('categories.dinner') },
+    { value: 'dessert', label: t('categories.dessert') },
+    { value: 'snack', label: t('categories.snack') },
+    { value: 'appetizer', label: t('categories.appetizer') },
+    { value: 'side', label: t('categories.side') },
+    { value: 'beverage', label: t('categories.beverage') },
   ];
 
   const dietaryTagOptions = [
-    { value: 'vegetarian', label: 'Vegetarian' },
-    { value: 'vegan', label: 'Vegan' },
-    { value: 'gluten-free', label: 'Gluten Free' },
-    { value: 'dairy-free', label: 'Dairy Free' },
-    { value: 'keto', label: 'Keto' },
-    { value: 'low-carb', label: 'Low Carb' },
-    { value: 'high-protein', label: 'High Protein' },
-    { value: 'paleo', label: 'Paleo' },
-    { value: 'whole30', label: 'Whole30' },
-    { value: 'mediterranean', label: 'Mediterranean' },
+    { value: 'vegetarian', label: t('dietary.vegetarian') },
+    { value: 'vegan', label: t('dietary.vegan') },
+    { value: 'gluten-free', label: t('dietary.glutenFree') },
+    { value: 'dairy-free', label: t('dietary.dairyFree') },
+    { value: 'keto', label: t('dietary.keto') },
+    { value: 'low-carb', label: t('dietary.lowCarb') },
+    { value: 'high-protein', label: t('dietary.highProtein') },
+    { value: 'paleo', label: t('dietary.paleo') },
+    { value: 'whole30', label: t('dietary.whole30') },
+    { value: 'mediterranean', label: t('dietary.mediterranean') },
   ];
 
   const unitOptions = UNIT_OPTIONS;
@@ -298,7 +300,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       .filter((ing): ing is IngredientInput => ing !== null);
 
     if (ingredientInputs.length === 0) {
-      alert('Please add valid ingredients before estimating nutrition.');
+      alert(t('recipes.form.addValidIngredientsFirst'));
       return;
     }
 
@@ -320,7 +322,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       }));
     } catch (error) {
       console.error('Failed to estimate nutrition:', error);
-      alert('Failed to estimate nutrition. Please try again.');
+      alert(t('recipes.failedToEstimate'));
     } finally {
       setEstimating(false);
     }
@@ -344,7 +346,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     e.preventDefault();
 
     if (!validateForm()) {
-      alert('Please fill in all required fields and add at least one ingredient.');
+      alert(t('recipes.form.validationError'));
       return;
     }
 
@@ -386,7 +388,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
           setImageFile(undefined);
         } catch (uploadError) {
           console.error('Failed to upload image:', uploadError);
-          setImageUploadError('Recipe saved but image upload failed. Please try adding the image again.');
+          setImageUploadError(t('recipes.form.imageSavedButUploadFailed'));
           setUploadingImage(false);
           onSuccess();
           return;
@@ -466,7 +468,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         <div ref={scrollContainerRef} className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
           <div className="flex items-center justify-between p-6 border-b border-neutral-200">
             <h2 className="text-xl font-semibold text-neutral-900">
-              {isEditing ? 'Edit Recipe' : 'Create New Recipe'}
+              {isEditing ? t('recipes.editRecipe') : t('recipes.createRecipe')}
             </h2>
             <button
               onClick={handleClose}
@@ -480,17 +482,17 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="Recipe Name"
+                label={t('recipes.form.recipeName')}
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter recipe name"
+                placeholder={t('recipes.form.enterRecipeName')}
                 required
                 fullWidth
               />
 
               <Select
-                label="Category"
+                label={t('recipes.form.category')}
                 options={categoryOptions}
                 value={formData.category}
                 onChange={(value) => handleInputChange('category', value)}
@@ -501,7 +503,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             {/* Image Upload */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Recipe Image
+                {t('recipes.form.recipeImage')}
               </label>
               <FileUpload
                 value={imagePreviewUrl}
@@ -517,7 +519,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             {/* Time and Servings */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <NumericInput
-                label="Servings"
+                label={t('recipes.form.servings')}
                 value={formData.servings}
                 onChange={(val) => handleInputChange('servings', val)}
                 leftIcon={<Users className="h-5 w-5" />}
@@ -528,7 +530,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
               />
 
               <NumericInput
-                label="Prep Time (minutes)"
+                label={t('recipes.form.prepTime')}
                 value={formData.prep_time}
                 onChange={(val) => handleInputChange('prep_time', val)}
                 leftIcon={<Clock className="h-5 w-5" />}
@@ -539,7 +541,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
               />
 
               <NumericInput
-                label="Cook Time (minutes)"
+                label={t('recipes.form.cookTime')}
                 value={formData.cook_time}
                 onChange={(val) => handleInputChange('cook_time', val)}
                 leftIcon={<Clock className="h-5 w-5" />}
@@ -553,12 +555,12 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             {/* Instructions */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1">
-                Instructions
+                {t('recipes.form.instructions')}
               </label>
               <textarea
                 value={formData.instructions}
                 onChange={(e) => handleInputChange('instructions', e.target.value)}
-                placeholder="Enter cooking instructions..."
+                placeholder={t('recipes.form.enterInstructions')}
                 rows={6}
                 className="w-full rounded-md border border-neutral-300 px-3 py-2 shadow-sm focus:border-primary-300 focus:ring-primary-200 focus:ring-2 focus:outline-none"
                 required
@@ -568,7 +570,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             {/* Dietary Tags */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-2">
-                Dietary Tags
+                {t('recipes.form.dietaryTags')}
               </label>
               <div className="flex flex-wrap gap-2">
                 {dietaryTagOptions.map((option) => (
@@ -593,7 +595,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             {/* Ingredients */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-neutral-900">Ingredients</h3>
+                <h3 className="text-lg font-medium text-neutral-900">{t('recipes.form.ingredients')}</h3>
                 <Button
                   type="button"
                   variant="outline"
@@ -601,13 +603,13 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                   onClick={addIngredient}
                   leftIcon={<Plus className="h-4 w-4" />}
                 >
-                  Add Ingredient
+                  {t('recipes.form.addIngredient')}
                 </Button>
               </div>
 
               {formData.ingredients.some(ing => ing.ingredient_id === 0) && (
                 <div className="mb-4 rounded-md border border-warning-200 bg-warning-50 p-3 text-sm text-warning-800">
-                  Some ingredients are still unmapped. Search or create them before saving.
+                  {t('recipes.form.unmappedWarning')}
                 </div>
               )}
 
@@ -621,7 +623,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                           value={ingredient.ingredient_id}
                           onChange={(ingredientId) => updateIngredient(index, 'ingredient_id', ingredientId)}
                           onCreateNew={(name) => handleCreateNewIngredient(name, index)}
-                          placeholder="Search ingredient..."
+                          placeholder={t('recipes.form.searchIngredient')}
                           initialDisplayName={ingredientNotes[index] || ''}
                         />
                       </div>
@@ -633,7 +635,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                           onChange={(val) => updateIngredient(index, 'quantity', val)}
                           min={0}
                           step={0.1}
-                          placeholder="Qty"
+                          placeholder={t('recipes.form.quantity')}
                           fullWidth
                         />
                       </div>
@@ -664,7 +666,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     {ingredient.ingredient_id === 0 && ingredientNotes[index] && (
                       <div className="mt-2 flex items-center justify-between gap-3 rounded-md border border-neutral-200 bg-white px-3 py-2">
                         <div className="min-w-0 text-xs text-neutral-600">
-                          <span className="font-medium text-neutral-700">Parsed:</span>{' '}
+                          <span className="font-medium text-neutral-700">{t('recipes.form.parsed')}:</span>{' '}
                           <span className="break-words">{ingredientNotes[index]}</span>
                         </div>
                         <Button
@@ -674,7 +676,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                           onClick={() => handleCreateNewIngredient(ingredientNotes[index], index)}
                           className="shrink-0"
                         >
-                          Create
+                          {t('common.create')}
                         </Button>
                       </div>
                     )}
@@ -683,7 +685,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
                 {formData.ingredients.length === 0 && (
                   <div className="text-center py-8 text-neutral-500 border-2 border-dashed border-neutral-200 rounded-lg">
-                    No ingredients added yet. Click "Add Ingredient" to get started.
+                    {t('recipes.form.noIngredientsYet')}
                   </div>
                 )}
               </div>
@@ -696,7 +698,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     onClick={calculateNutrition}
                     leftIcon={<Target className="h-4 w-4" />}
                   >
-                    Calculate Nutrition
+                    {t('recipes.form.calculateNutrition')}
                   </Button>
                   <Button
                     type="button"
@@ -706,7 +708,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                     isLoading={estimating}
                     disabled={estimating}
                   >
-                    Estimate with AI
+                    {t('recipes.form.estimateWithAI')}
                   </Button>
                 </div>
               )}
@@ -715,12 +717,12 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             {/* Nutrition Information */}
             <Card>
               <CardHeader>
-                <CardTitle>Nutrition Information (per serving)</CardTitle>
+                <CardTitle>{t('recipes.form.nutritionInfo')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <NumericInput
-                    label="Calories"
+                    label={t('recipes.form.calories')}
                     value={formData.calories}
                     onChange={(val) => handleInputChange('calories', val)}
                     min={0}
@@ -728,7 +730,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                   />
 
                   <NumericInput
-                    label="Protein (g)"
+                    label={t('recipes.form.protein')}
                     value={formData.protein}
                     onChange={(val) => handleInputChange('protein', val)}
                     min={0}
@@ -737,7 +739,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                   />
 
                   <NumericInput
-                    label="Fats (g)"
+                    label={t('recipes.form.fats')}
                     value={formData.fats}
                     onChange={(val) => handleInputChange('fats', val)}
                     min={0}
@@ -746,7 +748,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                   />
 
                   <NumericInput
-                    label="Carbs (g)"
+                    label={t('recipes.form.carbs')}
                     value={formData.carbs}
                     onChange={(val) => handleInputChange('carbs', val)}
                     min={0}
@@ -760,45 +762,45 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             {/* Meal Weights */}
             <Card>
               <CardHeader>
-                <CardTitle>Meal Type Weights</CardTitle>
+                <CardTitle>{t('recipes.form.mealTypeWeights')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <NumericInput
-                    label="Breakfast Weight"
+                    label={t('recipes.form.breakfastWeight')}
                     value={formData.breakfast_weight}
                     onChange={(val) => handleInputChange('breakfast_weight', val)}
                     min={0}
                     max={1}
                     step={0.1}
-                    helperText="0.0 to 1.0"
+                    helperText={t('recipes.form.weightHelperText')}
                     fullWidth
                   />
 
                   <NumericInput
-                    label="Lunch Weight"
+                    label={t('recipes.form.lunchWeight')}
                     value={formData.lunch_weight}
                     onChange={(val) => handleInputChange('lunch_weight', val)}
                     min={0}
                     max={1}
                     step={0.1}
-                    helperText="0.0 to 1.0"
+                    helperText={t('recipes.form.weightHelperText')}
                     fullWidth
                   />
 
                   <NumericInput
-                    label="Dinner Weight"
+                    label={t('recipes.form.dinnerWeight')}
                     value={formData.dinner_weight}
                     onChange={(val) => handleInputChange('dinner_weight', val)}
                     min={0}
                     max={1}
                     step={0.1}
-                    helperText="0.0 to 1.0"
+                    helperText={t('recipes.form.weightHelperText')}
                     fullWidth
                   />
                 </div>
                 <p className="text-sm text-neutral-500 mt-2">
-                  Weights determine how likely this recipe is to be selected for each meal type during auto-generation.
+                  {t('recipes.form.weightsDescription')}
                 </p>
               </CardContent>
             </Card>
@@ -806,14 +808,14 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 pt-6 border-t border-neutral-200">
               <Button type="button" variant="outline" onClick={handleClose}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
                 isLoading={isLoading}
                 disabled={!validateForm()}
               >
-                {isEditing ? 'Update Recipe' : 'Create Recipe'}
+                {isEditing ? t('recipes.updateRecipe') : t('recipes.createRecipe')}
               </Button>
             </div>
           </form>

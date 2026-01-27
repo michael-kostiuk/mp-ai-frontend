@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, ShoppingBag, ChefHat, ChevronDown, ChevronUp } from 'lucide-react';
 import { ShoppingListItem as ShoppingListItemType, Recipe } from '../../types';
 import Button from '../ui/Button';
@@ -17,6 +18,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
   item,
   onStatusChange
 }) => {
+  const { t } = useTranslation();
   const [isChecked, setIsChecked] = useState(item.status === 'completed');
   const [showRecipes, setShowRecipes] = useState(false);
   
@@ -90,7 +92,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
             leftIcon={<ChefHat className="h-3 w-3" />}
             rightIcon={showRecipes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           >
-            Recipes
+            {t('shoppingListItem.recipes')}
           </Button>
         </div>
       </div>
@@ -101,13 +103,13 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
           <CardContent className="p-3">
             {loading && (
               <div className="py-4">
-                <Loader size="sm" label="Loading recipes..." />
+                <Loader size="sm" label={t('shoppingListItem.loadingRecipes')} />
               </div>
             )}
 
             {error && (
               <ErrorMessage 
-                title="Failed to load recipes" 
+                title={t('shoppingListItem.failedToLoadRecipes')} 
                 message={error.message}
                 onRetry={() => fetchRecipes(item.id)}
                 className="text-sm"
@@ -116,14 +118,14 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
 
             {recipes && recipes.length === 0 && (
               <div className="py-4 text-center text-sm text-neutral-500">
-                No recipes found using this ingredient.
+                {t('shoppingListItem.noRecipesFound')}
               </div>
             )}
 
             {recipes && recipes.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-neutral-700 mb-2">
-                  Used in {recipes.length} recipe{recipes.length !== 1 ? 's' : ''}:
+                  {t('shoppingListItem.usedInRecipes', { count: recipes.length })}
                 </h4>
                 <div className="space-y-2">
                   {recipes.map((recipe) => {
@@ -149,7 +151,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
                               {recipeIngredient.quantity} {recipeIngredient.unit}
                             </div>
                             <div className="text-xs text-neutral-500">
-                              per recipe
+                              {t('shoppingListItem.perRecipe')}
                             </div>
                           </div>
                         )}
@@ -161,7 +163,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
                 {/* Summary */}
                 <div className="mt-3 pt-2 border-t border-neutral-200">
                   <div className="text-xs text-neutral-600">
-                    <span className="font-medium">Total needed:</span> {item.quantity} {item.unit}
+                    <span className="font-medium">{t('shoppingListItem.totalNeeded')}</span> {item.quantity} {item.unit}
                   </div>
                 </div>
               </div>

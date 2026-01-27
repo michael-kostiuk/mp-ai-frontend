@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Menu, X, ChefHat, Wifi, WifiOff } from 'lucide-react';
 import { useApiContext } from '../../context/ApiContext';
+import LanguageSwitcher from '../ui/LanguageSwitcher';
 
 const MAX_RETRIES = 5;
 const INITIAL_DELAY = 1000; // 1 second
 
 const Header: React.FC = () => {
+  const { t } = useTranslation();
   const { config } = useApiContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
@@ -18,10 +21,10 @@ const Header: React.FC = () => {
   const retryTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const navigation = [
-    { name: 'Recipes', href: '/recipes' },
-    { name: 'Meal Plans', href: '/meal-plans' },
-    { name: 'Shopping Lists', href: '/shopping-lists' },
-    { name: 'Ingredients', href: '/ingredients' },
+    { name: t('nav.recipes'), href: '/recipes' },
+    { name: t('nav.mealPlans'), href: '/meal-plans' },
+    { name: t('nav.shoppingLists'), href: '/shopping-lists' },
+    { name: t('nav.ingredients'), href: '/ingredients' },
   ];
   
   const isActive = (path: string) => {
@@ -65,7 +68,7 @@ const Header: React.FC = () => {
       
       if (!isManual && retryCount.current < MAX_RETRIES) {
         const delay = INITIAL_DELAY * Math.pow(2, retryCount.current);
-        console.log(`Connection failed. Retrying in ${delay / 1000}s...`);
+
         
         retryCount.current++;
         
@@ -73,7 +76,7 @@ const Header: React.FC = () => {
           testConnection(false);
         }, delay);
       } else if (!isManual) {
-        console.error(`Connection failed after ${MAX_RETRIES} retries. Giving up.`);
+
       }
     }
   }, [baseUrl, timeout]);
@@ -102,11 +105,11 @@ const Header: React.FC = () => {
   const getStatusText = () => {
     switch (connectionStatus) {
       case 'connected':
-        return 'Connected';
+        return t('header.connected');
       case 'disconnected':
-        return 'Disconnected';
+        return t('header.disconnected');
       case 'checking':
-        return 'Checking...';
+        return t('header.checking');
     }
   };
   
@@ -130,7 +133,7 @@ const Header: React.FC = () => {
               <Link to="/" className="flex items-center group">
                 <ChefHat className="h-7 w-7 sm:h-8 sm:w-8 text-primary-600 group-hover:text-primary-700 transition-colors" />
                 <span className="ml-2 text-lg sm:text-xl font-bold text-neutral-900 group-hover:text-primary-700 transition-colors">
-                  MealMaster
+                  {t('header.appName')}
                 </span>
               </Link>
             </div>
@@ -138,7 +141,7 @@ const Header: React.FC = () => {
             <nav className="hidden lg:ml-8 xl:ml-12 lg:flex lg:space-x-6 xl:space-x-8" aria-label="Main navigation">
               {navigation.map((item) => (
                 <Link
-                  key={item.name}
+                  key={item.href}
                   to={item.href}
                   className={`inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium transition-colors ${
                     isActive(item.href)
@@ -160,7 +163,7 @@ const Header: React.FC = () => {
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
-              <span className="sr-only">{isMenuOpen ? 'Close menu' : 'Open menu'}</span>
+              <span className="sr-only">{isMenuOpen ? t('header.closeMenu') : t('header.openMenu')}</span>
               {isMenuOpen ? (
                 <X className="block h-6 w-6" aria-hidden="true" />
               ) : (
@@ -169,13 +172,14 @@ const Header: React.FC = () => {
             </button>
           </div>
           
-          <div className="hidden lg:ml-6 lg:flex lg:items-center">
+          <div className="hidden lg:ml-6 lg:flex lg:items-center gap-2">
+            <LanguageSwitcher />
             <button
               onClick={() => testConnection(true)}
               className="flex items-center text-xs xl:text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
               title={`Click to test connection. Timeout: ${timeout}ms`}
             >
-              <span className="mr-2 text-neutral-500 hidden xl:inline">API:</span>
+              <span className="mr-2 text-neutral-500 hidden xl:inline">{t('header.api')}:</span>
               <span className={`flex items-center ${getStatusColor()}`}>
                 {getStatusIcon()}
                 <span className="ml-1 hidden xl:inline">{getStatusText()}</span>
@@ -190,7 +194,7 @@ const Header: React.FC = () => {
           <div className="space-y-1 pt-2 pb-3">
             {navigation.map((item) => (
               <Link
-                key={item.name}
+                key={item.href}
                 to={item.href}
                 className={`block border-l-4 py-2 pl-3 pr-4 text-base font-medium transition-colors ${
                   isActive(item.href)
@@ -206,22 +210,23 @@ const Header: React.FC = () => {
           </div>
           
           <div className="border-t border-neutral-200 pt-4 pb-3">
-            <div className="flex items-center px-4">
+            <div className="flex items-center justify-between px-4">
               <button
                 onClick={() => testConnection(true)}
                 className="flex items-center text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
                 title={`Click to test connection. Timeout: ${timeout}ms`}
               >
-                <span className="mr-2 text-neutral-500">API:</span>
+                <span className="mr-2 text-neutral-500">{t('header.api')}:</span>
                 <span className={`flex items-center ${getStatusColor()}`}>
                   {getStatusIcon()}
                   <span className="ml-1">{getStatusText()}</span>
                 </span>
               </button>
+              <LanguageSwitcher />
             </div>
             <div className="px-4 mt-2">
               <div className="text-xs text-neutral-500 break-all">
-                {baseUrl} • {timeout}ms timeout
+                {baseUrl} • {timeout}ms {t('header.timeout')}
               </div>
             </div>
           </div>

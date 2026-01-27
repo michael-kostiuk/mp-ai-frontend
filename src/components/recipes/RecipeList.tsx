@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Recipe, RecipeFilterParams } from '../../types';
 import RecipeCard from './RecipeCard';
 import RecipeSearchFilters from './RecipeSearchFilters';
@@ -12,6 +13,7 @@ interface RecipeListProps {
 }
 
 const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState<RecipeFilterParams>({
     skip: 0,
     limit: 20
@@ -76,13 +78,13 @@ const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
 
       {loading && allRecipes.length === 0 && (
         <div className="py-12 lg:py-16">
-          <Loader centered label="Loading recipes..." />
+          <Loader centered label={t('recipes.loadingRecipes')} />
         </div>
       )}
 
       {error && (
         <ErrorMessage
-          title="Failed to load recipes"
+          title={t('recipes.failedToLoadRecipes')}
           message={error.message}
           onRetry={() => loadRecipes(filters)}
         />
@@ -90,7 +92,7 @@ const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
 
       {allRecipes.length === 0 && !loading && !error && (
         <div className="py-12 lg:py-16 text-center">
-          <p className="text-neutral-500 text-sm sm:text-base">No recipes found matching your criteria.</p>
+          <p className="text-neutral-500 text-sm sm:text-base">{t('recipes.noRecipes')}</p>
         </div>
       )}
 
@@ -119,10 +121,10 @@ const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Loading...
+                    {t('common.loading')}
                   </span>
                 ) : (
-                  'Load more'
+                  t('recipes.loadMore')
                 )}
               </button>
             </div>

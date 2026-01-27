@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Download, ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Container from '../components/layout/Container';
@@ -10,9 +11,10 @@ import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
 import { ShoppingList as ShoppingListType } from '../types';
 import useApi from '../hooks/useApi';
-import { getShoppingLists, deleteShoppingList } from '../api/shoppingListApi';
+import { getShoppingLists, deleteShoppingList, exportShoppingList } from '../api/shoppingListApi';
 
 const ShoppingLists: React.FC = () => {
+  const { t } = useTranslation();
   const { data: shoppingLists, loading, error, execute: fetchShoppingLists } = useApi<ShoppingListType[]>(getShoppingLists);
 
   // Load shopping lists only once on mount
@@ -20,19 +22,26 @@ const ShoppingLists: React.FC = () => {
     fetchShoppingLists();
   }, [fetchShoppingLists]);
 
-  const handleExportList = (id: number) => {
-    // In a real app, this would trigger the export functionality
-    console.log('Export shopping list:', id);
+  const handleExportList = async (id: number) => {
+    try {
+      const result = await exportShoppingList(id);
+      const text = typeof (result as any)?.content === 'string' ? (result as any).content : JSON.stringify(result, null, 2);
+      await navigator.clipboard.writeText(text);
+      alert(t('common.copiedToClipboard'));
+    } catch (err) {
+      console.error('Failed to export shopping list:', err);
+      alert(t('shoppingLists.exportFailed'));
+    }
   };
 
   const handleDeleteList = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this shopping list?')) {
+    if (window.confirm(t('shoppingLists.deleteConfirm'))) {
       try {
         await deleteShoppingList(id);
         fetchShoppingLists();
       } catch (err) {
         console.error('Failed to delete shopping list:', err);
-        alert('Failed to delete shopping list. Please try again.');
+        alert(t('shoppingLists.deleteError'));
       }
     }
   };
@@ -40,19 +49,19 @@ const ShoppingLists: React.FC = () => {
   return (
     <Container className="py-8">
       <PageHeader
-        title="Shopping Lists"
-        description="View and manage your shopping lists"
+        title={t('shoppingLists.title')}
+        description={t('shoppingLists.description')}
       />
 
       {loading && shoppingLists === null && (
         <div className="py-12">
-          <Loader centered label="Loading shopping lists..." />
+          <Loader centered label={t('shoppingLists.loadingShoppingLists')} />
         </div>
       )}
 
       {error && (
         <ErrorMessage
-          title="Failed to load shopping lists"
+          title={t('shoppingLists.failedToLoad')}
           message={error.message}
           onRetry={fetchShoppingLists}
         />
@@ -60,12 +69,12 @@ const ShoppingLists: React.FC = () => {
 
       {shoppingLists && shoppingLists.length === 0 && (
         <div className="py-12 text-center bg-white rounded-lg shadow-sm border border-neutral-200">
-          <p className="text-neutral-500 mb-4">You don't have any shopping lists yet.</p>
+          <p className="text-neutral-500 mb-4">{t('shoppingLists.noShoppingLists')}</p>
           <p className="text-neutral-500 text-sm mb-4">
-            Create a meal plan first, then generate a shopping list from it.
+            {t('shoppingLists.createMealPlanFirst')}
           </p>
           <Link to="/meal-plans">
-            <Button>Go to Meal Plans</Button>
+            <Button>{t('shoppingLists.goToMealPlans')}</Button>
           </Link>
         </div>
       )}
@@ -77,7 +86,7 @@ const ShoppingLists: React.FC = () => {
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <CardTitle>Shopping List #{list.id}</CardTitle>
+                    <CardTitle>{t('shoppingLists.shoppingListNumber', { id: list.id })}</CardTitle>
                     <Link to={`/shopping-lists/${list.id}`}>
                       <Button
                         variant="ghost"
@@ -85,7 +94,7 @@ const ShoppingLists: React.FC = () => {
                         rightIcon={<ExternalLink size={14} />}
                         className="text-primary-600 hover:text-primary-700"
                       >
-                        View Details
+                        {t('common.viewDetails')}
                       </Button>
                     </Link>
                   </div>
@@ -96,7 +105,7 @@ const ShoppingLists: React.FC = () => {
                       leftIcon={<Download size={16} />}
                       onClick={() => handleExportList(list.id)}
                     >
-                      Export
+                      {t('common.export')}
                     </Button>
                     <Button
                       variant="danger"
@@ -104,7 +113,7 @@ const ShoppingLists: React.FC = () => {
                       leftIcon={<Trash2 size={16} />}
                       onClick={() => handleDeleteList(list.id)}
                     >
-                      Delete
+                      {t('common.delete')}
                     </Button>
                   </div>
                 </div>
@@ -120,7 +129,7 @@ const ShoppingLists: React.FC = () => {
                   ))}
                   {list.items.length > 5 && (
                     <div className="text-center py-2 text-sm text-neutral-500 border-t border-neutral-200">
-                      +{list.items.length - 5} more items
+                      {t('common.moreItems', { count: list.items.length - 5 })}
                     </div>
                   )}
                 </div>

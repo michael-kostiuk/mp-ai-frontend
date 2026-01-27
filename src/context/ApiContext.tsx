@@ -19,8 +19,6 @@ export const ApiProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Update the API client immediately
     const client = getApiClient();
     client.updateConfig(newConfig.baseUrl, newConfig.timeout);
-
-    console.log('API Configuration updated:', newConfig);
   };
 
   // Initialize API client with current config on mount

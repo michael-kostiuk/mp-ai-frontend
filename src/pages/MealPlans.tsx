@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PlusCircle, Calendar, Users, Target } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -14,6 +15,7 @@ import useApi from '../hooks/useApi';
 import { getMealPlans } from '../api/mealPlanApi';
 
 const MealPlans: React.FC = () => {
+  const { t } = useTranslation();
   // In a real app, this would come from user authentication
   const userId = 1;
   
@@ -80,8 +82,8 @@ const MealPlans: React.FC = () => {
   return (
     <Container className="py-6 sm:py-8 lg:py-12">
       <PageHeader
-        title="Meal Plans"
-        description="Plan and organize your meals for the week"
+        title={t('mealPlans.title')}
+        description={t('mealPlans.description')}
         actions={
           <Button 
             leftIcon={<PlusCircle size={18} />}
@@ -91,7 +93,7 @@ const MealPlans: React.FC = () => {
             }}
             className="w-full sm:w-auto"
           >
-            Create Meal Plan
+            {t('mealPlans.createMealPlan')}
           </Button>
         }
       />
@@ -103,7 +105,7 @@ const MealPlans: React.FC = () => {
             <CardContent className="p-4 sm:p-6 text-center">
               <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.totalPlans}</div>
-              <div className="text-xs sm:text-sm text-neutral-500">Total Plans</div>
+              <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.totalPlans')}</div>
             </CardContent>
           </Card>
 
@@ -111,7 +113,7 @@ const MealPlans: React.FC = () => {
             <CardContent className="p-4 sm:p-6 text-center">
               <Users className="h-6 w-6 sm:h-8 sm:w-8 text-accent-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.totalDays}</div>
-              <div className="text-xs sm:text-sm text-neutral-500">Days Planned</div>
+              <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.daysPlanned')}</div>
             </CardContent>
           </Card>
 
@@ -119,7 +121,7 @@ const MealPlans: React.FC = () => {
             <CardContent className="p-4 sm:p-6 text-center">
               <Target className="h-6 w-6 sm:h-8 sm:w-8 text-secondary-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.avgCalories}</div>
-              <div className="text-xs sm:text-sm text-neutral-500">Avg Calories/Day</div>
+              <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.avgCaloriesDay')}</div>
             </CardContent>
           </Card>
         </div>
@@ -127,13 +129,13 @@ const MealPlans: React.FC = () => {
       
       {loading && mealPlans === null && (
         <div className="py-12 lg:py-16">
-          <Loader centered label="Loading meal plans..." />
+          <Loader centered label={t('mealPlans.loadingMealPlans')} />
         </div>
       )}
       
       {error && (
         <ErrorMessage 
-          title="Failed to load meal plans" 
+          title={t('mealPlans.failedToLoadMealPlans')} 
           message={error.message}
           onRetry={() => fetchMealPlans(userId)} 
         />
@@ -145,10 +147,10 @@ const MealPlans: React.FC = () => {
             <div className="max-w-md mx-auto">
               <Calendar className="h-12 w-12 sm:h-16 sm:w-16 text-neutral-300 mx-auto mb-4 sm:mb-6" />
               <h3 className="text-lg sm:text-xl font-medium text-neutral-900 mb-2 sm:mb-4">
-                No meal plans yet
+                {t('mealPlans.noMealPlans')}
               </h3>
               <p className="text-sm sm:text-base text-neutral-500 mb-6 sm:mb-8 leading-relaxed">
-                Create your first meal plan to start organizing your meals and generating shopping lists.
+                {t('mealPlans.noMealPlansDescription')}
               </p>
               <Button 
                 onClick={() => {
@@ -158,7 +160,7 @@ const MealPlans: React.FC = () => {
                 leftIcon={<PlusCircle size={18} />}
                 className="w-full sm:w-auto"
               >
-                Create Your First Meal Plan
+                {t('mealPlans.createFirstMealPlan')}
               </Button>
             </div>
           </CardContent>

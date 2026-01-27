@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { MAX_FILE_SIZE } from '../../constants';
 
@@ -21,6 +22,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
   isUploading = false,
   showPreview = true
 }) => {
+  const { t } = useTranslation();
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
@@ -39,11 +41,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
 
   const validateFile = (file: File): boolean => {
     if (file.size > maxSize) {
-      setError(`File too large (max ${maxSize / 1024 / 1024}MB)`);
+      setError(t('fileUpload.fileTooLarge', { size: maxSize / 1024 / 1024 }));
       return false;
     }
     if (!file.type.startsWith('image/')) {
-      setError('File must be an image');
+      setError(t('fileUpload.mustBeImage'));
       return false;
     }
     setError(null);
@@ -105,12 +107,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
           {imageError ? (
             <div className="w-full h-64 flex flex-col items-center justify-center rounded-lg bg-neutral-100">
               <ImageIcon className="w-12 h-12 text-neutral-400 mb-2" />
-              <p className="text-sm text-neutral-500">Failed to load image</p>
+              <p className="text-sm text-neutral-500">{t('fileUpload.failedToLoad')}</p>
             </div>
           ) : (
             <img
               src={value}
-              alt="Recipe image"
+              alt={t('fileUpload.recipeImage')}
               className="w-full h-64 object-cover rounded-lg"
               onError={handleImageError}
             />
@@ -121,7 +123,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
               onClick={onRemove}
               disabled={isUploading}
               className="bg-black bg-opacity-70 hover:bg-opacity-90 text-white rounded-full p-4 transition-all disabled:opacity-50 flex items-center justify-center border-2 border-white hover:border-red-400 hover:bg-red-600"
-              title="Remove image"
+              title={t('fileUpload.removeImage')}
             >
               <X className="w-8 h-8" />
             </button>
@@ -150,16 +152,16 @@ const FileUpload: React.FC<FileUploadProps> = ({
           {isUploading ? (
             <div className="flex flex-col items-center">
               <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
-              <p className="text-sm text-neutral-600">Uploading image...</p>
+              <p className="text-sm text-neutral-600">{t('fileUpload.uploadingImage')}</p>
             </div>
           ) : (
             <>
               <ImageIcon className="w-12 h-12 mx-auto text-neutral-400 mb-4" />
               <p className="text-sm text-neutral-600">
-                Click or drag image to upload
+                {t('fileUpload.clickOrDrag')}
               </p>
               <p className="text-xs text-neutral-400 mt-2">
-                JPG, PNG, WebP, GIF up to 10MB
+                {t('fileUpload.supportedFormats')}
               </p>
             </>
           )}

@@ -1,5 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Download, ArrowLeft } from 'lucide-react';
 import Container from '../components/layout/Container';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
@@ -9,9 +10,11 @@ import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
 import { ShoppingList } from '../types';
 import useApi from '../hooks/useApi';
-import { getShoppingList } from '../api/shoppingListApi';
+import { getShoppingList, exportShoppingList } from '../api/shoppingListApi';
+import { getLocaleFromLanguage } from '../utils/i18nUtils';
 
 const ShoppingListDetail: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -42,8 +45,16 @@ const ShoppingListDetail: React.FC = () => {
 
   const handleExport = () => {
     if (shoppingList) {
-      // In a real app, this would trigger the export functionality
-      console.log('Export shopping list:', shoppingList.id);
+      exportShoppingList(shoppingList.id)
+        .then(async (result) => {
+          const text = typeof (result as any)?.content === 'string' ? (result as any).content : JSON.stringify(result, null, 2);
+          await navigator.clipboard.writeText(text);
+          alert(t('common.copiedToClipboard'));
+        })
+        .catch((err) => {
+          console.error('Failed to export shopping list:', err);
+          alert(t('shoppingLists.exportFailed'));
+        });
     }
   };
 
@@ -60,17 +71,17 @@ const ShoppingListDetail: React.FC = () => {
           leftIcon={<ArrowLeft className="h-4 w-4" />}
           className="mb-4"
         >
-          Back to Shopping Lists
+          {t('shoppingLists.backToShoppingLists')}
         </Button>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">
-              Shopping List #{shoppingListId}
+              {t('shoppingLists.shoppingListNumber', { id: shoppingListId })}
             </h1>
             {shoppingList && (
               <p className="text-neutral-500 mt-1">
-                Created on {new Date(shoppingList.created_at).toLocaleDateString()}
+                {t('shoppingLists.createdOn')} {new Date(shoppingList.created_at).toLocaleDateString(getLocaleFromLanguage(i18n.language))}
               </p>
             )}
           </div>
@@ -81,7 +92,7 @@ const ShoppingListDetail: React.FC = () => {
               leftIcon={<Download className="h-4 w-4" />}
               onClick={handleExport}
             >
-              Export List
+              {t('shoppingLists.exportList')}
             </Button>
           )}
         </div>
@@ -89,13 +100,13 @@ const ShoppingListDetail: React.FC = () => {
 
       {loading && (
         <div className="py-12">
-          <Loader centered label="Loading shopping list..." />
+          <Loader centered label={t('shoppingLists.loadingShoppingList')} />
         </div>
       )}
 
       {error && (
         <ErrorMessage
-          title="Failed to load shopping list"
+          title={t('shoppingLists.failedToLoadSingle')}
           message={error.message}
           onRetry={loadShoppingList}
         />
@@ -105,14 +116,14 @@ const ShoppingListDetail: React.FC = () => {
         <Card className="animate-fadeIn">
           <CardHeader>
             <CardTitle>
-              Items ({shoppingList.items.length})
+              {t('shoppingLists.items')} ({shoppingList.items.length})
             </CardTitle>
           </CardHeader>
 
           <CardContent>
             {shoppingList.items.length === 0 ? (
               <div className="text-center py-8 text-neutral-500">
-                This shopping list is empty.
+                {t('shoppingLists.emptyList')}
               </div>
             ) : (
               <div className="space-y-2">

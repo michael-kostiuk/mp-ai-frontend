@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ErrorMessageProps {
   title?: string;
@@ -8,11 +9,13 @@ interface ErrorMessageProps {
 }
 
 const ErrorMessage: React.FC<ErrorMessageProps> = ({
-  title = 'An error occurred',
+  title,
   message,
   onRetry,
   className = '',
 }) => {
+  const { t } = useTranslation();
+  const displayTitle = title || t('errors.anErrorOccurred');
   return (
     <div className={`rounded-md bg-error-50 p-4 ${className}`}>
       <div className="flex">
@@ -32,7 +35,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({
           </svg>
         </div>
         <div className="ml-3">
-          <h3 className="text-sm font-medium text-error-800">{title}</h3>
+          <h3 className="text-sm font-medium text-error-800">{displayTitle}</h3>
           <div className="mt-2 text-sm text-error-700">
             <p>{message}</p>
           </div>
@@ -43,7 +46,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({
                 className="inline-flex items-center rounded-md border border-transparent bg-error-100 px-3 py-2 text-sm font-medium text-error-700 hover:bg-error-200 focus:outline-none focus:ring-2 focus:ring-error-500 focus:ring-offset-2"
                 onClick={onRetry}
               >
-                Try again
+                {t('common.tryAgain')}
               </button>
             </div>
           )}

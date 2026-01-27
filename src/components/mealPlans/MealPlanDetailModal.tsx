@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { X, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
 import Button from '../ui/Button';
@@ -8,6 +9,7 @@ import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
 import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
+import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
 interface MealPlanDetailModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
   onEdit,
   onDelete
 }) => {
+  const { t, i18n } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const { data: mealPlan, loading, error, execute: fetchMealPlan } = useApi<MealPlan>(getMealPlan);
@@ -47,7 +50,7 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString(getLocaleFromLanguage(i18n.language), { 
       weekday: 'long',
       year: 'numeric', 
       month: 'long', 
@@ -136,7 +139,7 @@ const handleGenerateShoppingList = async () => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-          <h2 className="text-xl font-semibold text-neutral-900">Meal Plan Details</h2>
+          <h2 className="text-xl font-semibold text-neutral-900">{t('mealPlans.mealPlanDetails')}</h2>
           <button
             onClick={onClose}
             className="text-neutral-400 hover:text-neutral-600 transition-colors"
@@ -148,13 +151,13 @@ const handleGenerateShoppingList = async () => {
         <div className="p-6">
           {loading && (
             <div className="py-12">
-              <Loader centered label="Loading meal plan..." />
+              <Loader centered label={t('mealPlans.loadingMealPlan')} />
             </div>
           )}
 
           {error && (
             <ErrorMessage 
-              title="Failed to load meal plan" 
+              title={t('mealPlans.failedToLoad')} 
               message={error.message}
               onRetry={loadMealPlan} 
             />
@@ -168,7 +171,7 @@ const handleGenerateShoppingList = async () => {
                   <CardContent className="p-4 text-center">
                     <Calendar className="h-8 w-8 text-primary-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-neutral-900">{getDaysDifference()}</div>
-                    <div className="text-sm text-neutral-500">Days</div>
+                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.days')}</div>
                   </CardContent>
                 </Card>
 
@@ -176,7 +179,7 @@ const handleGenerateShoppingList = async () => {
                   <CardContent className="p-4 text-center">
                     <Users className="h-8 w-8 text-accent-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-neutral-900">{mealPlan.people_count}</div>
-                    <div className="text-sm text-neutral-500">People</div>
+                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.people')}</div>
                   </CardContent>
                 </Card>
 
@@ -184,7 +187,7 @@ const handleGenerateShoppingList = async () => {
                   <CardContent className="p-4 text-center">
                     <Target className="h-8 w-8 text-secondary-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-neutral-900">{mealPlan.target_calories}</div>
-                    <div className="text-sm text-neutral-500">Target Cal/Day (per person)</div>
+                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.targetCalDay')}</div>
                   </CardContent>
                 </Card>
 
@@ -192,7 +195,7 @@ const handleGenerateShoppingList = async () => {
                   <CardContent className="p-4 text-center">
                     <Clock className="h-8 w-8 text-warning-600 mx-auto mb-2" />
                     <div className="text-2xl font-bold text-neutral-900">{getCaloriesPerDayPerPerson()}</div>
-                    <div className="text-sm text-neutral-500">Actual Cal/Day (per person)</div>
+                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.actualCalDay')}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -205,7 +208,7 @@ const handleGenerateShoppingList = async () => {
                       {formatDate(mealPlan.start_date)} - {formatDate(mealPlan.end_date)}
                     </div>
                     <div className="text-sm text-neutral-500">
-                      Created on {formatDate(mealPlan.created_at)}
+                      {t('mealPlans.detail.createdOn')} {formatDate(mealPlan.created_at)}
                     </div>
                   </div>
                 </CardContent>
@@ -215,7 +218,7 @@ const handleGenerateShoppingList = async () => {
               {mealPlan.dietary_preferences.length > 0 && (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Dietary Preferences</CardTitle>
+                    <CardTitle>{t('mealPlans.detail.dietaryPreferences')}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
@@ -235,12 +238,12 @@ const handleGenerateShoppingList = async () => {
               {/* Meal Schedule */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Meal Schedule</CardTitle>
+                  <CardTitle>{t('mealPlans.detail.mealSchedule')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {Object.keys(groupEntriesByDate()).length === 0 ? (
                     <div className="text-center py-8 text-neutral-500">
-                      No meals scheduled for this plan.
+                      {t('mealPlans.noMealsScheduled')}
                     </div>
                   ) : (
                     <div className="space-y-6">
@@ -261,7 +264,7 @@ const handleGenerateShoppingList = async () => {
                                         {entry.meal_type}
                                       </span>
                                       <span className="text-sm text-neutral-500">
-                                        {entry.servings} serving{entry.servings !== 1 ? 's' : ''}
+                                        {entry.servings} {entry.servings !== 1 ? t('common.servings') : t('common.serving')}
                                       </span>
                                     </div>
                                     <Link
@@ -271,7 +274,7 @@ const handleGenerateShoppingList = async () => {
                                       {entry.recipe.name}
                                     </Link>
                                     <div className="text-sm text-neutral-500">
-                                      {entry.recipe.calories * entry.servings} calories ({entry.servings} x {entry.recipe.calories})
+                                      {entry.recipe.calories * entry.servings} {t('common.cal')} ({entry.servings} x {entry.recipe.calories})
                                     </div>
                                   </div>
                                 ))}
@@ -287,14 +290,14 @@ const handleGenerateShoppingList = async () => {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle>Shopping List</CardTitle>
+                    <CardTitle>{t('mealPlans.detail.shoppingList')}</CardTitle>
                     <Button
                       onClick={handleGenerateShoppingList}
                       isLoading={generatingList}
                       leftIcon={<ShoppingCart className="h-4 w-4" />}
                       size="sm"
                     >
-                      Generate List
+                      {t('mealPlans.detail.generateList')}
                     </Button>
                   </div>
                 </CardHeader>
@@ -302,7 +305,7 @@ const handleGenerateShoppingList = async () => {
                   {shoppingList ? (
                     <div className="space-y-2">
                       <div className="text-sm text-success-600 mb-4">
-                        ✓ Shopping list generated with {shoppingList.items.length} items
+                        ✓ {t('mealPlans.detail.shoppingListGenerated', { count: shoppingList.items.length })}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {shoppingList.items.slice(0, 6).map((item) => (
@@ -316,13 +319,13 @@ const handleGenerateShoppingList = async () => {
                       </div>
                       {shoppingList.items.length > 6 && (
                         <div className="text-sm text-neutral-500 text-center mt-2">
-                          +{shoppingList.items.length - 6} more items
+                          {t('common.moreItems', { count: shoppingList.items.length - 6 })}
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="text-center py-4 text-neutral-500">
-                      Generate a shopping list to see all required ingredients.
+                      {t('mealPlans.detail.generateShoppingListHint')}
                     </div>
                   )}
                 </CardContent>
@@ -338,7 +341,7 @@ const handleGenerateShoppingList = async () => {
                       leftIcon={<Trash2 className="h-4 w-4" />}
                       className="text-error-600 border-error-300 hover:bg-error-50"
                     >
-                      Delete Plan
+                      {t('mealPlans.deletePlan')}
                     </Button>
                   ) : (
                     <div className="flex space-x-2">
@@ -347,7 +350,7 @@ const handleGenerateShoppingList = async () => {
                         size="sm"
                         onClick={() => setShowDeleteConfirm(false)}
                       >
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                       <Button
                         variant="outline"
@@ -356,7 +359,7 @@ const handleGenerateShoppingList = async () => {
                         isLoading={deleting}
                         className="text-error-600 border-error-300 hover:bg-error-50"
                       >
-                        Confirm Delete
+                        {t('mealPlans.confirmDelete')}
                       </Button>
                     </div>
                   )}
@@ -364,7 +367,7 @@ const handleGenerateShoppingList = async () => {
 
 <div className="flex space-x-3">
                   <Button variant="outline" onClick={onClose}>
-                    Close
+                    {t('common.close')}
                   </Button>
                   <Button
                     variant="outline"
@@ -373,14 +376,14 @@ const handleGenerateShoppingList = async () => {
                     disabled={regenerating}
                     leftIcon={<RefreshCw className="h-4 w-4" />}
                   >
-                    Regenerate
+                    {t('mealPlans.detail.regenerate')}
                   </Button>
                   {onEdit && (
                     <Button
                       onClick={() => onEdit(mealPlan)}
                       leftIcon={<Edit className="h-4 w-4" />}
                     >
-                      Edit Plan
+                      {t('mealPlans.detail.editPlan')}
                     </Button>
                   )}
                 </div>

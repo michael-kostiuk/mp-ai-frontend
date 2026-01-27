@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Merge, PlusCircle, Search, Sparkles, X } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -21,18 +22,19 @@ const isMissingNutrition = (ingredient: Ingredient): boolean => {
   return hasMissingValue || allZero;
 };
 
-const formatEstimateError = (error: ApiError): string => {
-  if (error.status === 429) {
-    return 'AI rate limit reached. Please wait a moment and try again.';
-  }
-  if (error.status === 503) {
-    return 'AI service is temporarily unavailable. Please try again soon.';
-  }
-  return error.message || 'Something went wrong while estimating nutrition.';
-};
-
 const Ingredients: React.FC = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  const formatEstimateError = useCallback((error: ApiError): string => {
+    if (error.status === 429) {
+      return t('ingredients.errors.rateLimitReached');
+    }
+    if (error.status === 503) {
+      return t('ingredients.errors.serviceUnavailable');
+    }
+    return error.message || t('ingredients.errors.genericEstimateError');
+  }, [t]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
@@ -132,8 +134,8 @@ const Ingredients: React.FC = () => {
   return (
     <Container className="py-6 sm:py-8 lg:py-12">
       <PageHeader
-        title="Ingredients"
-        description="Browse and manage ingredients"
+        title={t('ingredients.title')}
+        description={t('ingredients.description')}
         actions={
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
             <Button 
@@ -142,9 +144,9 @@ const Ingredients: React.FC = () => {
               onClick={handleOpenBulkModal}
               disabled={bulkEstimating || rowEstimating || estimatingId !== null || missingCount === 0}
               className="w-full sm:w-auto"
-              title={missingCount === 0 ? 'All ingredients already have nutrition values' : 'Estimate missing nutrition with AI'}
+              title={missingCount === 0 ? t('ingredients.bulk.allHaveNutrition') : t('ingredients.fillMissingNutrition')}
             >
-              Fill Missing Nutrition
+              {t('ingredients.fillMissingNutrition')}
             </Button>
             <Button 
               variant="outline"
@@ -152,14 +154,14 @@ const Ingredients: React.FC = () => {
               onClick={() => setIsMergeModalOpen(true)}
               className="w-full sm:w-auto"
             >
-              Merge Ingredients
+              {t('ingredients.mergeIngredients')}
             </Button>
             <Button 
               leftIcon={<PlusCircle size={18} />}
               onClick={() => setIsCreateModalOpen(true)}
               className="w-full sm:w-auto"
             >
-              Add Ingredient
+              {t('ingredients.addIngredient')}
             </Button>
           </div>
         }
@@ -167,7 +169,7 @@ const Ingredients: React.FC = () => {
       
       <div className="mb-6 lg:mb-8">
         <Input
-          placeholder="Search ingredients..."
+          placeholder={t('ingredients.searchIngredients')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           leftIcon={<Search className="h-5 w-5" />}
@@ -189,12 +191,12 @@ const Ingredients: React.FC = () => {
               {bulkSummary && (
                 <>
                   <p className="font-medium text-neutral-900">
-                    Filled missing nutrition for {bulkSummary.updated} ingredient{bulkSummary.updated === 1 ? '' : 's'}.
+                    {t('ingredients.bulk.filledMissing', { count: bulkSummary.updated })}
                   </p>
                   <p className="text-neutral-600">
-                    Skipped {bulkSummary.skipped} • Failed {bulkSummary.failed.length}
+                    {t('ingredients.bulk.skippedFailed', { skipped: bulkSummary.skipped, failed: bulkSummary.failed.length })}
                   </p>
-                  <p className="text-neutral-500">AI estimates are best-effort and may need review.</p>
+                  <p className="text-neutral-500">{t('ingredients.bulk.aiEstimatesBestEffort')}</p>
                 </>
               )}
             </div>
@@ -211,13 +213,13 @@ const Ingredients: React.FC = () => {
       
       {loading && ingredients === null && (
         <div className="py-12 lg:py-16">
-          <Loader centered label="Loading ingredients..." />
+          <Loader centered label={t('ingredients.loadingIngredients')} />
         </div>
       )}
       
       {error && (
         <ErrorMessage 
-          title="Failed to load ingredients" 
+          title={t('ingredients.failedToLoad')} 
           message={error.message}
           onRetry={fetchIngredients} 
         />
@@ -226,16 +228,16 @@ const Ingredients: React.FC = () => {
       {ingredients && filteredIngredients.length === 0 && (
         <div className="py-12 lg:py-16 text-center bg-white rounded-lg shadow-sm border border-neutral-200">
           {searchQuery ? (
-            <p className="text-neutral-500 text-sm sm:text-base">No ingredients found matching "{searchQuery}".</p>
+            <p className="text-neutral-500 text-sm sm:text-base">{t('ingredients.noIngredientsMatching', { query: searchQuery })}</p>
           ) : (
             <div className="max-w-md mx-auto">
-              <p className="text-neutral-500 mb-4 text-sm sm:text-base">No ingredients available.</p>
+              <p className="text-neutral-500 mb-4 text-sm sm:text-base">{t('ingredients.noIngredients')}</p>
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
                 leftIcon={<PlusCircle size={18} />}
                 className="w-full sm:w-auto"
               >
-                Add Your First Ingredient
+                {t('ingredients.addFirstIngredient')}
               </Button>
             </div>
           )}
@@ -250,22 +252,22 @@ const Ingredients: React.FC = () => {
                 <thead className="bg-neutral-50">
                   <tr>
                     <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Name
+                      {t('ingredients.table.name')}
                     </th>
                     <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Category
+                      {t('ingredients.table.category')}
                     </th>
                     <th scope="col" className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Unit
+                      {t('ingredients.table.unit')}
                     </th>
                     <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Calories
+                      {t('ingredients.table.calories')}
                     </th>
                     <th scope="col" className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      Macros (P/C/F)
+                      {t('ingredients.table.macros')}
                     </th>
                     <th scope="col" className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      AI
+                      {t('ingredients.table.ai')}
                     </th>
                   </tr>
                 </thead>
@@ -283,13 +285,13 @@ const Ingredients: React.FC = () => {
                         </span>
                       </td>
                       <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                        per 100{ingredient.base_unit}
+                        {t('ingredients.table.per100', { unit: ingredient.base_unit })}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                         <div className="flex flex-col sm:flex-row sm:items-center">
-                          <span>{ingredient.calories} cal</span>
+                          <span>{ingredient.calories} {t('common.cal')}</span>
                           <span className="sm:hidden text-xs text-neutral-400 mt-1">
-                            per 100{ingredient.base_unit}
+                            {t('ingredients.table.per100', { unit: ingredient.base_unit })}
                           </span>
                         </div>
                       </td>
@@ -305,9 +307,9 @@ const Ingredients: React.FC = () => {
                             onClick={() => handleSingleEstimate(ingredient)}
                             isLoading={estimatingId === ingredient.id}
                             disabled={bulkEstimating || rowEstimating || (estimatingId !== null && estimatingId !== ingredient.id)}
-                            title={estimatingId === ingredient.id ? 'Estimating nutrition...' : 'Estimate nutrition with AI'}
+                            title={estimatingId === ingredient.id ? t('ingredients.estimatingNutrition') : t('ingredients.fillMissingNutrition')}
                           >
-                            Estimate
+                            {t('ingredients.estimate')}
                           </Button>
                         ) : (
                           <span className="text-xs text-neutral-400">—</span>
@@ -327,27 +329,27 @@ const Ingredients: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
             <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-              <h2 className="text-xl font-semibold text-neutral-900">Fill Missing Nutrition</h2>
+              <h2 className="text-xl font-semibold text-neutral-900">{t('ingredients.bulk.title')}</h2>
               <button
                 onClick={() => setIsBulkModalOpen(false)}
                 className="text-neutral-400 hover:text-neutral-600 transition-colors"
-                aria-label="Close"
+                aria-label={t('common.close')}
               >
                 <X className="h-6 w-6" />
               </button>
             </div>
             <div className="p-6 space-y-4 text-sm text-neutral-600">
               {missingCount === 0 ? (
-                <p>All ingredients already have nutrition values.</p>
+                <p>{t('ingredients.bulk.allHaveNutrition')}</p>
               ) : (
                 <>
                   <p>
-                    {missingCount} ingredient{missingCount === 1 ? '' : 's'} will be updated with AI nutrition estimates.
+                    {t('ingredients.bulk.willBeUpdated', { count: missingCount })}
                   </p>
                   <div className="rounded-md bg-neutral-50 border border-neutral-200 p-3">
-                    <p className="font-medium text-neutral-900">AI estimates may need review.</p>
+                    <p className="font-medium text-neutral-900">{t('ingredients.bulk.aiEstimatesWarning')}</p>
                     <p className="text-neutral-500 mt-1">
-                      Values are stored per 100 of each ingredient&apos;s base unit.
+                      {t('ingredients.bulk.valuesStoredPer100')}
                     </p>
                   </div>
                 </>
@@ -359,7 +361,7 @@ const Ingredients: React.FC = () => {
                 onClick={() => setIsBulkModalOpen(false)}
                 disabled={bulkEstimating}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 leftIcon={<Sparkles size={18} />}
@@ -367,7 +369,7 @@ const Ingredients: React.FC = () => {
                 isLoading={bulkEstimating}
                 disabled={bulkEstimating || rowEstimating || estimatingId !== null || missingCount === 0}
               >
-                Fill Missing Nutrition
+                {t('ingredients.fillMissingNutrition')}
               </Button>
             </div>
           </div>
