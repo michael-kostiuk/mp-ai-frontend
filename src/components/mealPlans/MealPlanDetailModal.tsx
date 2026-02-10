@@ -9,6 +9,7 @@ import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
 import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
+import { getShoppingLists } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
 interface MealPlanDetailModalProps {
@@ -28,10 +29,16 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [existingShoppingList, setExistingShoppingList] = useState<ShoppingList | null>(null);
   
   const { data: mealPlan, loading, error, execute: fetchMealPlan } = useApi<MealPlan>(getMealPlan);
   const { loading: deleting, execute: deletePlan } = useApi(deleteMealPlan);
   const { data: shoppingList, loading: generatingList, execute: generateList } = useApi<ShoppingList>(generateShoppingList);
+  const {
+    loading: loadingShoppingLists,
+    execute: fetchShoppingLists,
+    cancel: cancelShoppingLists
+  } = useApi<ShoppingList[]>(getShoppingLists);
   const { loading: regenerating, execute: regenerate } = useApi<MealPlan>(regenerateMealPlan);
 
   // Memoize the fetch function to prevent unnecessary re-renders
@@ -47,6 +54,34 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
       loadMealPlan();
     }
   }, [isOpen, mealPlanId, loadMealPlan]);
+
+  const loadExistingShoppingList = useCallback(async () => {
+    if (!mealPlanId) return;
+
+    try {
+      const lists = await fetchShoppingLists();
+      const match = lists
+        .filter((list) => list.meal_plan_id === mealPlanId)
+        .sort((a, b) => b.id - a.id)[0] ?? null;
+      setExistingShoppingList(match);
+    } catch {
+      // Non-blocking: shopping list summary is optional in this modal.
+      setExistingShoppingList(null);
+    }
+  }, [mealPlanId, fetchShoppingLists]);
+
+  useEffect(() => {
+    if (isOpen && mealPlanId) {
+      setExistingShoppingList(null);
+      loadExistingShoppingList();
+    }
+  }, [isOpen, mealPlanId, loadExistingShoppingList]);
+
+  useEffect(() => {
+    if (isOpen) return;
+    cancelShoppingLists();
+    setExistingShoppingList(null);
+  }, [isOpen, cancelShoppingLists]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -111,15 +146,16 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
     }
   };
 
-const handleGenerateShoppingList = async () => {
-    if (!mealPlanId) return;
-    
-    try {
-      await generateList(mealPlanId);
-    } catch (error) {
-      console.error('Failed to generate shopping list:', error);
-    }
-  };
+ const handleGenerateShoppingList = async () => {
+     if (!mealPlanId) return;
+     
+     try {
+       const created = await generateList(mealPlanId);
+       setExistingShoppingList(created);
+     } catch (error) {
+       console.error('Failed to generate shopping list:', error);
+     }
+   };
 
   const handleRegenerate = async () => {
     if (!mealPlanId || regenerating) return;
@@ -302,13 +338,13 @@ const handleGenerateShoppingList = async () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {shoppingList ? (
+                  {(shoppingList ?? existingShoppingList) ? (
                     <div className="space-y-2">
                       <div className="text-sm text-success-600 mb-4">
-                        ✓ {t('mealPlans.detail.shoppingListGenerated', { count: shoppingList.items.length })}
+                        ✓ {t('mealPlans.detail.shoppingListGenerated', { count: (shoppingList ?? existingShoppingList)!.items.length })}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {shoppingList.items.slice(0, 6).map((item) => (
+                        {(shoppingList ?? existingShoppingList)!.items.slice(0, 6).map((item) => (
                           <div key={item.id} className="flex items-center justify-between p-2 bg-neutral-50 rounded">
                             <span className="text-sm">{item.ingredient.name}</span>
                             <span className="text-sm text-neutral-500">
@@ -317,15 +353,15 @@ const handleGenerateShoppingList = async () => {
                           </div>
                         ))}
                       </div>
-                      {shoppingList.items.length > 6 && (
+                      {(shoppingList ?? existingShoppingList)!.items.length > 6 && (
                         <div className="text-sm text-neutral-500 text-center mt-2">
-                          {t('common.moreItems', { count: shoppingList.items.length - 6 })}
+                          {t('common.moreItems', { count: (shoppingList ?? existingShoppingList)!.items.length - 6 })}
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="text-center py-4 text-neutral-500">
-                      {t('mealPlans.detail.generateShoppingListHint')}
+                      {loadingShoppingLists ? t('shoppingLists.loadingShoppingLists') : t('mealPlans.detail.generateShoppingListHint')}
                     </div>
                   )}
                 </CardContent>
