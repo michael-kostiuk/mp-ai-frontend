@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
-import { X, Calendar, Users, Target, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { X, Calendar, Users, Target, Plus, Trash2, AlertTriangle, Dices } from 'lucide-react';
 import { MealPlanCreate, MealPlanEntryCreate, MealPlan } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -8,7 +8,7 @@ import NumericInput from '../ui/NumericInput';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import RecipeSearchSelect from '../recipes/RecipeSearchSelect';
 import useApi from '../../hooks/useApi';
-import { createMealPlan, autoGenerateMealPlan, updateMealPlan } from '../../api/mealPlanApi';
+import { createMealPlan, autoGenerateMealPlan, updateMealPlan, suggestMeal } from '../../api/mealPlanApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
 const DRAFT_STORAGE_KEY = 'mealPlanDraft';
@@ -63,6 +63,8 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
   const isEditing = !!editingMealPlan;
   const [isAutoGenerate, setIsAutoGenerate] = useState(false);
   const [generatedMealPlan, setGeneratedMealPlan] = useState<MealPlan | null>(null);
+  // Index of the meal entry currently being re-rolled (null = none in flight)
+  const [rerollingIndex, setRerollingIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<MealPlanCreate>({
     start_date: nextMonday,
     end_date: getSundayFromMonday(nextMonday),
@@ -371,6 +373,35 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
     setIsDirty(true);
   };
 
+  // Re-roll a single meal: ask the backend for another recipe for this slot, using the
+  // same weighted selection as plan generation. Avoids the current recipe and recipes
+  // already used twice elsewhere in the plan. Updates local state only (saved on submit).
+  const rerollMealEntry = async (index: number) => {
+    const entry = formData.entries[index];
+    if (!entry || rerollingIndex !== null) return;
+
+    // All recipe ids used in the rest of the plan (every other slot), so the backend can
+    // enforce the max-2-uses cap.
+    const planRecipeIds = formData.entries
+      .filter((e, i) => i !== index && e.recipe_id > 0)
+      .map(e => e.recipe_id);
+
+    setRerollingIndex(index);
+    try {
+      const recipe = await suggestMeal({
+        meal_type: entry.meal_type,
+        target_calories: formData.target_calories,
+        current_recipe_id: entry.recipe_id > 0 ? entry.recipe_id : undefined,
+        plan_recipe_ids: planRecipeIds,
+      });
+      updateMealEntry(index, 'recipe_id', recipe.id);
+    } catch (error) {
+      console.error('Failed to re-roll meal:', error);
+    } finally {
+      setRerollingIndex(null);
+    }
+  };
+
   // Group entries by date and meal type for organized display
   const groupEntriesByDateAndMeal = () => {
     if (!formData.start_date || !formData.end_date) return { grouped: {}, dates: [] };
@@ -476,10 +507,14 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
           ...formData,
           start_date: formData.start_date + 'T00:00:00',
           end_date: formData.end_date + 'T23:59:59',
-          entries: formData.entries.map(entry => ({
-            ...entry,
-            date: entry.date + 'T00:00:00'
-          }))
+          // Drop empty meal slots (rows added but never assigned a recipe).
+          // recipe_id 0 has no matching recipe and would fail the backend FK constraint.
+          entries: formData.entries
+            .filter(entry => entry.recipe_id > 0)
+            .map(entry => ({
+              ...entry,
+              date: entry.date + 'T00:00:00'
+            }))
         };
 
         if (isEditing && editingMealPlan) {
@@ -920,7 +955,7 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                                     <div key={entry.originalIndex} className="bg-neutral-50 rounded-lg p-3">
                                       <div className="grid grid-cols-12 gap-3 items-end">
                                         {/* Recipe Selection - Takes up most space */}
-                                        <div className="col-span-12 md:col-span-7">
+                                        <div className="col-span-12 md:col-span-6">
                                           <label className="block text-xs font-medium text-neutral-700 mb-1">
                                             {t('mealPlans.form.recipe')}
                                           </label>
@@ -935,7 +970,7 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                                         </div>
 
                                         {/* Servings */}
-                                        <div className="col-span-8 md:col-span-3">
+                                        <div className="col-span-6 md:col-span-3">
                                           <NumericInput
                                             label={t('mealPlans.form.servings')}
                                             value={entry.servings}
@@ -946,14 +981,27 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                                           />
                                         </div>
 
-                                        {/* Delete Button */}
-                                        <div className="col-span-4 md:col-span-2">
+                                        {/* Re-roll + Delete Buttons */}
+                                        <div className="col-span-6 md:col-span-3 flex gap-2">
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => rerollMealEntry(entry.originalIndex)}
+                                            isLoading={rerollingIndex === entry.originalIndex}
+                                            disabled={rerollingIndex !== null}
+                                            title={t('mealPlans.form.rerollMeal')}
+                                            aria-label={t('mealPlans.form.rerollMeal')}
+                                            className="flex-1 text-primary-600 hover:text-primary-700 h-[42px] px-2"
+                                          >
+                                            {rerollingIndex === entry.originalIndex ? null : <Dices className="h-4 w-4" />}
+                                          </Button>
                                           <Button
                                             type="button"
                                             variant="outline"
                                             size="sm"
                                             onClick={() => removeMealEntry(entry.originalIndex)}
-                                            className="text-error-600 hover:text-error-700 w-full h-[42px] px-2"
+                                            className="flex-1 text-error-600 hover:text-error-700 h-[42px] px-2"
                                           >
                                             <Trash2 className="h-3 w-3" />
                                           </Button>

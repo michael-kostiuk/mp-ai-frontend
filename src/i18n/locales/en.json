@@ -225,7 +225,8 @@
       "addMeal": "Add Meal",
       "recipe": "Recipe",
       "searchForRecipe": "Search for recipe...",
-      "servings": "Servings"
+      "servings": "Servings",
+      "rerollMeal": "Suggest another recipe"
     },
     "detail": {
       "days": "Days",

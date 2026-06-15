@@ -225,7 +225,8 @@
       "addMeal": "Додати їжу",
       "recipe": "Рецепт",
       "searchForRecipe": "Шукати рецепт...",
-      "servings": "Порції"
+      "servings": "Порції",
+      "rerollMeal": "Запропонувати інший рецепт"
     },
     "detail": {
       "days": "Днів",
