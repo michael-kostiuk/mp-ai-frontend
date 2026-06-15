@@ -1,0 +1,166 @@
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Check, ChefHat, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingListItem as ShoppingListItemType, Recipe } from '../../types';
+import Button from '../ui/Button';
+import Card, { CardContent } from '../ui/Card';
+import Loader from '../ui/Loader';
+import ErrorMessage from '../ui/ErrorMessage';
+import useApi from '../../hooks/useApi';
+import { getShoppingListItemRecipes } from '../../api/shoppingListApi';
+
+interface ShoppingListItemProps {
+  item: ShoppingListItemType;
+  onStatusChange?: (itemId: number, status: string) => void;
+}
+
+const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
+  item,
+  onStatusChange
+}) => {
+  const { t } = useTranslation();
+  const [isChecked, setIsChecked] = useState(item.status === 'completed');
+  const [showRecipes, setShowRecipes] = useState(false);
+  
+  const { data: recipes, loading, error, execute: fetchRecipes } = useApi<Recipe[]>(getShoppingListItemRecipes);
+  
+  const handleToggle = () => {
+    const newStatus = isChecked ? 'pending' : 'completed';
+    setIsChecked(!isChecked);
+    if (onStatusChange) {
+      onStatusChange(item.id, newStatus);
+    }
+  };
+  
+  const handleShowRecipes = async () => {
+    if (!showRecipes && !recipes) {
+      // Only fetch if we haven't fetched before and we're opening
+      try {
+        await fetchRecipes(item.id);
+      } catch (error) {
+        console.error('Failed to fetch recipes for item:', error);
+      }
+    }
+    setShowRecipes(!showRecipes);
+  };
+  
+  return (
+    <div className="space-y-2">
+      <div className={`
+        flex items-center p-3 rounded-md transition-colors
+        ${isChecked ? 'bg-neutral-50' : 'bg-white hover:bg-neutral-50'}
+      `}>
+        <button
+          type="button"
+          className={`
+            flex h-5 w-5 items-center justify-center rounded-full border mr-3 flex-shrink-0
+            ${isChecked 
+              ? 'border-primary-500 bg-primary-500 text-white' 
+              : 'border-neutral-300 bg-white'}
+          `}
+          onClick={handleToggle}
+        >
+          {isChecked && <Check className="h-3 w-3" />}
+        </button>
+        
+        <div className="flex-1 min-w-0">
+          <p className={`
+            text-sm font-medium ${isChecked ? 'text-neutral-500 line-through' : 'text-neutral-900'}
+          `}>
+            {item.ingredient.name} - {item.quantity} {item.unit}
+          </p>
+        </div>
+        
+        <div className="ml-3 flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleShowRecipes}
+            className="text-primary-600 hover:text-primary-700 hover:bg-primary-50 px-2 py-1"
+            leftIcon={<ChefHat className="h-3 w-3" />}
+            rightIcon={showRecipes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          >
+            {t('shoppingListItem.recipes')}
+          </Button>
+        </div>
+      </div>
+
+      {/* Recipe Details */}
+      {showRecipes && (
+        <Card className="ml-8 animate-slideIn">
+          <CardContent className="p-3">
+            {loading && (
+              <div className="py-4">
+                <Loader size="sm" label={t('shoppingListItem.loadingRecipes')} />
+              </div>
+            )}
+
+            {error && (
+              <ErrorMessage 
+                title={t('shoppingListItem.failedToLoadRecipes')} 
+                message={error.message}
+                onRetry={() => fetchRecipes(item.id)}
+                className="text-sm"
+              />
+            )}
+
+            {recipes && recipes.length === 0 && (
+              <div className="py-4 text-center text-sm text-neutral-500">
+                {t('shoppingListItem.noRecipesFound')}
+              </div>
+            )}
+
+            {recipes && recipes.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-neutral-700 mb-2">
+                  {t('shoppingListItem.usedInRecipes', { count: recipes.length })}
+                </h4>
+                <div className="space-y-2">
+                  {recipes.map((recipe) => {
+                    // Find the ingredient details in this recipe
+                    const recipeIngredient = recipe.ingredients.find(
+                      ing => ing.ingredient_id === item.ingredient_id
+                    );
+                    
+                    return (
+                      <div key={recipe.id} className="flex items-center justify-between p-2 bg-neutral-50 rounded border">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-neutral-900 truncate">
+                            {recipe.name}
+                          </div>
+                          <div className="text-xs text-neutral-500 capitalize">
+                            {recipe.category} • {recipe.servings} servings
+                          </div>
+                        </div>
+                        
+                        {recipeIngredient && (
+                          <div className="ml-2 text-right flex-shrink-0">
+                            <div className="text-sm font-medium text-primary-700">
+                              {recipeIngredient.quantity} {recipeIngredient.unit}
+                            </div>
+                            <div className="text-xs text-neutral-500">
+                              {t('shoppingListItem.perRecipe')}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Summary */}
+                <div className="mt-3 pt-2 border-t border-neutral-200">
+                  <div className="text-xs text-neutral-600">
+                    <span className="font-medium">{t('shoppingListItem.totalNeeded')}</span> {item.quantity} {item.unit}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+});
+
+export default ShoppingListItem;

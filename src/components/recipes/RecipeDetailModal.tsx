@@ -1,0 +1,421 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { X, Clock, Users, Target, Edit, Trash2, ChefHat, ArrowLeft } from 'lucide-react';
+import { Recipe } from '../../types';
+import Button from '../ui/Button';
+import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
+import Loader from '../ui/Loader';
+import ErrorMessage from '../ui/ErrorMessage';
+import useApi from '../../hooks/useApi';
+import { getRecipe, deleteRecipe } from '../../api/recipeApi';
+import { getLocaleFromLanguage } from '../../utils/i18nUtils';
+
+interface RecipeDetailModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  recipeId: number | null;
+  onEdit?: (recipe: Recipe) => void;
+  onDelete?: () => void;
+  backTo?: string;
+  backLabel?: string;
+}
+
+const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
+  isOpen,
+  onClose,
+  recipeId,
+  onEdit,
+  onDelete,
+  backTo,
+  backLabel
+}) => {
+  const { t, i18n } = useTranslation();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  
+  const { data: recipe, loading, error, execute: fetchRecipe } = useApi<Recipe>(getRecipe);
+  const { loading: deleting, execute: deleteRecipeById } = useApi(deleteRecipe);
+
+  // Memoize the fetch function to prevent unnecessary re-renders
+  const loadRecipe = useCallback(() => {
+    if (recipeId) {
+      fetchRecipe(recipeId);
+    }
+  }, [fetchRecipe, recipeId]);
+
+  // Load recipe only when modal opens or recipeId changes
+  useEffect(() => {
+    if (isOpen && recipeId) {
+      loadRecipe();
+    }
+  }, [isOpen, recipeId]); // Only depend on isOpen and recipeId, not the fetch function
+
+  const formatTime = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes} ${t('common.minutes')}`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0 ? `${hours}${t('common.hours')} ${remainingMinutes}${t('common.minutes')}` : `${hours}${t('common.hours')}`;
+  };
+
+  const getTotalTime = () => {
+    if (!recipe) return 0;
+    return recipe.prep_time + recipe.cook_time;
+  };
+
+  const groupIngredientsByCategory = () => {
+    if (!recipe?.ingredients) return {};
+    
+    return recipe.ingredients.reduce((groups, ingredient) => {
+      const category = ingredient.ingredient.category;
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(ingredient);
+      return groups;
+    }, {} as Record<string, typeof recipe.ingredients>);
+  };
+
+  const formatInstructions = (instructions: string) => {
+    // Split by numbered steps or line breaks
+    const steps = instructions
+      .split(/\n+|\d+\.\s*/)
+      .filter(step => step.trim().length > 0)
+      .map(step => step.trim());
+    
+    return steps;
+  };
+
+  const handleDelete = async () => {
+    if (!recipeId) return;
+    
+    try {
+      await deleteRecipeById(recipeId);
+      onDelete?.();
+      onClose();
+    } catch (error) {
+      console.error('Failed to delete recipe:', error);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const dietaryTags = Array.isArray(recipe?.dietary_tags) ? recipe.dietary_tags : [];
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+          <div className="flex items-center gap-4">
+            {backTo && (
+              <Link to={backTo}>
+                <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+                  {backLabel || t('common.back')}
+                </Button>
+              </Link>
+            )}
+            <h2 className="text-xl font-semibold text-neutral-900">{t('recipes.recipeDetails')}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-neutral-400 hover:text-neutral-600 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {loading && (
+            <div className="py-12">
+              <Loader centered label={t('recipes.loadingRecipe')} />
+            </div>
+          )}
+
+          {error && (
+            <ErrorMessage 
+              title={t('recipes.failedToLoad')} 
+              message={error.message}
+              onRetry={loadRecipe} 
+            />
+          )}
+
+          {recipe && (
+            <div className="space-y-6">
+              {/* Recipe Header */}
+              <div className="text-center">
+                {recipe.image_url ? (
+                  <img
+                    src={recipe.image_url}
+                    alt={recipe.name}
+                    className="w-full h-64 object-cover rounded-lg mb-4"
+                  />
+                ) : (
+                  <div className="bg-secondary-100 h-48 rounded-lg flex items-center justify-center mb-4">
+                    <ChefHat className="h-16 w-16 text-secondary-600" />
+                  </div>
+                )}
+                <h1 className="text-3xl font-bold text-neutral-900 mb-2">{recipe.name}</h1>
+                <p className="text-lg text-neutral-600 capitalize">{recipe.category}</p>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <Users className="h-8 w-8 text-primary-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-neutral-900">{recipe.servings}</div>
+                    <div className="text-sm text-neutral-500">{t('recipes.detail.servings')}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <Clock className="h-8 w-8 text-accent-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-neutral-900">{formatTime(recipe.prep_time)}</div>
+                    <div className="text-sm text-neutral-500">{t('recipes.detail.prepTime')}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <Clock className="h-8 w-8 text-secondary-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-neutral-900">{formatTime(recipe.cook_time)}</div>
+                    <div className="text-sm text-neutral-500">{t('recipes.detail.cookTime')}</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4 text-center">
+                    <Target className="h-8 w-8 text-warning-600 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-neutral-900">{recipe.calories}</div>
+                    <div className="text-sm text-neutral-500">{t('recipes.detail.calories')}</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Dietary Tags */}
+              {dietaryTags.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{t('recipes.detail.dietaryInfo')}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {dietaryTags.map((tag) => (
+                        <span 
+                          key={tag}
+                          className="inline-flex items-center rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-800"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Nutrition Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('recipes.detail.nutritionPerServing')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-neutral-900">{recipe.calories}</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.calories')}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary-600">{recipe.protein}g</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.protein')}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-accent-600">{recipe.carbs}g</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.carbs')}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-secondary-600">{recipe.fats}g</div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.fats')}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Ingredients */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('recipes.detail.ingredients')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {Object.keys(groupIngredientsByCategory()).length === 0 ? (
+                    <div className="text-center py-8 text-neutral-500">
+                      {t('recipes.noIngredientsListed')}
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {Object.entries(groupIngredientsByCategory()).map(([category, ingredients]) => (
+                        <div key={category}>
+                          <h4 className="font-medium text-neutral-900 mb-3 capitalize text-lg">
+                            {category}
+                          </h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {ingredients.map((ingredient, index) => (
+                              <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
+                                <span className="font-medium text-neutral-900">
+                                  {ingredient.ingredient.name}
+                                </span>
+                                <span className="text-neutral-600">
+                                  {ingredient.quantity} {ingredient.unit}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Instructions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('recipes.detail.instructions')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {recipe.instructions ? (
+                    <div className="space-y-4">
+                      {formatInstructions(recipe.instructions).map((step, index) => (
+                        <div key={index} className="flex">
+                          <div className="flex-shrink-0 w-8 h-8 bg-primary-100 text-primary-800 rounded-full flex items-center justify-center text-sm font-medium mr-4">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-neutral-700 leading-relaxed">{step}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-neutral-500">
+                      {t('recipes.noInstructionsProvided')}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recipe Meta */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('recipes.detail.recipeInfo')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-neutral-700">{t('recipes.detail.totalTime')}:</span>
+                      <span className="ml-2 text-neutral-600">{formatTime(getTotalTime())}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-neutral-700">{t('recipes.detail.category')}:</span>
+                      <span className="ml-2 text-neutral-600 capitalize">{recipe.category}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-neutral-700">{t('recipes.detail.created')}:</span>
+                      <span className="ml-2 text-neutral-600">
+                        {new Date(recipe.created_at).toLocaleDateString(getLocaleFromLanguage(i18n.language))}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Meal Type Weights (for developers/advanced users) */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t('recipes.detail.mealPlanningWeights')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-neutral-900">
+                        {(recipe.breakfast_weight * 100).toFixed(0)}%
+                      </div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.breakfast')}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-neutral-900">
+                        {(recipe.lunch_weight * 100).toFixed(0)}%
+                      </div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.lunch')}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-lg font-semibold text-neutral-900">
+                        {(recipe.dinner_weight * 100).toFixed(0)}%
+                      </div>
+                      <div className="text-sm text-neutral-500">{t('recipes.detail.dinner')}</div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-3 text-center">
+                    {t('recipes.detail.weightDescription')}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              <div className="flex justify-between pt-6 border-t border-neutral-200">
+                <div>
+                  {!showDeleteConfirm ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      leftIcon={<Trash2 className="h-4 w-4" />}
+                      className="text-error-600 border-error-300 hover:bg-error-50"
+                    >
+                      {t('recipes.deleteRecipe')}
+                    </Button>
+                  ) : (
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowDeleteConfirm(false)}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDelete}
+                        isLoading={deleting}
+                        className="text-error-600 border-error-300 hover:bg-error-50"
+                      >
+                        {t('recipes.confirmDelete')}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex space-x-3">
+                  <Button variant="outline" onClick={onClose}>
+                    {t('common.close')}
+                  </Button>
+                  {onEdit && (
+                    <Button
+                      onClick={() => onEdit(recipe)}
+                      leftIcon={<Edit className="h-4 w-4" />}
+                    >
+                      {t('recipes.editRecipe')}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RecipeDetailModal;
