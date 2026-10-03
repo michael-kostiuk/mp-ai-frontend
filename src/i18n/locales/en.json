@@ -181,6 +181,7 @@
     }
   },
   "mealPlans": {
+    "leftover": "Leftovers",
     "title": "Meal Plans",
     "description": "Plan and organize your meals for the week",
     "createMealPlan": "Create Meal Plan",

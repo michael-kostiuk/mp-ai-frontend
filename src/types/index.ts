@@ -161,6 +161,7 @@ export interface MealPlanEntry {
   date: string;
   meal_type: string;
   servings: number;
+  is_leftover?: boolean;
   recipe: Recipe;
 }
 

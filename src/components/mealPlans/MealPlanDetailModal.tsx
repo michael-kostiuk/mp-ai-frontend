@@ -300,6 +300,11 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
                                         {entry.meal_type}
                                       </span>
                                       <span className="text-sm text-neutral-500">
+                                        {entry.is_leftover && (
+                                          <span className="mr-2 text-xs font-medium text-amber-700 bg-amber-100 rounded px-2 py-0.5">
+                                            {t('mealPlans.leftover')}
+                                          </span>
+                                        )}
                                         {entry.servings} {entry.servings !== 1 ? t('common.servings') : t('common.serving')}
                                       </span>
                                     </div>
