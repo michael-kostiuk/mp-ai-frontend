@@ -78,11 +78,11 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   };
 
   const formatInstructions = (instructions: string) => {
-    // Split by numbered steps or line breaks
+    // Split by line breaks, dropping a leading step number ("1. ") on each line
     const steps = instructions
-      .split(/\n+|\d+\.\s*/)
-      .filter(step => step.trim().length > 0)
-      .map(step => step.trim());
+      .split(/\n+/)
+      .map(step => step.trim().replace(/^\d+\.\s*/, ''))
+      .filter(step => step.length > 0);
     
     return steps;
   };
