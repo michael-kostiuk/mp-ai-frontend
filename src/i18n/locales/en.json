@@ -228,7 +228,8 @@
       "searchForRecipe": "Search for recipe...",
       "servings": "Servings",
       "rerollMeal": "Suggest another recipe",
-      "rerollFailed": "Couldn't suggest another recipe. Please try again."
+      "rerollFailed": "Couldn't suggest another recipe. Please try again.",
+      "viewRecipe": "View recipe"
     },
     "detail": {
       "days": "Days",

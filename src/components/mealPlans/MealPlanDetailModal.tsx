@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
@@ -7,6 +6,7 @@ import Button from '../ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
+import RecipeDetailModal from '../recipes/RecipeDetailModal';
 import useApi from '../../hooks/useApi';
 import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
 import { getShoppingLists } from '../../api/shoppingListApi';
@@ -30,6 +30,8 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
   const { t, i18n } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [existingShoppingList, setExistingShoppingList] = useState<ShoppingList | null>(null);
+  // Recipe opened on top of the plan; closing it returns to the plan without reloading
+  const [viewingRecipeId, setViewingRecipeId] = useState<number | null>(null);
   
   const { data: mealPlan, loading, error, execute: fetchMealPlan } = useApi<MealPlan>(getMealPlan);
   const { loading: deleting, execute: deletePlan } = useApi(deleteMealPlan);
@@ -172,7 +174,10 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
           <h2 className="text-xl font-semibold text-neutral-900">{t('mealPlans.mealPlanDetails')}</h2>
@@ -308,12 +313,13 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
                                         {entry.servings} {entry.servings !== 1 ? t('common.servings') : t('common.serving')}
                                       </span>
                                     </div>
-                                    <Link
-                                      to={`/recipes/${entry.recipe.id}?fromMealPlan=${mealPlan.id}`}
-                                      className="font-medium text-neutral-900 mb-1 block hover:text-primary-700 transition-colors"
+                                    <button
+                                      type="button"
+                                      onClick={() => setViewingRecipeId(entry.recipe.id)}
+                                      className="font-medium text-neutral-900 mb-1 block text-left hover:text-primary-700 transition-colors"
                                     >
                                       {entry.recipe.name}
-                                    </Link>
+                                    </button>
                                     <div className="text-sm text-neutral-500">
                                       {entry.recipe.calories * entry.servings} {t('common.cal')} ({entry.servings} x {entry.recipe.calories})
                                     </div>
@@ -433,6 +439,12 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
           )}
         </div>
       </div>
+
+      <RecipeDetailModal
+        isOpen={viewingRecipeId !== null}
+        onClose={() => setViewingRecipeId(null)}
+        recipeId={viewingRecipeId}
+      />
     </div>
   );
 };

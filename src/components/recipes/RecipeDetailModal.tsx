@@ -104,7 +104,11 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const dietaryTags = Array.isArray(recipe?.dietary_tags) ? recipe.dietary_tags : [];
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      // Clicking the backdrop closes this modal (returning to whatever is underneath)
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
           <div className="flex items-center gap-4">
@@ -365,7 +369,8 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {/* Actions */}
               <div className="flex justify-between pt-6 border-t border-neutral-200">
                 <div>
-                  {!showDeleteConfirm ? (
+                  {/* Delete is only offered where the caller handles it (not in read-only lookups) */}
+                  {onDelete && (!showDeleteConfirm ? (
                     <Button
                       variant="outline"
                       onClick={() => setShowDeleteConfirm(true)}
@@ -393,7 +398,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                         {t('recipes.confirmDelete')}
                       </Button>
                     </div>
-                  )}
+                  ))}
                 </div>
 
                 <div className="flex space-x-3">

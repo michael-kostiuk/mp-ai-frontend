@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation, Trans } from 'react-i18next';
-import { X, Calendar, Users, Target, Plus, Trash2, AlertTriangle, Dices } from 'lucide-react';
+import { X, Calendar, Users, Target, Plus, Trash2, AlertTriangle, Dices, Eye } from 'lucide-react';
 import { MealPlanCreate, MealPlanEntryCreate, MealPlan } from '../../types';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import NumericInput from '../ui/NumericInput';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import RecipeSearchSelect from '../recipes/RecipeSearchSelect';
+import RecipeDetailModal from '../recipes/RecipeDetailModal';
 import useApi from '../../hooks/useApi';
 import { createMealPlan, autoGenerateMealPlan, updateMealPlan, suggestMeal } from '../../api/mealPlanApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
@@ -72,6 +73,8 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
   const [rerolledRecipeNames, setRerolledRecipeNames] = useState<Record<number, string>>({});
   // Per-entry list of recipe ids already offered by re-rolls, ending with the current one
   const rerollHistoryRef = useRef<Record<number, number[]>>({});
+  // Recipe opened on top of the form for a quick look; the form stays mounted (nothing is lost)
+  const [previewRecipeId, setPreviewRecipeId] = useState<number | null>(null);
   const [formData, setFormData] = useState<MealPlanCreate>({
     start_date: nextMonday,
     end_date: getSundayFromMonday(nextMonday),
@@ -664,7 +667,11 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
   const { grouped, dates } = groupEntriesByDateAndMeal();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      // Backdrop click goes through the same unsaved-changes check as the close button
+      onMouseDown={(e) => e.target === e.currentTarget && handleCloseAttempt()}
+    >
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
           <h2 className="text-xl font-semibold text-neutral-900">
@@ -1042,6 +1049,18 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                                             type="button"
                                             variant="outline"
                                             size="sm"
+                                            onClick={() => setPreviewRecipeId(entry.recipe_id)}
+                                            disabled={entry.recipe_id <= 0 || rerollingIndex === entry.originalIndex}
+                                            title={t('mealPlans.form.viewRecipe')}
+                                            aria-label={t('mealPlans.form.viewRecipe')}
+                                            className="flex-1 text-neutral-600 hover:text-neutral-800 h-[42px] px-2"
+                                          >
+                                            <Eye className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
                                             onClick={() => removeMealEntry(entry.originalIndex)}
                                             className="flex-1 text-error-600 hover:text-error-700 h-[42px] px-2"
                                           >
@@ -1176,6 +1195,12 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
           </div>
         </div>
       )}
+
+      <RecipeDetailModal
+        isOpen={previewRecipeId !== null}
+        onClose={() => setPreviewRecipeId(null)}
+        recipeId={previewRecipeId}
+      />
     </div>
   );
 };
