@@ -65,6 +65,13 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
   const [generatedMealPlan, setGeneratedMealPlan] = useState<MealPlan | null>(null);
   // Index of the meal entry currently being re-rolled (null = none in flight)
   const [rerollingIndex, setRerollingIndex] = useState<number | null>(null);
+  // Index of the entry just re-rolled (briefly highlighted) and of a failed re-roll
+  const [rerolledIndex, setRerolledIndex] = useState<number | null>(null);
+  const [rerollErrorIndex, setRerollErrorIndex] = useState<number | null>(null);
+  // Names of recipes returned by re-rolls, which may not be in the loaded plan data
+  const [rerolledRecipeNames, setRerolledRecipeNames] = useState<Record<number, string>>({});
+  // Per-entry list of recipe ids already offered by re-rolls, ending with the current one
+  const rerollHistoryRef = useRef<Record<number, number[]>>({});
   const [formData, setFormData] = useState<MealPlanCreate>({
     start_date: nextMonday,
     end_date: getSundayFromMonday(nextMonday),
@@ -374,11 +381,19 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
   };
 
   // Re-roll a single meal: ask the backend for another recipe for this slot, using the
-  // same weighted selection as plan generation. Avoids the current recipe and recipes
-  // already used twice elsewhere in the plan. Updates local state only (saved on submit).
+  // same weighted selection as plan generation. Avoids the current recipe, recipes already
+  // in the plan and recipes offered by earlier re-rolls of this slot while alternatives
+  // exist. Updates local state only (saved on submit).
   const rerollMealEntry = async (index: number) => {
     const entry = formData.entries[index];
     if (!entry || rerollingIndex !== null) return;
+
+    // History is only valid while the slot still holds the last re-rolled recipe (it is
+    // stale after a manual pick, regeneration or entry removal shifting indices).
+    const storedHistory = rerollHistoryRef.current[index];
+    const history = storedHistory && storedHistory[storedHistory.length - 1] === entry.recipe_id
+      ? storedHistory
+      : entry.recipe_id > 0 ? [entry.recipe_id] : [];
 
     // All recipe ids used in the rest of the plan (every other slot), so the backend can
     // enforce the max-2-uses cap.
@@ -387,16 +402,30 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
       .map(e => e.recipe_id);
 
     setRerollingIndex(index);
+    setRerollErrorIndex(null);
     try {
-      const recipe = await suggestMeal({
-        meal_type: entry.meal_type,
-        target_calories: formData.target_calories,
-        current_recipe_id: entry.recipe_id > 0 ? entry.recipe_id : undefined,
-        plan_recipe_ids: planRecipeIds,
-      });
+      // Keep the spinner up briefly so a fast response still reads as "something happened"
+      const [recipe] = await Promise.all([
+        suggestMeal({
+          meal_type: entry.meal_type,
+          target_calories: formData.target_calories,
+          current_recipe_id: entry.recipe_id > 0 ? entry.recipe_id : undefined,
+          plan_recipe_ids: planRecipeIds,
+          exclude_recipe_ids: history,
+        }),
+        new Promise(resolve => setTimeout(resolve, 300)),
+      ]);
+      // A recipe from the history means every alternative was offered: start over
+      rerollHistoryRef.current[index] = history.includes(recipe.id)
+        ? [recipe.id]
+        : [...history, recipe.id];
+      setRerolledRecipeNames(prev => ({ ...prev, [recipe.id]: recipe.name }));
       updateMealEntry(index, 'recipe_id', recipe.id);
+      setRerolledIndex(index);
+      setTimeout(() => setRerolledIndex(current => (current === index ? null : current)), 1000);
     } catch (error) {
       console.error('Failed to re-roll meal:', error);
+      setRerollErrorIndex(index);
     } finally {
       setRerollingIndex(null);
     }
@@ -445,6 +474,9 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
 
   // Get recipe name from editing meal plan data if available
   const getRecipeName = (recipeId: number): string => {
+    if (rerolledRecipeNames[recipeId]) {
+      return rerolledRecipeNames[recipeId];
+    }
     if (isEditing && editingMealPlan) {
       const entry = editingMealPlan.entries.find(e => e.recipe_id === recipeId);
       if (entry && entry.recipe) {
@@ -952,21 +984,31 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                               ) : (
                                 <div className="space-y-2">
                                   {grouped[date][mealType].map((entry) => (
-                                    <div key={entry.originalIndex} className="bg-neutral-50 rounded-lg p-3">
+                                    <div
+                                      key={entry.originalIndex}
+                                      className={`rounded-lg p-3 transition-colors duration-500 ${
+                                        rerolledIndex === entry.originalIndex
+                                          ? 'bg-primary-50 ring-1 ring-primary-300'
+                                          : 'bg-neutral-50'
+                                      }`}
+                                    >
                                       <div className="grid grid-cols-12 gap-3 items-end">
                                         {/* Recipe Selection - Takes up most space */}
                                         <div className="col-span-12 md:col-span-6">
                                           <label className="block text-xs font-medium text-neutral-700 mb-1">
                                             {t('mealPlans.form.recipe')}
                                           </label>
-                                          <RecipeSearchSelect
-                                            value={entry.recipe_id}
-                                            onChange={(recipeId) => updateMealEntry(entry.originalIndex, 'recipe_id', recipeId)}
-                                            placeholder={t('mealPlans.form.searchForRecipe')}
-                                            initialDisplayName={getRecipeName(entry.recipe_id)}
-                                            mealType={['breakfast', 'lunch', 'dinner'].includes(mealType) ? mealType as 'breakfast' | 'lunch' | 'dinner' : undefined}
-                                            excludeIds={getExcludeIdsForDate(date, entry.originalIndex)}
-                                          />
+                                          <div className={rerollingIndex === entry.originalIndex ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'}>
+                                            <RecipeSearchSelect
+                                              value={entry.recipe_id}
+                                              onChange={(recipeId) => updateMealEntry(entry.originalIndex, 'recipe_id', recipeId)}
+                                              placeholder={t('mealPlans.form.searchForRecipe')}
+                                              initialDisplayName={getRecipeName(entry.recipe_id)}
+                                              mealType={['breakfast', 'lunch', 'dinner'].includes(mealType) ? mealType as 'breakfast' | 'lunch' | 'dinner' : undefined}
+                                              excludeIds={getExcludeIdsForDate(date, entry.originalIndex)}
+                                              disabled={rerollingIndex === entry.originalIndex}
+                                            />
+                                          </div>
                                         </div>
 
                                         {/* Servings */}
@@ -1007,6 +1049,9 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
                                           </Button>
                                         </div>
                                       </div>
+                                      {rerollErrorIndex === entry.originalIndex && (
+                                        <p className="mt-2 text-xs text-error-600">{t('mealPlans.form.rerollFailed')}</p>
+                                      )}
                                     </div>
                                   ))}
                                 </div>

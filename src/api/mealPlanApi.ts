@@ -59,6 +59,8 @@ export interface SuggestMealParams {
   target_calories: number;
   current_recipe_id?: number;
   plan_recipe_ids: number[];
+  // Recipes already offered for this slot in earlier re-rolls
+  exclude_recipe_ids?: number[];
 }
 
 // Re-roll a single meal: get another recipe suggestion for one slot, using the same
