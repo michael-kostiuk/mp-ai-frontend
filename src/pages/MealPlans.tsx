@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlusCircle, Calendar, Users, Target } from 'lucide-react';
 import Container from '../components/layout/Container';
@@ -6,6 +6,7 @@ import PageHeader from '../components/layout/PageHeader';
 import MealPlanCard from '../components/mealPlans/MealPlanCard';
 import CreateMealPlanModal from '../components/mealPlans/CreateMealPlanModal';
 import MealPlanDetailModal from '../components/mealPlans/MealPlanDetailModal';
+import { toDateKey } from '../utils/mealPlanUtils';
 import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
@@ -30,6 +31,12 @@ const MealPlans: React.FC = () => {
   useEffect(() => {
     fetchMealPlans(userId);
   }, [fetchMealPlans, userId]);
+
+  const sortedMealPlans = useMemo(
+    () => (mealPlans ? [...mealPlans].sort((a, b) => b.end_date.localeCompare(a.end_date)) : []),
+    [mealPlans]
+  );
+  const todayKey = toDateKey(new Date());
   
   const handleSelectMealPlan = (mealPlan: MealPlan) => {
     setSelectedMealPlanId(mealPlan.id);
@@ -169,10 +176,11 @@ const MealPlans: React.FC = () => {
       
       {mealPlans && mealPlans.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 animate-fadeIn">
-          {mealPlans.map((mealPlan) => (
+          {sortedMealPlans.map((mealPlan) => (
             <MealPlanCard 
               key={mealPlan.id} 
               mealPlan={mealPlan} 
+              isPast={mealPlan.end_date.slice(0, 10) < todayKey}
               onClick={() => handleSelectMealPlan(mealPlan)}
             />
           ))}

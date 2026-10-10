@@ -1,14 +1,32 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChefHat, CalendarDays, ShoppingCart, List } from 'lucide-react';
 import Container from '../components/layout/Container';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import TodayMeals from '../components/mealPlans/TodayMeals';
+import { findTodayPlan, getCurrentMeal } from '../utils/mealPlanUtils';
+import { MealPlan } from '../types';
+import useApi from '../hooks/useApi';
+import { getMealPlans } from '../api/mealPlanApi';
 
 const Home: React.FC = () => {
   const { t } = useTranslation();
-  
+  // In a real app, this would come from user authentication
+  const userId = 1;
+
+  const { data: mealPlans, execute: fetchMealPlans } = useApi<MealPlan[], [number]>(getMealPlans);
+
+  useEffect(() => {
+    fetchMealPlans(userId).catch(() => {
+      // Today's plan is optional on the home page; ignore load failures
+    });
+  }, [fetchMealPlans, userId]);
+
+  const currentMeal = getCurrentMeal(new Date());
+  const today = mealPlans ? findTodayPlan(mealPlans, currentMeal.dateKey) : null;
+
   const features = [
     {
       title: t('home.features.recipes.title'),
@@ -42,25 +60,36 @@ const Home: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-neutral-50">
-      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 py-12 sm:py-16 lg:py-20 xl:py-24 text-white relative overflow-hidden">
+      <div className={`bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 text-white relative overflow-hidden ${today ? 'pt-6 pb-20 sm:pt-10 sm:pb-24' : 'py-12 sm:py-16 lg:py-20 xl:py-24'}`}>
         {/* Background decoration */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
         
         <Container className="relative">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-6 sm:mb-8">
+            <div className={today ? 'hidden' : 'mb-6 sm:mb-8'}>
               <ChefHat className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 mx-auto mb-4 sm:mb-6 text-white/90" />
             </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bold tracking-tight mb-4 sm:mb-6">
+            <h1 className={`font-bold tracking-tight ${today ? 'text-2xl sm:text-3xl lg:text-4xl mb-2' : 'text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl mb-4 sm:mb-6'}`}>
               {t('home.title')}
             </h1>
-            <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+            <p className={`text-white/90 max-w-3xl mx-auto leading-relaxed ${today ? 'hidden sm:block text-base sm:text-lg' : 'text-lg sm:text-xl lg:text-2xl xl:text-3xl'}`}>
               {t('home.subtitle')}
             </p>
           </div>
         </Container>
       </div>
       
+      {today && (
+        <Container className="relative -mt-16 sm:-mt-20">
+          <TodayMeals
+            mealPlan={today.mealPlan}
+            entries={today.entries}
+            dateKey={currentMeal.dateKey}
+            currentMealType={currentMeal.mealType}
+          />
+        </Container>
+      )}
+
       <Container className="py-8 sm:py-12 lg:py-16 xl:py-20">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
           {features.map((feature) => (

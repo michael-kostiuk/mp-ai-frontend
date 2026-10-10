@@ -57,6 +57,11 @@
   "home": {
     "title": "MealMaster",
     "subtitle": "A powerful tool for meal planning, recipe management, and grocery shopping.",
+    "today": {
+      "title": "Today's menu",
+      "viewPlan": "View plan",
+      "now": "Now"
+    },
     "features": {
       "recipes": {
         "title": "Recipes",
