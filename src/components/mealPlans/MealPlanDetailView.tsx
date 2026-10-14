@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
@@ -7,7 +8,6 @@ import Container from '../layout/Container';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
-import RecipeDetailModal from '../recipes/RecipeDetailModal';
 import useApi from '../../hooks/useApi';
 import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
 import { getShoppingLists } from '../../api/shoppingListApi';
@@ -29,8 +29,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
   const { t, i18n } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [existingShoppingList, setExistingShoppingList] = useState<ShoppingList | null>(null);
-  // Recipe opened on top of the plan; closing it returns to the plan without reloading
-  const [viewingRecipeId, setViewingRecipeId] = useState<number | null>(null);
+  const navigate = useNavigate();
   
   const { data: mealPlan, loading, error, execute: fetchMealPlan } = useApi<MealPlan>(getMealPlan);
   const { loading: deleting, execute: deletePlan } = useApi(deleteMealPlan);
@@ -293,7 +292,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                                   <button
                                     type="button"
                                     key={entry.id}
-                                    onClick={() => setViewingRecipeId(entry.recipe.id)}
+                                    onClick={() => navigate(`/recipes/${entry.recipe.id}?fromMealPlan=${mealPlanId}`)}
                                     className="group w-full text-left bg-neutral-50 rounded-lg p-4 hover:bg-neutral-100 transition-colors"
                                   >
                                     <div className="flex items-center justify-between mb-2">
@@ -424,12 +423,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
           )}
         </div>
       </div>
-
-      <RecipeDetailModal
-        isOpen={viewingRecipeId !== null}
-        onClose={() => setViewingRecipeId(null)}
-        recipeId={viewingRecipeId}
-      />
     </Container>
   );
 };

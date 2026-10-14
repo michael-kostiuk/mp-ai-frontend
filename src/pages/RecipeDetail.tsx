@@ -68,7 +68,7 @@ const RecipeDetail: React.FC = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         backTo={returnPath || '/recipes'}
-        backLabel={returnPath ? 'Back to Meal Plan' : t('recipes.backToRecipes')}
+        backLabel={returnPath ? t('recipes.backToMealPlan') : t('recipes.backToRecipes')}
       />
 
       <CreateRecipeModal

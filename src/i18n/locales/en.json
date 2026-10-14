@@ -90,6 +90,7 @@
     "description": "Browse, search, and manage your recipes",
     "addRecipe": "Add Recipe",
     "addFromImage": "Add from Image",
+    "backToMealPlan": "Back to Meal Plan",
     "backToRecipes": "Back to Recipes",
     "recipeDetails": "Recipe Details",
     "createRecipe": "Create New Recipe",
