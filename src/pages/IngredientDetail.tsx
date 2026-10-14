@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import Container from '../components/layout/Container';
-import Button from '../components/ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
@@ -39,18 +38,18 @@ const IngredientDetail: React.FC = () => {
   const error = ingredientsError || recipesError;
 
   return (
-    <Container maxWidth="4xl" className="py-8">
-      <div className="bg-white rounded-lg shadow-sm">
-        <div className="flex items-center gap-4 p-6 border-b border-neutral-200">
-          <Link to="/ingredients">
-            <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
-              {t('ingredients.detail.backToIngredients')}
-            </Button>
-          </Link>
-          <h2 className="text-xl font-semibold text-neutral-900">{t('ingredients.detail.title')}</h2>
-        </div>
+    <Container className="py-6 sm:py-8 lg:py-12">
+      <div className="max-w-4xl mx-auto">
+        <Link
+          to="/ingredients"
+          className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          {t('ingredients.detail.backToIngredients')}
+        </Link>
+        <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6">{t('ingredients.detail.title')}</h1>
 
-        <div className="p-6">
+        <div>
           {(loadingIngredients || loadingRecipes) && (
             <div className="py-12">
               <Loader centered label={t('ingredients.loadingIngredients')} />

@@ -107,30 +107,8 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   const dietaryTags = Array.isArray(recipe?.dietary_tags) ? recipe.dietary_tags : [];
 
-  const panel = (
-      <div className={asPage ? 'bg-white rounded-lg shadow-sm' : 'bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto'}>
-        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-          <div className="flex items-center gap-4">
-            {backTo && (
-              <Link to={backTo}>
-                <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
-                  {backLabel || t('common.back')}
-                </Button>
-              </Link>
-            )}
-            <h2 className="text-xl font-semibold text-neutral-900">{t('recipes.recipeDetails')}</h2>
-          </div>
-          {!asPage && (
-            <button
-              onClick={onClose}
-              className="text-neutral-400 hover:text-neutral-600 transition-colors"
-            >
-              <X className="h-6 w-6" />
-            </button>
-          )}
-        </div>
-
-        <div className="p-6">
+  const body = (
+        <>
           {loading && (
             <div className="py-12">
               <Loader centered label={t('recipes.loadingRecipe')} />
@@ -429,14 +407,23 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               </div>
             </div>
           )}
-        </div>
-      </div>
+        </>
   );
 
   if (asPage) {
     return (
-      <Container maxWidth="4xl" className="py-8">
-        {panel}
+      <Container className="py-6 sm:py-8 lg:py-12">
+        <div className="max-w-4xl mx-auto">
+          <Link
+            to={backTo || '/recipes'}
+            className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-4"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            {backLabel || t('common.back')}
+          </Link>
+          <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6">{t('recipes.recipeDetails')}</h1>
+          {body}
+        </div>
       </Container>
     );
   }
@@ -447,7 +434,30 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
       // Clicking the backdrop closes this modal (returning to whatever is underneath)
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      {panel}
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
+          <div className="flex items-center gap-4">
+            {backTo && (
+              <Link to={backTo}>
+                <Button variant="ghost" size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
+                  {backLabel || t('common.back')}
+                </Button>
+              </Link>
+            )}
+            <h2 className="text-xl font-semibold text-neutral-900">{t('recipes.recipeDetails')}</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-neutral-400 hover:text-neutral-600 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          {body}
+        </div>
+      </div>
     </div>
   );
 };
