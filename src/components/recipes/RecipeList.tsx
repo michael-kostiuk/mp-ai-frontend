@@ -98,7 +98,7 @@ const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
 
       {allRecipes.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 animate-fadeIn">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4 lg:gap-8 animate-fadeIn">
             {allRecipes.map((recipe) => (
               <RecipeCard
                 key={recipe.id}
