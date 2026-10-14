@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import MealPlanDetailModal from '../components/mealPlans/MealPlanDetailModal';
+import MealPlanDetailView from '../components/mealPlans/MealPlanDetailView';
 import CreateMealPlanModal from '../components/mealPlans/CreateMealPlanModal';
 import { MealPlan } from '../types';
 
@@ -49,8 +49,7 @@ const MealPlanDetail: React.FC = () => {
 
   return (
     <>
-      <MealPlanDetailModal
-        isOpen={true}
+      <MealPlanDetailView
         onClose={handleClose}
         mealPlanId={mealPlanId}
         onEdit={handleEdit}

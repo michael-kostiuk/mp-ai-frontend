@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
 import Button from '../ui/Button';
+import Container from '../layout/Container';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
@@ -12,16 +13,14 @@ import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan }
 import { getShoppingLists } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
-interface MealPlanDetailModalProps {
-  isOpen: boolean;
+interface MealPlanDetailViewProps {
   onClose: () => void;
   mealPlanId: number | null;
   onEdit?: (mealPlan: MealPlan) => void;
   onDelete?: () => void;
 }
 
-const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
-  isOpen,
+const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
   onClose,
   mealPlanId,
   onEdit,
@@ -50,12 +49,9 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
     }
   }, [fetchMealPlan, mealPlanId]);
 
-  // Load meal plan only when modal opens or mealPlanId changes
   useEffect(() => {
-    if (isOpen && mealPlanId) {
-      loadMealPlan();
-    }
-  }, [isOpen, mealPlanId, loadMealPlan]);
+    loadMealPlan();
+  }, [loadMealPlan]);
 
   const loadExistingShoppingList = useCallback(async () => {
     if (!mealPlanId) return;
@@ -73,17 +69,10 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
   }, [mealPlanId, fetchShoppingLists]);
 
   useEffect(() => {
-    if (isOpen && mealPlanId) {
-      setExistingShoppingList(null);
-      loadExistingShoppingList();
-    }
-  }, [isOpen, mealPlanId, loadExistingShoppingList]);
-
-  useEffect(() => {
-    if (isOpen) return;
-    cancelShoppingLists();
     setExistingShoppingList(null);
-  }, [isOpen, cancelShoppingLists]);
+    loadExistingShoppingList();
+    return cancelShoppingLists;
+  }, [loadExistingShoppingList, cancelShoppingLists]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -171,25 +160,19 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-          <h2 className="text-xl font-semibold text-neutral-900">{t('mealPlans.mealPlanDetails')}</h2>
-          <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
+    <Container className="py-6 sm:py-8 lg:py-12">
+      <div className="max-w-4xl mx-auto">
+        <button
+          onClick={onClose}
+          className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          {t('common.back')}
+        </button>
+        <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6">{t('mealPlans.mealPlanDetails')}</h1>
 
-        <div className="p-6">
+        <div>
           {loading && (
             <div className="py-12">
               <Loader centered label={t('mealPlans.loadingMealPlan')} />
@@ -413,9 +396,6 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
                 </div>
 
 <div className="flex space-x-3">
-                  <Button variant="outline" onClick={onClose}>
-                    {t('common.close')}
-                  </Button>
                   <Button
                     variant="outline"
                     onClick={handleRegenerate}
@@ -445,8 +425,8 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
         onClose={() => setViewingRecipeId(null)}
         recipeId={viewingRecipeId}
       />
-    </div>
+    </Container>
   );
 };
 
-export default MealPlanDetailModal;
+export default MealPlanDetailView;

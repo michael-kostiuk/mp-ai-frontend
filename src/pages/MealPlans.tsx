@@ -5,7 +5,6 @@ import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import MealPlanCard from '../components/mealPlans/MealPlanCard';
 import CreateMealPlanModal from '../components/mealPlans/CreateMealPlanModal';
-import MealPlanDetailModal from '../components/mealPlans/MealPlanDetailModal';
 import { toDateKey } from '../utils/mealPlanUtils';
 import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
@@ -21,8 +20,6 @@ const MealPlans: React.FC = () => {
   const userId = 1;
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedMealPlanId, setSelectedMealPlanId] = useState<number | null>(null);
   const [editingMealPlan, setEditingMealPlan] = useState<MealPlan | null>(null);
   
   const { data: mealPlans, loading, error, execute: fetchMealPlans } = useApi<MealPlan[]>(getMealPlans);
@@ -38,26 +35,8 @@ const MealPlans: React.FC = () => {
   );
   const todayKey = toDateKey(new Date());
   
-  const handleSelectMealPlan = (mealPlan: MealPlan) => {
-    setSelectedMealPlanId(mealPlan.id);
-    setIsDetailModalOpen(true);
-  };
-
   const handleCreateSuccess = () => {
     fetchMealPlans(userId); // Refresh the list after creating
-  };
-
-  const handleDeleteSuccess = () => {
-    fetchMealPlans(userId); // Refresh the list after deleting
-    setIsDetailModalOpen(false);
-    setSelectedMealPlanId(null);
-  };
-
-  const handleEditMealPlan = (mealPlan: MealPlan) => {
-    // Close detail modal and open edit modal with meal plan data
-    setIsDetailModalOpen(false);
-    setEditingMealPlan(mealPlan);
-    setIsCreateModalOpen(true);
   };
 
   const handleCreateModalClose = () => {
@@ -181,7 +160,6 @@ const MealPlans: React.FC = () => {
               key={mealPlan.id} 
               mealPlan={mealPlan} 
               isPast={mealPlan.end_date.slice(0, 10) < todayKey}
-              onClick={() => handleSelectMealPlan(mealPlan)}
             />
           ))}
         </div>
@@ -193,17 +171,6 @@ const MealPlans: React.FC = () => {
         onClose={handleCreateModalClose}
         onSuccess={handleCreateSuccess}
         editingMealPlan={editingMealPlan}
-      />
-
-      <MealPlanDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedMealPlanId(null);
-        }}
-        mealPlanId={selectedMealPlanId}
-        onEdit={handleEditMealPlan}
-        onDelete={handleDeleteSuccess}
       />
     </Container>
   );
