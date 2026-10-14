@@ -207,36 +207,36 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
           {mealPlan && (
             <div className="space-y-6">
               {/* Header Info */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Calendar className="h-8 w-8 text-primary-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{getDaysDifference()}</div>
-                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.days')}</div>
+              <div className="grid grid-cols-4 gap-2 md:gap-4">
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Calendar className="h-6 w-6 md:h-8 md:w-8 text-primary-600 mx-auto mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{getDaysDifference()}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.days')}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Users className="h-8 w-8 text-accent-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{mealPlan.people_count}</div>
-                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.people')}</div>
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Users className="h-6 w-6 md:h-8 md:w-8 text-accent-600 mx-auto mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{mealPlan.people_count}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.people')}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Target className="h-8 w-8 text-secondary-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{mealPlan.target_calories}</div>
-                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.targetCalDay')}</div>
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Target className="h-6 w-6 md:h-8 md:w-8 text-secondary-600 mx-auto mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{mealPlan.target_calories}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.targetCalDay')}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Clock className="h-8 w-8 text-warning-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{getCaloriesPerDayPerPerson()}</div>
-                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.actualCalDay')}</div>
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Clock className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{getCaloriesPerDayPerPerson()}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.actualCalDay')}</div>
                   </CardContent>
                 </Card>
               </div>
