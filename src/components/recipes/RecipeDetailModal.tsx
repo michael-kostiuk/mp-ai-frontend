@@ -6,6 +6,7 @@ import { Recipe } from '../../types';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Loader from '../ui/Loader';
+import Container from '../layout/Container';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
 import { getRecipe, deleteRecipe } from '../../api/recipeApi';
@@ -19,6 +20,8 @@ interface RecipeDetailModalProps {
   onDelete?: () => void;
   backTo?: string;
   backLabel?: string;
+  // Render as a full page (no overlay) instead of a pop-up
+  asPage?: boolean;
 }
 
 const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
@@ -28,7 +31,8 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   onEdit,
   onDelete,
   backTo,
-  backLabel
+  backLabel,
+  asPage = false
 }) => {
   const { t, i18n } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -103,13 +107,8 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   const dietaryTags = Array.isArray(recipe?.dietary_tags) ? recipe.dietary_tags : [];
 
-  return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-      // Clicking the backdrop closes this modal (returning to whatever is underneath)
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+  const panel = (
+      <div className={asPage ? 'bg-white rounded-lg shadow-sm' : 'bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto'}>
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
           <div className="flex items-center gap-4">
             {backTo && (
@@ -121,12 +120,14 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
             )}
             <h2 className="text-xl font-semibold text-neutral-900">{t('recipes.recipeDetails')}</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
+          {!asPage && (
+            <button
+              onClick={onClose}
+              className="text-neutral-400 hover:text-neutral-600 transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          )}
         </div>
 
         <div className="p-6">
@@ -266,9 +267,18 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {ingredients.map((ingredient, index) => (
                               <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
-                                <span className="font-medium text-neutral-900">
-                                  {ingredient.ingredient.name}
-                                </span>
+                                {asPage ? (
+                                  <Link
+                                    to={`/ingredients/${ingredient.ingredient_id}`}
+                                    className="font-medium text-neutral-900 hover:text-primary-600"
+                                  >
+                                    {ingredient.ingredient.name}
+                                  </Link>
+                                ) : (
+                                  <span className="font-medium text-neutral-900">
+                                    {ingredient.ingredient.name}
+                                  </span>
+                                )}
                                 <span className="text-neutral-600">
                                   {ingredient.quantity} {ingredient.unit}
                                 </span>
@@ -402,9 +412,11 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 </div>
 
                 <div className="flex space-x-3">
-                  <Button variant="outline" onClick={onClose}>
-                    {t('common.close')}
-                  </Button>
+                  {!asPage && (
+                    <Button variant="outline" onClick={onClose}>
+                      {t('common.close')}
+                    </Button>
+                  )}
                   {onEdit && (
                     <Button
                       onClick={() => onEdit(recipe)}
@@ -419,6 +431,23 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           )}
         </div>
       </div>
+  );
+
+  if (asPage) {
+    return (
+      <Container maxWidth="4xl" className="py-8">
+        {panel}
+      </Container>
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      // Clicking the backdrop closes this modal (returning to whatever is underneath)
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      {panel}
     </div>
   );
 };

@@ -90,6 +90,7 @@
     "description": "Переглядайте, шукайте та керуйте рецептами",
     "addRecipe": "Додати рецепт",
     "addFromImage": "Додати з фото",
+    "backToRecipes": "Назад до рецептів",
     "recipeDetails": "Деталі рецепта",
     "createRecipe": "Створити новий рецепт",
     "editRecipe": "Редагувати рецепт",
@@ -319,6 +320,14 @@
     "searchingIngredients": "Пошук інгредієнтів...",
     "createIngredient": "Створити \"{{name}}\"",
     "addToDatabase": "Додати цей інгредієнт до бази даних",
+    "detail": {
+      "title": "Деталі інгредієнта",
+      "backToIngredients": "Назад до інгредієнтів",
+      "nutrition": "Поживна цінність",
+      "usedInRecipes": "Використовується в рецептах",
+      "notUsed": "Ще не використовується в жодному рецепті",
+      "notFound": "Інгредієнт не знайдено"
+    },
     "calPer100": "{{calories}} ккал на 100{{unit}}",
     "table": {
       "name": "Назва",

@@ -90,6 +90,7 @@
     "description": "Browse, search, and manage your recipes",
     "addRecipe": "Add Recipe",
     "addFromImage": "Add from Image",
+    "backToRecipes": "Back to Recipes",
     "recipeDetails": "Recipe Details",
     "createRecipe": "Create New Recipe",
     "editRecipe": "Edit Recipe",
@@ -319,6 +320,14 @@
     "searchingIngredients": "Searching ingredients...",
     "createIngredient": "Create \"{{name}}\"",
     "addToDatabase": "Add this ingredient to your database",
+    "detail": {
+      "title": "Ingredient Details",
+      "backToIngredients": "Back to Ingredients",
+      "nutrition": "Nutrition",
+      "usedInRecipes": "Used in recipes",
+      "notUsed": "Not used in any recipe yet",
+      "notFound": "Ingredient not found"
+    },
     "calPer100": "{{calories}} cal per 100{{unit}}",
     "table": {
       "name": "Name",
