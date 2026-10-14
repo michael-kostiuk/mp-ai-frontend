@@ -152,11 +152,11 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <img
                     src={recipe.image_url}
                     alt={recipe.name}
-                    className="w-full h-64 object-cover rounded-lg mb-4"
+                    className="w-full h-40 sm:h-64 object-cover rounded-lg mb-4"
                   />
                 ) : (
-                  <div className="bg-secondary-100 h-48 rounded-lg flex items-center justify-center mb-4">
-                    <ChefHat className="h-16 w-16 text-secondary-600" />
+                  <div className="bg-secondary-100 h-28 sm:h-48 rounded-lg flex items-center justify-center mb-4">
+                    <ChefHat className="h-12 w-12 sm:h-16 sm:w-16 text-secondary-600" />
                   </div>
                 )}
                 <h1 className="text-3xl font-bold text-neutral-900 mb-2">{recipe.name}</h1>
