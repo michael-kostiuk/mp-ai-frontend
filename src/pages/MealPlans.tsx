@@ -107,25 +107,25 @@ const MealPlans: React.FC = () => {
 
       {/* Stats Cards */}
       {mealPlans && mealPlans.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
-          <Card className="group hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-4 sm:p-6 text-center">
+        <div className="grid grid-cols-3 gap-2 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
+          <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
+            <CardContent className="px-1 py-3 sm:p-11 text-center">
               <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.totalPlans}</div>
               <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.totalPlans')}</div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-4 sm:p-6 text-center">
+          <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
+            <CardContent className="px-1 py-3 sm:p-11 text-center">
               <Users className="h-6 w-6 sm:h-8 sm:w-8 text-accent-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.totalDays}</div>
               <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.daysPlanned')}</div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-4 sm:p-6 text-center">
+          <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
+            <CardContent className="px-1 py-3 sm:p-11 text-center">
               <Target className="h-6 w-6 sm:h-8 sm:w-8 text-secondary-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.avgCalories}</div>
               <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.avgCaloriesDay')}</div>
