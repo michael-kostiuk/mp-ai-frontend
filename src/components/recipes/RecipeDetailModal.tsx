@@ -164,36 +164,36 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               </div>
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Users className="h-8 w-8 text-primary-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{recipe.servings}</div>
-                    <div className="text-sm text-neutral-500">{t('recipes.detail.servings')}</div>
+              <div className="grid grid-cols-4 gap-2 md:gap-4">
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Users className="h-6 w-6 md:h-8 md:w-8 text-primary-600 mx-auto mb-2" />
+                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{recipe.servings}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.servings')}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Clock className="h-8 w-8 text-accent-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{formatTime(recipe.prep_time)}</div>
-                    <div className="text-sm text-neutral-500">{t('recipes.detail.prepTime')}</div>
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Clock className="h-6 w-6 md:h-8 md:w-8 text-accent-600 mx-auto mb-2" />
+                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{formatTime(recipe.prep_time)}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.prepTime')}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Clock className="h-8 w-8 text-secondary-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{formatTime(recipe.cook_time)}</div>
-                    <div className="text-sm text-neutral-500">{t('recipes.detail.cookTime')}</div>
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Clock className="h-6 w-6 md:h-8 md:w-8 text-secondary-600 mx-auto mb-2" />
+                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{formatTime(recipe.cook_time)}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.cookTime')}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Target className="h-8 w-8 text-warning-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{recipe.calories}</div>
-                    <div className="text-sm text-neutral-500">{t('recipes.detail.calories')}</div>
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Target className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />
+                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{recipe.calories}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.calories')}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -225,22 +225,22 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <CardTitle>{t('recipes.detail.nutritionPerServing')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-4 gap-2 md:gap-6">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-neutral-900">{recipe.calories}</div>
-                      <div className="text-sm text-neutral-500">{t('recipes.detail.calories')}</div>
+                      <div className="text-lg md:text-2xl font-bold text-neutral-900">{recipe.calories}</div>
+                      <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.calories')}</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-primary-600">{recipe.protein}g</div>
-                      <div className="text-sm text-neutral-500">{t('recipes.detail.protein')}</div>
+                      <div className="text-lg md:text-2xl font-bold text-primary-600">{recipe.protein}g</div>
+                      <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.protein')}</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-accent-600">{recipe.carbs}g</div>
-                      <div className="text-sm text-neutral-500">{t('recipes.detail.carbs')}</div>
+                      <div className="text-lg md:text-2xl font-bold text-accent-600">{recipe.carbs}g</div>
+                      <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.carbs')}</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-secondary-600">{recipe.fats}g</div>
-                      <div className="text-sm text-neutral-500">{t('recipes.detail.fats')}</div>
+                      <div className="text-lg md:text-2xl font-bold text-secondary-600">{recipe.fats}g</div>
+                      <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.fats')}</div>
                     </div>
                   </div>
                 </CardContent>

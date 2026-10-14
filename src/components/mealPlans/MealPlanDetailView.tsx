@@ -233,8 +233,8 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
               </div>
 
               {/* Date Range */}
-              <Card>
-                <CardContent className="p-4">
+              <div>
+                <CardContent>
                   <div className="text-center">
                     <div className="text-lg font-medium text-neutral-900 mb-1">
                       {formatShortDate(mealPlan.start_date)} - {formatShortDate(mealPlan.end_date)}
@@ -244,7 +244,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </div>
 
               {/* Dietary Preferences */}
               {mealPlan.dietary_preferences.length > 0 && (
@@ -268,7 +268,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
               )}
 
               {/* Meal Schedule */}
-              <Card>
+              <div>
                 <CardHeader>
                   <CardTitle>{t('mealPlans.detail.mealSchedule')}</CardTitle>
                 </CardHeader>
@@ -282,7 +282,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                       {Object.entries(groupEntriesByDate())
                         .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
                         .map(([date, entries]) => (
-                          <div key={date} className="border border-neutral-200 rounded-lg p-3 sm:p-4">
+                          <div key={date} className="bg-white border border-neutral-200 rounded-lg p-3 sm:p-4">
                             <h4 className="font-medium text-neutral-900 pb-3 mb-3 border-b border-neutral-200">
                               {formatDate(date + 'T00:00:00')}
                             </h4>
@@ -290,7 +290,12 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                               {entries
                                 .sort((a, b) => getMealTypeOrder(a.meal_type) - getMealTypeOrder(b.meal_type))
                                 .map((entry) => (
-                                  <div key={entry.id} className="bg-neutral-50 rounded-lg p-4">
+                                  <button
+                                    type="button"
+                                    key={entry.id}
+                                    onClick={() => setViewingRecipeId(entry.recipe.id)}
+                                    className="group w-full text-left bg-neutral-50 rounded-lg p-4 hover:bg-neutral-100 transition-colors"
+                                  >
                                     <div className="flex items-center justify-between mb-2">
                                       <span className="text-sm font-medium text-primary-600 capitalize">
                                         {entry.meal_type}
@@ -304,17 +309,13 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                                         {entry.servings} {entry.servings !== 1 ? t('common.servings') : t('common.serving')}
                                       </span>
                                     </div>
-                                    <button
-                                      type="button"
-                                      onClick={() => setViewingRecipeId(entry.recipe.id)}
-                                      className="font-medium text-neutral-900 mb-1 block text-left hover:text-primary-700 transition-colors"
-                                    >
+                                    <div className="font-medium text-neutral-900 mb-1 group-hover:text-primary-700 transition-colors">
                                       {entry.recipe.name}
-                                    </button>
+                                    </div>
                                     <div className="text-sm text-neutral-500">
                                       {entry.recipe.calories * entry.servings} {t('common.cal')} ({entry.servings} x {entry.recipe.calories})
                                     </div>
-                                  </div>
+                                  </button>
                                 ))}
                             </div>
                           </div>
@@ -322,7 +323,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                     </div>
                   )}
                 </CardContent>
-              </Card>
+              </div>
 
               {/* Shopping List Section */}
               <Card>
