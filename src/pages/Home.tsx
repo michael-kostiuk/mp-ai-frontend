@@ -91,7 +91,20 @@ const Home: React.FC = () => {
       )}
 
       <Container className="py-8 sm:py-12 lg:py-16 xl:py-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
+        <div className="grid grid-cols-3 gap-3 sm:hidden">
+          {features.map((feature) => (
+            <Link key={feature.title} to={feature.link}>
+              <Card padding="sm" className="h-full flex flex-col items-center text-center gap-2 active:scale-95 transition-transform">
+                <div className="p-2 bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-xl">
+                  {feature.icon}
+                </div>
+                <span className="text-sm font-semibold text-neutral-900 leading-tight">{feature.title}</span>
+              </Card>
+            </Link>
+          ))}
+        </div>
+
+        <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
           {features.map((feature) => (
             <Card key={feature.title} className="h-full group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <CardHeader className="flex flex-col items-center text-center sm:items-start sm:text-left lg:items-center lg:text-center xl:items-start xl:text-left">
