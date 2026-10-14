@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, ChefHat, Wifi, WifiOff } from 'lucide-react';
+import { Menu, X, Wifi, WifiOff } from 'lucide-react';
 import { useApiContext } from '../../context/ApiContext';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
+import BrandMark from '../ui/BrandMark';
 
 const MAX_RETRIES = 5;
 const INITIAL_DELAY = 1000; // 1 second
@@ -125,14 +126,14 @@ const Header: React.FC = () => {
   };
   
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-40">
+    <header className="bg-neutral-50 border-b border-neutral-200 sticky top-0 z-40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
         <div className="flex h-14 sm:h-16 lg:h-18 justify-between">
           <div className="flex">
             <div className="flex flex-shrink-0 items-center">
               <Link to="/" className="flex items-center group">
-                <ChefHat className="h-7 w-7 sm:h-8 sm:w-8 text-primary-600 group-hover:text-primary-700 transition-colors" />
-                <span className="ml-2 text-lg sm:text-xl font-bold text-neutral-900 group-hover:text-primary-700 transition-colors">
+                <BrandMark className="h-6 w-6 sm:h-7 sm:w-7 text-neutral-900" />
+                <span className="ml-2 text-lg sm:text-xl font-bold tracking-[-0.03em] text-neutral-900">
                   {t('header.appName')}
                 </span>
               </Link>
@@ -190,7 +191,7 @@ const Header: React.FC = () => {
       </div>
       
       {isMenuOpen && (
-        <div className="lg:hidden border-t border-neutral-200 bg-white">
+        <div className="lg:hidden border-t border-neutral-200 bg-neutral-50">
           <div className="space-y-1 pt-2 pb-3">
             {navigation.map((item) => (
               <Link

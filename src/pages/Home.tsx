@@ -5,6 +5,7 @@ import { ChefHat, CalendarDays, ShoppingCart, List } from 'lucide-react';
 import Container from '../components/layout/Container';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import BrandMark from '../components/ui/BrandMark';
 import TodayMeals from '../components/mealPlans/TodayMeals';
 import { findTodayPlan, getCurrentMeal } from '../utils/mealPlanUtils';
 import { MealPlan } from '../types';
@@ -60,19 +61,16 @@ const Home: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-neutral-50">
-      <div className={`bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 text-white relative overflow-hidden ${today ? 'pt-6 pb-20 sm:pt-10 sm:pb-24' : 'py-12 sm:py-16 lg:py-20 xl:py-24'}`}>
-        {/* Background decoration */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
-        
-        <Container className="relative">
+      <div className={`${today ? 'pt-6 pb-6 sm:pt-10 sm:pb-8' : 'py-12 sm:py-16 lg:py-20 xl:py-24'}`}>
+        <Container>
           <div className="max-w-4xl mx-auto text-center">
             <div className={today ? 'hidden' : 'mb-6 sm:mb-8'}>
-              <ChefHat className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 mx-auto mb-4 sm:mb-6 text-white/90" />
+              <BrandMark className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 mx-auto text-neutral-900" />
             </div>
-            <h1 className={`font-bold tracking-tight ${today ? 'text-2xl sm:text-3xl lg:text-4xl mb-2' : 'text-3xl sm:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl mb-4 sm:mb-6'}`}>
+            <h1 className={`font-bold tracking-[-0.035em] text-neutral-900 ${today ? 'text-2xl sm:text-3xl lg:text-4xl mb-2' : 'text-3xl sm:text-4xl lg:text-5xl xl:text-6xl mb-4 sm:mb-6'}`}>
               {t('home.title')}
             </h1>
-            <p className={`text-white/90 max-w-3xl mx-auto leading-relaxed ${today ? 'hidden sm:block text-base sm:text-lg' : 'text-lg sm:text-xl lg:text-2xl xl:text-3xl'}`}>
+            <p className={`text-neutral-500 max-w-3xl mx-auto leading-relaxed ${today ? 'hidden sm:block text-base sm:text-lg' : 'text-lg sm:text-xl lg:text-2xl'}`}>
               {t('home.subtitle')}
             </p>
           </div>
@@ -80,7 +78,7 @@ const Home: React.FC = () => {
       </div>
       
       {today && (
-        <Container className="relative -mt-16 sm:-mt-20">
+        <Container>
           <TodayMeals
             mealPlan={today.mealPlan}
             entries={today.entries}
