@@ -91,14 +91,14 @@ const Home: React.FC = () => {
       )}
 
       <Container className="py-8 sm:py-12 lg:py-16 xl:py-20">
-        <div className="grid grid-cols-3 gap-3 sm:hidden">
+        <div className="grid grid-cols-4 gap-2 sm:hidden">
           {features.map((feature) => (
             <Link key={feature.title} to={feature.link}>
-              <Card padding="sm" className="h-full flex flex-col items-center text-center gap-2 active:scale-95 transition-transform">
+              <Card padding="none" className="h-full flex flex-col items-center text-center gap-2 px-1 py-3 active:scale-95 transition-transform">
                 <div className="p-2 bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-xl">
                   {feature.icon}
                 </div>
-                <span className="text-sm font-semibold text-neutral-900 leading-tight">{feature.title}</span>
+                <span className="text-xs font-semibold text-neutral-900 leading-tight break-words">{feature.title}</span>
               </Card>
             </Link>
           ))}
