@@ -84,6 +84,14 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
     });
   };
 
+  // e.g. "Mo 12.10.26"
+  const formatShortDate = (dateString: string) => {
+    const date = new Date(dateString.slice(0, 10) + 'T00:00:00');
+    const weekday = date.toLocaleDateString(getLocaleFromLanguage(i18n.language), { weekday: 'short' }).slice(0, 2);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${String(date.getFullYear()).slice(-2)}`;
+  };
+
   const getDaysDifference = () => {
     if (!mealPlan) return 0;
     const startDate = new Date(mealPlan.start_date);
@@ -229,7 +237,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                 <CardContent className="p-4">
                   <div className="text-center">
                     <div className="text-lg font-medium text-neutral-900 mb-1">
-                      {formatDate(mealPlan.start_date)} - {formatDate(mealPlan.end_date)}
+                      {formatShortDate(mealPlan.start_date)} - {formatShortDate(mealPlan.end_date)}
                     </div>
                     <div className="text-sm text-neutral-500">
                       {t('mealPlans.detail.createdOn')} {formatDate(mealPlan.created_at)}
@@ -274,8 +282,8 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                       {Object.entries(groupEntriesByDate())
                         .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
                         .map(([date, entries]) => (
-                          <div key={date}>
-                            <h4 className="font-medium text-neutral-900 mb-3">
+                          <div key={date} className="border border-neutral-200 rounded-lg p-3 sm:p-4">
+                            <h4 className="font-medium text-neutral-900 pb-3 mb-3 border-b border-neutral-200">
                               {formatDate(date + 'T00:00:00')}
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -362,58 +370,54 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
               </Card>
 
               {/* Actions */}
-              <div className="flex justify-between pt-6 border-t border-neutral-200">
-                <div>
-                  {!showDeleteConfirm ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDeleteConfirm(true)}
-                      leftIcon={<Trash2 className="h-4 w-4" />}
-                      className="text-error-600 border-error-300 hover:bg-error-50"
-                    >
-                      {t('mealPlans.deletePlan')}
-                    </Button>
-                  ) : (
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowDeleteConfirm(false)}
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleDelete}
-                        isLoading={deleting}
-                        className="text-error-600 border-error-300 hover:bg-error-50"
-                      >
-                        {t('mealPlans.confirmDelete')}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-<div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-6 border-t border-neutral-200">
+                {onEdit && (
+                  <Button
+                    onClick={() => onEdit(mealPlan)}
+                    leftIcon={<Edit className="h-4 w-4" />}
+                    className="w-full sm:w-auto"
+                  >
+                    {t('mealPlans.detail.editPlan')}
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={handleRegenerate}
+                  isLoading={regenerating}
+                  disabled={regenerating}
+                  leftIcon={<RefreshCw className="h-4 w-4" />}
+                  className="w-full sm:w-auto"
+                >
+                  {t('mealPlans.detail.regenerate')}
+                </Button>
+                {!showDeleteConfirm ? (
                   <Button
                     variant="outline"
-                    onClick={handleRegenerate}
-                    isLoading={regenerating}
-                    disabled={regenerating}
-                    leftIcon={<RefreshCw className="h-4 w-4" />}
+                    onClick={() => setShowDeleteConfirm(true)}
+                    leftIcon={<Trash2 className="h-4 w-4" />}
+                    className="w-full sm:w-auto !text-error-600 !border-error-300 hover:!bg-error-50"
                   >
-                    {t('mealPlans.detail.regenerate')}
+                    {t('mealPlans.deletePlan')}
                   </Button>
-                  {onEdit && (
+                ) : (
+                  <div className="flex gap-2">
                     <Button
-                      onClick={() => onEdit(mealPlan)}
-                      leftIcon={<Edit className="h-4 w-4" />}
+                      variant="outline"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex-1 sm:flex-none"
                     >
-                      {t('mealPlans.detail.editPlan')}
+                      {t('common.cancel')}
                     </Button>
-                  )}
-                </div>
+                    <Button
+                      variant="danger"
+                      onClick={handleDelete}
+                      isLoading={deleting}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {t('mealPlans.confirmDelete')}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
