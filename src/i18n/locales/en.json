@@ -52,6 +52,7 @@
     "pinLabel": "PIN",
     "wrongPin": "Wrong PIN",
     "tooManyAttempts": "Too many attempts, try again in {{minutes}} min",
+    "tooManyAttemptsHours": "Too many attempts, try again in {{hours}} h",
     "loginFailed": "Could not log in. Please try again."
   },
   "header": {

@@ -17,14 +17,32 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const lockedMessage = (seconds: number) =>
-    t('auth.tooManyAttempts', { minutes: Math.max(1, Math.ceil(seconds / 60)) });
+  const lockedMessage = (seconds: number) => {
+    const minutes = Math.max(1, Math.ceil(seconds / 60));
+    return minutes < 90
+      ? t('auth.tooManyAttempts', { minutes })
+      : t('auth.tooManyAttemptsHours', { hours: Math.ceil(minutes / 60) });
+  };
 
   useEffect(() => {
     if (isOpen) {
       setPin('');
       setError(lockedFor > 0 ? lockedMessage(lockedFor) : null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const trigger = document.activeElement as HTMLElement | null;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      trigger?.focus();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
@@ -61,7 +79,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div
         role="dialog"
         aria-modal="true"
