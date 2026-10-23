@@ -16,6 +16,14 @@ const Header: React.FC = () => {
   const { mode, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const loginTriggerRef = useRef<HTMLElement | null>(null);
+
+  const closeLogin = () => {
+    setIsLoginOpen(false);
+    // Wait for the modal to unmount so its input does not keep focus.
+    requestAnimationFrame(() => loginTriggerRef.current?.focus());
+  };
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const location = useLocation();
   const baseUrl = config.baseUrl;
@@ -136,7 +144,9 @@ const Header: React.FC = () => {
       <button
         type="button"
         className={className}
-        onClick={() => {
+        onClick={(e) => {
+          // The mobile menu item unmounts with the menu; return focus to the menu toggle then.
+          loginTriggerRef.current = closeMenu ? menuToggleRef.current : e.currentTarget;
           if (closeMenu) setIsMenuOpen(false);
           if (isOwner) void logout();
           else setIsLoginOpen(true);
@@ -188,6 +198,7 @@ const Header: React.FC = () => {
             <button
               type="button"
               className="inline-flex items-center justify-center rounded-md p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-colors"
+              ref={menuToggleRef}
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
@@ -264,7 +275,7 @@ const Header: React.FC = () => {
           </div>
         </div>
       )}
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <LoginModal isOpen={isLoginOpen} onClose={closeLogin} />
     </header>
   );
 };

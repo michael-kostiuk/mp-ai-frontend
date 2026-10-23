@@ -16,6 +16,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const downOnBackdrop = useRef(false);
 
   const lockedMessage = (seconds: number) => {
     const minutes = Math.max(1, Math.ceil(seconds / 60));
@@ -34,14 +35,12 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (!isOpen) return;
-    const trigger = document.activeElement as HTMLElement | null;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      trigger?.focus();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -81,8 +80,11 @@ const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose }) => {
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onMouseDown={(e) => {
+        downOnBackdrop.current = e.target === e.currentTarget;
+      }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (downOnBackdrop.current && e.target === e.currentTarget) onClose();
       }}
     >
       <div
