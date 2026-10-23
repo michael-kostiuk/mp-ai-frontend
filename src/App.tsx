@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { IngredientProvider } from './context/IngredientContext';
+import { AuthProvider } from './context/AuthContext';
 import Header from './components/layout/Header';
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
@@ -14,6 +15,7 @@ import './styles/index.css';
 
 function App() {
   return (
+    <AuthProvider>
     <IngredientProvider>
       <Router>
         <div className="min-h-screen bg-neutral-50">
@@ -33,6 +35,7 @@ function App() {
         </div>
       </Router>
     </IngredientProvider>
+    </AuthProvider>
   );
 }
 

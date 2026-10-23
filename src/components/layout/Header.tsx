@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Menu, X, ChefHat, Wifi, WifiOff } from 'lucide-react';
 import { useApiContext } from '../../context/ApiContext';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
+import LoginModal from '../auth/LoginModal';
+import { useAuth } from '../../context/AuthContext';
 
 const MAX_RETRIES = 5;
 const INITIAL_DELAY = 1000; // 1 second
@@ -11,7 +13,9 @@ const INITIAL_DELAY = 1000; // 1 second
 const Header: React.FC = () => {
   const { t } = useTranslation();
   const { config } = useApiContext();
+  const { mode, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const location = useLocation();
   const baseUrl = config.baseUrl;
@@ -125,6 +129,24 @@ const Header: React.FC = () => {
     }
   };
   
+  const authButton = (className: string, closeMenu = false) => {
+    if (mode === 'loading') return null;
+    const isOwner = mode === 'owner';
+    return (
+      <button
+        type="button"
+        className={className}
+        onClick={() => {
+          if (closeMenu) setIsMenuOpen(false);
+          if (isOwner) void logout();
+          else setIsLoginOpen(true);
+        }}
+      >
+        {isOwner ? t('auth.logout') : t('auth.login')}
+      </button>
+    );
+  };
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
@@ -137,6 +159,11 @@ const Header: React.FC = () => {
                   {t('header.appName')}
                 </span>
               </Link>
+              {mode === 'demo' && (
+                <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500">
+                  {t('auth.demo')}
+                </span>
+              )}
             </div>
             
             <nav className="hidden lg:ml-8 xl:ml-12 lg:flex lg:space-x-6 xl:space-x-8" aria-label="Main navigation">
@@ -175,6 +202,7 @@ const Header: React.FC = () => {
           
           <div className="hidden lg:ml-6 lg:flex lg:items-center gap-2">
             <LanguageSwitcher />
+            {authButton('text-sm text-neutral-500 hover:text-neutral-700 px-2 py-1 rounded transition-colors')}
             <button
               onClick={() => testConnection(true)}
               className="flex items-center text-xs xl:text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
@@ -226,6 +254,9 @@ const Header: React.FC = () => {
               <LanguageSwitcher />
             </div>
             <div className="px-4 mt-2">
+              {authButton('text-sm text-neutral-600 hover:text-neutral-800 py-1', true)}
+            </div>
+            <div className="px-4 mt-2">
               <div className="text-xs text-neutral-500 break-all">
                 {baseUrl} • {timeout}ms {t('header.timeout')}
               </div>
@@ -233,6 +264,7 @@ const Header: React.FC = () => {
           </div>
         </div>
       )}
+      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </header>
   );
 };
