@@ -4,8 +4,8 @@ import { createQueryString } from '../utils/apiUtils';
 
 const BASE_PATH = '/meal-plans';
 
-export const getMealPlans = async (userId: number): Promise<MealPlan[]> => {
-  return apiClient.get<MealPlan[]>(BASE_PATH, { user_id: userId });
+export const getMealPlans = async (): Promise<MealPlan[]> => {
+  return apiClient.get<MealPlan[]>(BASE_PATH);
 };
 
 export const getMealPlan = async (id: number): Promise<MealPlan> => {
@@ -42,7 +42,6 @@ export const autoGenerateMealPlan = async (
     days: number;
     target_calories: number;
     people_count: number;
-    user_id: number;
     dietary_preferences?: string[];
   }
 ): Promise<MealPlan> => {

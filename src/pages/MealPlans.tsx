@@ -16,9 +16,6 @@ import { getMealPlans } from '../api/mealPlanApi';
 
 const MealPlans: React.FC = () => {
   const { t } = useTranslation();
-  // In a real app, this would come from user authentication
-  const userId = 1;
-  
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedMealPlanId, setSelectedMealPlanId] = useState<number | null>(null);
@@ -28,8 +25,8 @@ const MealPlans: React.FC = () => {
   
   // Load meal plans only once on mount
   useEffect(() => {
-    fetchMealPlans(userId);
-  }, [fetchMealPlans, userId]);
+    fetchMealPlans();
+  }, [fetchMealPlans]);
   
   const handleSelectMealPlan = (mealPlan: MealPlan) => {
     setSelectedMealPlanId(mealPlan.id);
@@ -37,11 +34,11 @@ const MealPlans: React.FC = () => {
   };
 
   const handleCreateSuccess = () => {
-    fetchMealPlans(userId); // Refresh the list after creating
+    fetchMealPlans(); // Refresh the list after creating
   };
 
   const handleDeleteSuccess = () => {
-    fetchMealPlans(userId); // Refresh the list after deleting
+    fetchMealPlans(); // Refresh the list after deleting
     setIsDetailModalOpen(false);
     setSelectedMealPlanId(null);
   };
@@ -137,7 +134,7 @@ const MealPlans: React.FC = () => {
         <ErrorMessage 
           title={t('mealPlans.failedToLoadMealPlans')} 
           message={error.message}
-          onRetry={() => fetchMealPlans(userId)} 
+          onRetry={() => fetchMealPlans()} 
         />
       )}
       

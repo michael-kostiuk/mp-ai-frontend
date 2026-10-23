@@ -49,6 +49,7 @@ const Header: React.FC = () => {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         signal: controller.signal,
+        credentials: 'include',
       });
       
       clearTimeout(timeoutId);
