@@ -14,16 +14,13 @@ import { getMealPlans } from '../api/mealPlanApi';
 
 const Home: React.FC = () => {
   const { t } = useTranslation();
-  // In a real app, this would come from user authentication
-  const userId = 1;
-
-  const { data: mealPlans, execute: fetchMealPlans } = useApi<MealPlan[], [number]>(getMealPlans);
+  const { data: mealPlans, execute: fetchMealPlans } = useApi<MealPlan[]>(getMealPlans);
 
   useEffect(() => {
-    fetchMealPlans(userId).catch(() => {
+    fetchMealPlans().catch(() => {
       // Today's plan is optional on the home page; ignore load failures
     });
-  }, [fetchMealPlans, userId]);
+  }, [fetchMealPlans]);
 
   const currentMeal = getCurrentMeal(new Date());
   const today = mealPlans ? findTodayPlan(mealPlans, currentMeal.dateKey) : null;

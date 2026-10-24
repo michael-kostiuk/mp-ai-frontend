@@ -85,6 +85,7 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(fullUrl, {
         method: 'GET',
+        credentials: 'include',
         headers: this.getHeaders()
       })
     );
@@ -96,6 +97,7 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(url, {
         method: 'POST',
+        credentials: 'include',
         headers: this.getHeaders(),
         body: data ? JSON.stringify(data) : undefined
       })
@@ -108,6 +110,7 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(url, {
         method: 'PUT',
+        credentials: 'include',
         headers: this.getHeaders(),
         body: JSON.stringify(data)
       })
@@ -120,6 +123,7 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(url, {
         method: 'DELETE',
+        credentials: 'include',
         headers: this.getHeaders()
       })
     );
@@ -133,6 +137,7 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(url, {
         method: 'POST',
+        credentials: 'include',
         body: formData
       })
     );

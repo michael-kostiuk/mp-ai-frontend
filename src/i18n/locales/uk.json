@@ -44,6 +44,17 @@
     "shoppingLists": "Списки покупок",
     "ingredients": "Інгредієнти"
   },
+  "auth": {
+    "demo": "Демо",
+    "login": "Увійти",
+    "logout": "Вийти",
+    "loginTitle": "Введіть PIN-код",
+    "pinLabel": "PIN-код",
+    "wrongPin": "Неправильний PIN-код",
+    "tooManyAttempts": "Забагато спроб, спробуйте через {{minutes}} хв",
+    "tooManyAttemptsHours": "Забагато спроб, спробуйте через {{hours}} год",
+    "loginFailed": "Не вдалося увійти. Спробуйте ще раз."
+  },
   "header": {
     "appName": "MealMaster",
     "api": "API",

@@ -16,9 +16,6 @@ import { getMealPlans } from '../api/mealPlanApi';
 
 const MealPlans: React.FC = () => {
   const { t } = useTranslation();
-  // In a real app, this would come from user authentication
-  const userId = 1;
-  
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingMealPlan, setEditingMealPlan] = useState<MealPlan | null>(null);
   
@@ -26,17 +23,17 @@ const MealPlans: React.FC = () => {
   
   // Load meal plans only once on mount
   useEffect(() => {
-    fetchMealPlans(userId);
-  }, [fetchMealPlans, userId]);
+    fetchMealPlans();
+  }, [fetchMealPlans]);
 
   const sortedMealPlans = useMemo(
     () => (mealPlans ? [...mealPlans].sort((a, b) => b.end_date.localeCompare(a.end_date)) : []),
     [mealPlans]
   );
   const todayKey = toDateKey(new Date());
-  
+
   const handleCreateSuccess = () => {
-    fetchMealPlans(userId); // Refresh the list after creating
+    fetchMealPlans(); // Refresh the list after creating
   };
 
   const handleCreateModalClose = () => {
@@ -123,7 +120,7 @@ const MealPlans: React.FC = () => {
         <ErrorMessage 
           title={t('mealPlans.failedToLoadMealPlans')} 
           message={error.message}
-          onRetry={() => fetchMealPlans(userId)} 
+          onRetry={() => fetchMealPlans()} 
         />
       )}
       

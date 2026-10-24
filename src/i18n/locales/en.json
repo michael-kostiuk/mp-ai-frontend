@@ -44,6 +44,17 @@
     "shoppingLists": "Shopping Lists",
     "ingredients": "Ingredients"
   },
+  "auth": {
+    "demo": "Demo",
+    "login": "Log in",
+    "logout": "Log out",
+    "loginTitle": "Enter PIN",
+    "pinLabel": "PIN",
+    "wrongPin": "Wrong PIN",
+    "tooManyAttempts": "Too many attempts, try again in {{minutes}} min",
+    "tooManyAttemptsHours": "Too many attempts, try again in {{hours}} h",
+    "loginFailed": "Could not log in. Please try again."
+  },
   "header": {
     "appName": "MealMaster",
     "api": "API",

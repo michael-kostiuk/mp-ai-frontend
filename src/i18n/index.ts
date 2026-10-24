@@ -26,7 +26,7 @@ i18n
     debug: import.meta.env.DEV,
     
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       caches: ['localStorage'],
       lookupLocalStorage: 'i18nextLng',
     },
