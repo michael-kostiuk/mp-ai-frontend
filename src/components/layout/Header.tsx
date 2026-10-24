@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, ChefHat, Wifi, WifiOff } from 'lucide-react';
+import { Menu, X, Wifi, WifiOff } from 'lucide-react';
 import { useApiContext } from '../../context/ApiContext';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
+import BrandMark from '../ui/BrandMark';
+import LoginModal from '../auth/LoginModal';
+import { useAuth } from '../../context/AuthContext';
 
 const MAX_RETRIES = 5;
 const INITIAL_DELAY = 1000; // 1 second
@@ -11,7 +14,17 @@ const INITIAL_DELAY = 1000; // 1 second
 const Header: React.FC = () => {
   const { t } = useTranslation();
   const { config } = useApiContext();
+  const { mode, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
+  const loginTriggerRef = useRef<HTMLElement | null>(null);
+
+  const closeLogin = () => {
+    setIsLoginOpen(false);
+    // Wait for the modal to unmount so its input does not keep focus.
+    requestAnimationFrame(() => loginTriggerRef.current?.focus());
+  };
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const location = useLocation();
   const baseUrl = config.baseUrl;
@@ -49,6 +62,7 @@ const Header: React.FC = () => {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         signal: controller.signal,
+        credentials: 'include',
       });
       
       clearTimeout(timeoutId);
@@ -124,18 +138,43 @@ const Header: React.FC = () => {
     }
   };
   
+  const authButton = (className: string, closeMenu = false) => {
+    if (mode === 'loading') return null;
+    const isOwner = mode === 'owner';
+    return (
+      <button
+        type="button"
+        className={className}
+        onClick={(e) => {
+          // The mobile menu item unmounts with the menu; return focus to the menu toggle then.
+          loginTriggerRef.current = closeMenu ? menuToggleRef.current : e.currentTarget;
+          if (closeMenu) setIsMenuOpen(false);
+          if (isOwner) void logout();
+          else setIsLoginOpen(true);
+        }}
+      >
+        {isOwner ? t('auth.logout') : t('auth.login')}
+      </button>
+    );
+  };
+
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-40">
+    <header className="bg-neutral-50 border-b border-neutral-200 sticky top-0 z-40">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
         <div className="flex h-14 sm:h-16 lg:h-18 justify-between">
           <div className="flex">
             <div className="flex flex-shrink-0 items-center">
               <Link to="/" className="flex items-center group">
-                <ChefHat className="h-7 w-7 sm:h-8 sm:w-8 text-primary-600 group-hover:text-primary-700 transition-colors" />
-                <span className="ml-2 text-lg sm:text-xl font-bold text-neutral-900 group-hover:text-primary-700 transition-colors">
+                <BrandMark className="h-6 w-6 sm:h-7 sm:w-7 text-neutral-900" />
+                <span className="ml-2 text-lg sm:text-xl font-bold tracking-[-0.03em] text-neutral-900">
                   {t('header.appName')}
                 </span>
               </Link>
+              {mode === 'demo' && (
+                <span className="ml-2 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500">
+                  {t('auth.demo')}
+                </span>
+              )}
             </div>
             
             <nav className="hidden lg:ml-8 xl:ml-12 lg:flex lg:space-x-6 xl:space-x-8" aria-label="Main navigation">
@@ -160,6 +199,7 @@ const Header: React.FC = () => {
             <button
               type="button"
               className="inline-flex items-center justify-center rounded-md p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-colors"
+              ref={menuToggleRef}
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
@@ -174,6 +214,7 @@ const Header: React.FC = () => {
           
           <div className="hidden lg:ml-6 lg:flex lg:items-center gap-2">
             <LanguageSwitcher />
+            {authButton('text-sm text-neutral-500 hover:text-neutral-700 px-2 py-1 rounded transition-colors')}
             <button
               onClick={() => testConnection(true)}
               className="flex items-center text-xs xl:text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
@@ -190,7 +231,7 @@ const Header: React.FC = () => {
       </div>
       
       {isMenuOpen && (
-        <div className="lg:hidden border-t border-neutral-200 bg-white">
+        <div className="lg:hidden border-t border-neutral-200 bg-neutral-50">
           <div className="space-y-1 pt-2 pb-3">
             {navigation.map((item) => (
               <Link
@@ -225,6 +266,9 @@ const Header: React.FC = () => {
               <LanguageSwitcher />
             </div>
             <div className="px-4 mt-2">
+              {authButton('text-sm text-neutral-600 hover:text-neutral-800 py-1', true)}
+            </div>
+            <div className="px-4 mt-2">
               <div className="text-xs text-neutral-500 break-all">
                 {baseUrl} • {timeout}ms {t('header.timeout')}
               </div>
@@ -232,6 +276,7 @@ const Header: React.FC = () => {
           </div>
         </div>
       )}
+      <LoginModal isOpen={isLoginOpen} onClose={closeLogin} />
     </header>
   );
 };

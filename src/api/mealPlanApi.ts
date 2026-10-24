@@ -1,11 +1,11 @@
 import apiClient from './apiClient';
-import { MealPlan, MealPlanCreate, MealPlanEntry, MealPlanEntryCreate, ShoppingList } from '../types';
+import { MealPlan, MealPlanCreate, MealPlanEntry, MealPlanEntryCreate, Recipe, ShoppingList } from '../types';
 import { createQueryString } from '../utils/apiUtils';
 
 const BASE_PATH = '/meal-plans';
 
-export const getMealPlans = async (userId: number): Promise<MealPlan[]> => {
-  return apiClient.get<MealPlan[]>(BASE_PATH, { user_id: userId });
+export const getMealPlans = async (): Promise<MealPlan[]> => {
+  return apiClient.get<MealPlan[]>(BASE_PATH);
 };
 
 export const getMealPlan = async (id: number): Promise<MealPlan> => {
@@ -42,7 +42,6 @@ export const autoGenerateMealPlan = async (
     days: number;
     target_calories: number;
     people_count: number;
-    user_id: number;
     dietary_preferences?: string[];
   }
 ): Promise<MealPlan> => {
@@ -52,4 +51,19 @@ export const autoGenerateMealPlan = async (
 
 export const regenerateMealPlan = async (mealPlanId: number): Promise<MealPlan> => {
   return apiClient.post<MealPlan>(`${BASE_PATH}/auto-generate?id=${mealPlanId}`);
+};
+
+export interface SuggestMealParams {
+  meal_type: string;
+  target_calories: number;
+  current_recipe_id?: number;
+  plan_recipe_ids: number[];
+  // Recipes already offered for this slot in earlier re-rolls
+  exclude_recipe_ids?: number[];
+}
+
+// Re-roll a single meal: get another recipe suggestion for one slot, using the same
+// weighted selection as plan generation while avoiding the current recipe.
+export const suggestMeal = async (params: SuggestMealParams): Promise<Recipe> => {
+  return apiClient.post<Recipe>(`${BASE_PATH}/suggest-meal`, params);
 };

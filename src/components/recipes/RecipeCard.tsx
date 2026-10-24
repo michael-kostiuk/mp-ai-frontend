@@ -1,9 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Clock, Users, Tag } from 'lucide-react';
+import { Clock, Users, Tag, CalendarDays } from 'lucide-react';
 import { Recipe } from '../../types';
 import Card, { CardContent } from '../ui/Card';
+import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -11,7 +12,7 @@ interface RecipeCardProps {
 }
 
 const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const totalTime = recipe.prep_time + recipe.cook_time;
   
   const CardWrapper = onClick ? 'div' : Link;
@@ -47,9 +48,20 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
         </div>
         
         <CardContent className="px-0 py-3 sm:py-4 lg:py-5">
-          <h3 className="text-base sm:text-lg font-semibold text-neutral-900 mb-2 sm:mb-3 line-clamp-2 group-hover:text-primary-700 transition-colors">
+          <h3 className="text-base sm:text-lg font-semibold text-neutral-900 mb-1 line-clamp-2 group-hover:text-primary-700 transition-colors">
             {recipe.name}
           </h3>
+
+          {recipe.created_at && (
+            <time
+              dateTime={recipe.created_at}
+              title={t('recipes.detail.created')}
+              className="flex items-center text-xs text-neutral-500 mb-2 sm:mb-3"
+            >
+              <CalendarDays className="h-3 w-3 mr-1" aria-hidden="true" />
+              {new Date(recipe.created_at).toLocaleDateString(getLocaleFromLanguage(i18n.language), { month: 'short', day: 'numeric', year: 'numeric' })}
+            </time>
+          )}
           
           <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
             {(recipe.dietary_tags || []).slice(0, 2).map((tag) => (

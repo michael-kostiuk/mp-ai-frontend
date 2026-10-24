@@ -4,7 +4,7 @@ export const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8800';
 export const API_CONFIG_KEY = 'apiConfig';
 const API_TIMEOUT = 15000;
 
-type ResourceKind = 'recipes' | 'ingredients' | 'meal-plans';
+type ResourceKind = 'recipes' | 'ingredients' | 'meal-plans' | 'shopping-lists';
 
 export class ResourceTracker {
   private resources: { kind: ResourceKind; id: number }[] = [];

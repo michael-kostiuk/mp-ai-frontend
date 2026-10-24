@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Check, ChefHat, ChevronDown, ChevronUp } from 'lucide-react';
 import { ShoppingListItem as ShoppingListItemType, Recipe } from '../../types';
@@ -11,27 +12,26 @@ import { getShoppingListItemRecipes } from '../../api/shoppingListApi';
 
 interface ShoppingListItemProps {
   item: ShoppingListItemType;
-  onStatusChange?: (itemId: number, status: string) => void;
+  checked?: boolean;
+  // Without it the checkbox is read-only (e.g. list previews)
+  onToggle?: (itemId: number) => void;
 }
 
 const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
   item,
-  onStatusChange
+  checked,
+  onToggle
 }) => {
   const { t } = useTranslation();
-  const [isChecked, setIsChecked] = useState(item.status === 'completed');
+  const isChecked = checked ?? item.status === 'purchased';
   const [showRecipes, setShowRecipes] = useState(false);
-  
+
   const { data: recipes, loading, error, execute: fetchRecipes } = useApi<Recipe[]>(getShoppingListItemRecipes);
-  
+
   const handleToggle = () => {
-    const newStatus = isChecked ? 'pending' : 'completed';
-    setIsChecked(!isChecked);
-    if (onStatusChange) {
-      onStatusChange(item.id, newStatus);
-    }
+    onToggle?.(item.id);
   };
-  
+
   const handleShowRecipes = async () => {
     if (!showRecipes && !recipes) {
       // Only fetch if we haven't fetched before and we're opening
@@ -57,8 +57,12 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
             ${isChecked 
               ? 'border-primary-500 bg-primary-500 text-white' 
               : 'border-neutral-300 bg-white'}
+            ${onToggle ? '' : 'cursor-default'}
           `}
           onClick={handleToggle}
+          disabled={!onToggle}
+          aria-pressed={isChecked}
+          aria-label={item.ingredient.name}
         >
           {isChecked && <Check className="h-3 w-3" />}
         </button>
@@ -125,9 +129,12 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
                     return (
                       <div key={recipe.id} className="flex items-center justify-between p-2 bg-neutral-50 rounded border">
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-neutral-900 truncate">
+                          <Link
+                            to={`/recipes/${recipe.id}?fromShoppingList=${item.shopping_list_id}`}
+                            className="block text-sm font-medium text-neutral-900 truncate hover:text-primary-700 transition-colors"
+                          >
                             {recipe.name}
-                          </div>
+                          </Link>
                           <div className="text-xs text-neutral-500 capitalize">
                             {recipe.category} • {recipe.servings} servings
                           </div>

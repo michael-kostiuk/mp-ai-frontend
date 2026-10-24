@@ -85,6 +85,7 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(fullUrl, {
         method: 'GET',
+        credentials: 'include',
         headers: this.getHeaders()
       })
     );
@@ -96,6 +97,7 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(url, {
         method: 'POST',
+        credentials: 'include',
         headers: this.getHeaders(),
         body: data ? JSON.stringify(data) : undefined
       })
@@ -108,8 +110,24 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(url, {
         method: 'PUT',
+        credentials: 'include',
         headers: this.getHeaders(),
         body: JSON.stringify(data)
+      })
+    );
+  }
+
+  // keepalive lets the request finish while the page is being closed or hidden
+  async patch<T>(endpoint: string, data: unknown, options: { keepalive?: boolean } = {}): Promise<T> {
+    const url = this.createUrl(endpoint);
+
+    return this.handleResponse<T>(
+      fetch(url, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: this.getHeaders(),
+        body: JSON.stringify(data),
+        keepalive: options.keepalive
       })
     );
   }
@@ -120,6 +138,7 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(url, {
         method: 'DELETE',
+        credentials: 'include',
         headers: this.getHeaders()
       })
     );
@@ -133,6 +152,7 @@ class ApiClient {
     return this.handleResponse<T>(
       fetch(url, {
         method: 'POST',
+        credentials: 'include',
         body: formData
       })
     );

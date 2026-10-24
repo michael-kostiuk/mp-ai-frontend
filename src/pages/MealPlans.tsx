@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlusCircle, Calendar, Users, Target } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import MealPlanCard from '../components/mealPlans/MealPlanCard';
 import CreateMealPlanModal from '../components/mealPlans/CreateMealPlanModal';
-import MealPlanDetailModal from '../components/mealPlans/MealPlanDetailModal';
+import { toDateKey } from '../utils/mealPlanUtils';
 import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
@@ -16,41 +16,24 @@ import { getMealPlans } from '../api/mealPlanApi';
 
 const MealPlans: React.FC = () => {
   const { t } = useTranslation();
-  // In a real app, this would come from user authentication
-  const userId = 1;
-  
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedMealPlanId, setSelectedMealPlanId] = useState<number | null>(null);
   const [editingMealPlan, setEditingMealPlan] = useState<MealPlan | null>(null);
   
   const { data: mealPlans, loading, error, execute: fetchMealPlans } = useApi<MealPlan[]>(getMealPlans);
   
   // Load meal plans only once on mount
   useEffect(() => {
-    fetchMealPlans(userId);
-  }, [fetchMealPlans, userId]);
-  
-  const handleSelectMealPlan = (mealPlan: MealPlan) => {
-    setSelectedMealPlanId(mealPlan.id);
-    setIsDetailModalOpen(true);
-  };
+    fetchMealPlans();
+  }, [fetchMealPlans]);
+
+  const sortedMealPlans = useMemo(
+    () => (mealPlans ? [...mealPlans].sort((a, b) => b.end_date.localeCompare(a.end_date)) : []),
+    [mealPlans]
+  );
+  const todayKey = toDateKey(new Date());
 
   const handleCreateSuccess = () => {
-    fetchMealPlans(userId); // Refresh the list after creating
-  };
-
-  const handleDeleteSuccess = () => {
-    fetchMealPlans(userId); // Refresh the list after deleting
-    setIsDetailModalOpen(false);
-    setSelectedMealPlanId(null);
-  };
-
-  const handleEditMealPlan = (mealPlan: MealPlan) => {
-    // Close detail modal and open edit modal with meal plan data
-    setIsDetailModalOpen(false);
-    setEditingMealPlan(mealPlan);
-    setIsCreateModalOpen(true);
+    fetchMealPlans(); // Refresh the list after creating
   };
 
   const handleCreateModalClose = () => {
@@ -100,25 +83,25 @@ const MealPlans: React.FC = () => {
 
       {/* Stats Cards */}
       {mealPlans && mealPlans.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
-          <Card className="group hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-4 sm:p-6 text-center">
+        <div className="grid grid-cols-3 gap-2 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
+          <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
+            <CardContent className="px-1 py-3 sm:p-11 text-center">
               <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.totalPlans}</div>
               <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.totalPlans')}</div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-4 sm:p-6 text-center">
+          <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
+            <CardContent className="px-1 py-3 sm:p-11 text-center">
               <Users className="h-6 w-6 sm:h-8 sm:w-8 text-accent-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.totalDays}</div>
               <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.daysPlanned')}</div>
             </CardContent>
           </Card>
 
-          <Card className="group hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-4 sm:p-6 text-center">
+          <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
+            <CardContent className="px-1 py-3 sm:p-11 text-center">
               <Target className="h-6 w-6 sm:h-8 sm:w-8 text-secondary-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.avgCalories}</div>
               <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.avgCaloriesDay')}</div>
@@ -137,7 +120,7 @@ const MealPlans: React.FC = () => {
         <ErrorMessage 
           title={t('mealPlans.failedToLoadMealPlans')} 
           message={error.message}
-          onRetry={() => fetchMealPlans(userId)} 
+          onRetry={() => fetchMealPlans()} 
         />
       )}
       
@@ -168,12 +151,12 @@ const MealPlans: React.FC = () => {
       )}
       
       {mealPlans && mealPlans.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 lg:gap-8 animate-fadeIn">
-          {mealPlans.map((mealPlan) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 animate-fadeIn">
+          {sortedMealPlans.map((mealPlan) => (
             <MealPlanCard 
               key={mealPlan.id} 
               mealPlan={mealPlan} 
-              onClick={() => handleSelectMealPlan(mealPlan)}
+              isPast={mealPlan.end_date.slice(0, 10) < todayKey}
             />
           ))}
         </div>
@@ -185,17 +168,6 @@ const MealPlans: React.FC = () => {
         onClose={handleCreateModalClose}
         onSuccess={handleCreateSuccess}
         editingMealPlan={editingMealPlan}
-      />
-
-      <MealPlanDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={() => {
-          setIsDetailModalOpen(false);
-          setSelectedMealPlanId(null);
-        }}
-        mealPlanId={selectedMealPlanId}
-        onEdit={handleEditMealPlan}
-        onDelete={handleDeleteSuccess}
       />
     </Container>
   );

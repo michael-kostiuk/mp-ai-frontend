@@ -1,26 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
 import Button from '../ui/Button';
+import Container from '../layout/Container';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
 import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
+import { getMealPlanShoppingLists } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
-interface MealPlanDetailModalProps {
-  isOpen: boolean;
+interface MealPlanDetailViewProps {
   onClose: () => void;
   mealPlanId: number | null;
   onEdit?: (mealPlan: MealPlan) => void;
   onDelete?: () => void;
 }
 
-const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
-  isOpen,
+const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
   onClose,
   mealPlanId,
   onEdit,
@@ -28,10 +28,17 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [existingShoppingList, setExistingShoppingList] = useState<ShoppingList | null>(null);
+  const navigate = useNavigate();
   
   const { data: mealPlan, loading, error, execute: fetchMealPlan } = useApi<MealPlan>(getMealPlan);
   const { loading: deleting, execute: deletePlan } = useApi(deleteMealPlan);
   const { data: shoppingList, loading: generatingList, execute: generateList } = useApi<ShoppingList>(generateShoppingList);
+  const {
+    loading: loadingShoppingLists,
+    execute: fetchShoppingLists,
+    cancel: cancelShoppingLists
+  } = useApi<ShoppingList[], [number]>(getMealPlanShoppingLists);
   const { loading: regenerating, execute: regenerate } = useApi<MealPlan>(regenerateMealPlan);
 
   // Memoize the fetch function to prevent unnecessary re-renders
@@ -41,12 +48,28 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
     }
   }, [fetchMealPlan, mealPlanId]);
 
-  // Load meal plan only when modal opens or mealPlanId changes
   useEffect(() => {
-    if (isOpen && mealPlanId) {
-      loadMealPlan();
+    loadMealPlan();
+  }, [loadMealPlan]);
+
+  const loadExistingShoppingList = useCallback(async () => {
+    if (!mealPlanId) return;
+
+    try {
+      // Newest first from the API
+      const lists = await fetchShoppingLists(mealPlanId);
+      setExistingShoppingList(lists[0] ?? null);
+    } catch {
+      // Non-blocking: shopping list summary is optional in this modal.
+      setExistingShoppingList(null);
     }
-  }, [isOpen, mealPlanId, loadMealPlan]);
+  }, [mealPlanId, fetchShoppingLists]);
+
+  useEffect(() => {
+    setExistingShoppingList(null);
+    loadExistingShoppingList();
+    return cancelShoppingLists;
+  }, [loadExistingShoppingList, cancelShoppingLists]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -56,6 +79,14 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
       month: 'long', 
       day: 'numeric' 
     });
+  };
+
+  // e.g. "Mo 12.10.26"
+  const formatShortDate = (dateString: string) => {
+    const date = new Date(dateString.slice(0, 10) + 'T00:00:00');
+    const weekday = date.toLocaleDateString(getLocaleFromLanguage(i18n.language), { weekday: 'short' }).slice(0, 2);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${String(date.getFullYear()).slice(-2)}`;
   };
 
   const getDaysDifference = () => {
@@ -111,15 +142,16 @@ const MealPlanDetailModal: React.FC<MealPlanDetailModalProps> = ({
     }
   };
 
-const handleGenerateShoppingList = async () => {
-    if (!mealPlanId) return;
-    
-    try {
-      await generateList(mealPlanId);
-    } catch (error) {
-      console.error('Failed to generate shopping list:', error);
-    }
-  };
+ const handleGenerateShoppingList = async () => {
+     if (!mealPlanId) return;
+     
+     try {
+       const created = await generateList(mealPlanId);
+       setExistingShoppingList(created);
+     } catch (error) {
+       console.error('Failed to generate shopping list:', error);
+     }
+   };
 
   const handleRegenerate = async () => {
     if (!mealPlanId || regenerating) return;
@@ -133,22 +165,19 @@ const handleGenerateShoppingList = async () => {
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-          <h2 className="text-xl font-semibold text-neutral-900">{t('mealPlans.mealPlanDetails')}</h2>
-          <button
-            onClick={onClose}
-            className="text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
+    <Container className="py-6 sm:py-8 lg:py-12">
+      <div className="max-w-4xl mx-auto">
+        <button
+          onClick={onClose}
+          className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-4"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          {t('common.back')}
+        </button>
+        <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6">{t('mealPlans.mealPlanDetails')}</h1>
 
-        <div className="p-6">
+        <div>
           {loading && (
             <div className="py-12">
               <Loader centered label={t('mealPlans.loadingMealPlan')} />
@@ -166,53 +195,53 @@ const handleGenerateShoppingList = async () => {
           {mealPlan && (
             <div className="space-y-6">
               {/* Header Info */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Calendar className="h-8 w-8 text-primary-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{getDaysDifference()}</div>
-                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.days')}</div>
+              <div className="grid grid-cols-4 gap-2 md:gap-4">
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Calendar className="h-6 w-6 md:h-8 md:w-8 text-primary-600 mx-auto mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{getDaysDifference()}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.days')}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Users className="h-8 w-8 text-accent-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{mealPlan.people_count}</div>
-                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.people')}</div>
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Users className="h-6 w-6 md:h-8 md:w-8 text-accent-600 mx-auto mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{mealPlan.people_count}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.people')}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Target className="h-8 w-8 text-secondary-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{mealPlan.target_calories}</div>
-                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.targetCalDay')}</div>
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Target className="h-6 w-6 md:h-8 md:w-8 text-secondary-600 mx-auto mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{mealPlan.target_calories}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.targetCalDay')}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Clock className="h-8 w-8 text-warning-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-neutral-900">{getCaloriesPerDayPerPerson()}</div>
-                    <div className="text-sm text-neutral-500">{t('mealPlans.detail.actualCalDay')}</div>
+                <Card padding="none">
+                  <CardContent className="px-1 py-3 md:p-9 text-center">
+                    <Clock className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{getCaloriesPerDayPerPerson()}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.actualCalDay')}</div>
                   </CardContent>
                 </Card>
               </div>
 
               {/* Date Range */}
-              <Card>
-                <CardContent className="p-4">
+              <div>
+                <CardContent>
                   <div className="text-center">
                     <div className="text-lg font-medium text-neutral-900 mb-1">
-                      {formatDate(mealPlan.start_date)} - {formatDate(mealPlan.end_date)}
+                      {formatShortDate(mealPlan.start_date)} - {formatShortDate(mealPlan.end_date)}
                     </div>
                     <div className="text-sm text-neutral-500">
                       {t('mealPlans.detail.createdOn')} {formatDate(mealPlan.created_at)}
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </div>
 
               {/* Dietary Preferences */}
               {mealPlan.dietary_preferences.length > 0 && (
@@ -236,7 +265,7 @@ const handleGenerateShoppingList = async () => {
               )}
 
               {/* Meal Schedule */}
-              <Card>
+              <div>
                 <CardHeader>
                   <CardTitle>{t('mealPlans.detail.mealSchedule')}</CardTitle>
                 </CardHeader>
@@ -250,33 +279,40 @@ const handleGenerateShoppingList = async () => {
                       {Object.entries(groupEntriesByDate())
                         .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
                         .map(([date, entries]) => (
-                          <div key={date}>
-                            <h4 className="font-medium text-neutral-900 mb-3">
+                          <div key={date} className="bg-white border border-neutral-200 rounded-lg p-3 sm:p-4">
+                            <h4 className="font-medium text-neutral-900 pb-3 mb-3 border-b border-neutral-200">
                               {formatDate(date + 'T00:00:00')}
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {entries
                                 .sort((a, b) => getMealTypeOrder(a.meal_type) - getMealTypeOrder(b.meal_type))
                                 .map((entry) => (
-                                  <div key={entry.id} className="bg-neutral-50 rounded-lg p-4">
+                                  <button
+                                    type="button"
+                                    key={entry.id}
+                                    onClick={() => navigate(`/recipes/${entry.recipe.id}?fromMealPlan=${mealPlanId}`)}
+                                    className="group w-full text-left bg-neutral-50 rounded-lg p-4 hover:bg-neutral-100 transition-colors"
+                                  >
                                     <div className="flex items-center justify-between mb-2">
                                       <span className="text-sm font-medium text-primary-600 capitalize">
                                         {entry.meal_type}
                                       </span>
                                       <span className="text-sm text-neutral-500">
+                                        {entry.is_leftover && (
+                                          <span className="mr-2 text-xs font-medium text-amber-700 bg-amber-100 rounded px-2 py-0.5">
+                                            {t('mealPlans.leftover')}
+                                          </span>
+                                        )}
                                         {entry.servings} {entry.servings !== 1 ? t('common.servings') : t('common.serving')}
                                       </span>
                                     </div>
-                                    <Link
-                                      to={`/recipes/${entry.recipe.id}?fromMealPlan=${mealPlan.id}`}
-                                      className="font-medium text-neutral-900 mb-1 block hover:text-primary-700 transition-colors"
-                                    >
+                                    <div className="font-medium text-neutral-900 mb-1 group-hover:text-primary-700 transition-colors">
                                       {entry.recipe.name}
-                                    </Link>
+                                    </div>
                                     <div className="text-sm text-neutral-500">
                                       {entry.recipe.calories * entry.servings} {t('common.cal')} ({entry.servings} x {entry.recipe.calories})
                                     </div>
-                                  </div>
+                                  </button>
                                 ))}
                             </div>
                           </div>
@@ -284,31 +320,44 @@ const handleGenerateShoppingList = async () => {
                     </div>
                   )}
                 </CardContent>
-              </Card>
+              </div>
 
               {/* Shopping List Section */}
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>{t('mealPlans.detail.shoppingList')}</CardTitle>
-                    <Button
-                      onClick={handleGenerateShoppingList}
-                      isLoading={generatingList}
-                      leftIcon={<ShoppingCart className="h-4 w-4" />}
-                      size="sm"
-                    >
-                      {t('mealPlans.detail.generateList')}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {(shoppingList ?? existingShoppingList) && (
+                        <Link to={`/shopping-lists/${(shoppingList ?? existingShoppingList)!.id}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            rightIcon={<ExternalLink className="h-4 w-4" />}
+                          >
+                            {t('mealPlans.detail.openShoppingList')}
+                          </Button>
+                        </Link>
+                      )}
+                      <Button
+                        onClick={handleGenerateShoppingList}
+                        isLoading={generatingList}
+                        leftIcon={<ShoppingCart className="h-4 w-4" />}
+                        size="sm"
+                      >
+                        {t('mealPlans.detail.generateList')}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {shoppingList ? (
+                  {(shoppingList ?? existingShoppingList) ? (
                     <div className="space-y-2">
                       <div className="text-sm text-success-600 mb-4">
-                        ✓ {t('mealPlans.detail.shoppingListGenerated', { count: shoppingList.items.length })}
+                        ✓ {t('mealPlans.detail.shoppingListGenerated', { count: (shoppingList ?? existingShoppingList)!.items.length })}
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {shoppingList.items.slice(0, 6).map((item) => (
+                        {(shoppingList ?? existingShoppingList)!.items.slice(0, 6).map((item) => (
                           <div key={item.id} className="flex items-center justify-between p-2 bg-neutral-50 rounded">
                             <span className="text-sm">{item.ingredient.name}</span>
                             <span className="text-sm text-neutral-500">
@@ -317,83 +366,76 @@ const handleGenerateShoppingList = async () => {
                           </div>
                         ))}
                       </div>
-                      {shoppingList.items.length > 6 && (
+                      {(shoppingList ?? existingShoppingList)!.items.length > 6 && (
                         <div className="text-sm text-neutral-500 text-center mt-2">
-                          {t('common.moreItems', { count: shoppingList.items.length - 6 })}
+                          {t('common.moreItems', { count: (shoppingList ?? existingShoppingList)!.items.length - 6 })}
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="text-center py-4 text-neutral-500">
-                      {t('mealPlans.detail.generateShoppingListHint')}
+                      {loadingShoppingLists ? t('shoppingLists.loadingShoppingLists') : t('mealPlans.detail.generateShoppingListHint')}
                     </div>
                   )}
                 </CardContent>
               </Card>
 
               {/* Actions */}
-              <div className="flex justify-between pt-6 border-t border-neutral-200">
-                <div>
-                  {!showDeleteConfirm ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDeleteConfirm(true)}
-                      leftIcon={<Trash2 className="h-4 w-4" />}
-                      className="text-error-600 border-error-300 hover:bg-error-50"
-                    >
-                      {t('mealPlans.deletePlan')}
-                    </Button>
-                  ) : (
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowDeleteConfirm(false)}
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleDelete}
-                        isLoading={deleting}
-                        className="text-error-600 border-error-300 hover:bg-error-50"
-                      >
-                        {t('mealPlans.confirmDelete')}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-<div className="flex space-x-3">
-                  <Button variant="outline" onClick={onClose}>
-                    {t('common.close')}
+              <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-6 border-t border-neutral-200">
+                {onEdit && (
+                  <Button
+                    onClick={() => onEdit(mealPlan)}
+                    leftIcon={<Edit className="h-4 w-4" />}
+                    className="w-full sm:w-auto"
+                  >
+                    {t('mealPlans.detail.editPlan')}
                   </Button>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={handleRegenerate}
+                  isLoading={regenerating}
+                  disabled={regenerating}
+                  leftIcon={<RefreshCw className="h-4 w-4" />}
+                  className="w-full sm:w-auto"
+                >
+                  {t('mealPlans.detail.regenerate')}
+                </Button>
+                {!showDeleteConfirm ? (
                   <Button
                     variant="outline"
-                    onClick={handleRegenerate}
-                    isLoading={regenerating}
-                    disabled={regenerating}
-                    leftIcon={<RefreshCw className="h-4 w-4" />}
+                    onClick={() => setShowDeleteConfirm(true)}
+                    leftIcon={<Trash2 className="h-4 w-4" />}
+                    className="w-full sm:w-auto !text-error-600 !border-error-300 hover:!bg-error-50"
                   >
-                    {t('mealPlans.detail.regenerate')}
+                    {t('mealPlans.deletePlan')}
                   </Button>
-                  {onEdit && (
+                ) : (
+                  <div className="flex gap-2">
                     <Button
-                      onClick={() => onEdit(mealPlan)}
-                      leftIcon={<Edit className="h-4 w-4" />}
+                      variant="outline"
+                      onClick={() => setShowDeleteConfirm(false)}
+                      className="flex-1 sm:flex-none"
                     >
-                      {t('mealPlans.detail.editPlan')}
+                      {t('common.cancel')}
                     </Button>
-                  )}
-                </div>
+                    <Button
+                      variant="danger"
+                      onClick={handleDelete}
+                      isLoading={deleting}
+                      className="flex-1 sm:flex-none"
+                    >
+                      {t('mealPlans.confirmDelete')}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+    </Container>
   );
 };
 
-export default MealPlanDetailModal;
+export default MealPlanDetailView;

@@ -1,0 +1,19 @@
+services:
+  frontend:
+    build: .
+    ports:
+      # 5173 is the only localhost origin the backend's CORS allows
+      - "5173:80"
+    environment:
+      # Resolved by the browser on the host, so it must be a host-reachable URL
+      # (the backend publishes 8000 to localhost), not the docker-internal name.
+      - VITE_API_URL=http://localhost:8000
+    networks:
+      - default
+      - mealplanner
+
+networks:
+  # Created by the backend repo's compose project (web + dbmp)
+  mealplanner:
+    name: mealplanner_default
+    external: true

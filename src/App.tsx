@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { IngredientProvider } from './context/IngredientContext';
+import { AuthProvider } from './context/AuthContext';
 import Header from './components/layout/Header';
 import Home from './pages/Home';
 import Recipes from './pages/Recipes';
@@ -10,10 +11,12 @@ import MealPlanDetail from './pages/MealPlanDetail';
 import ShoppingLists from './pages/ShoppingLists';
 import ShoppingListDetail from './pages/ShoppingListDetail';
 import Ingredients from './pages/Ingredients';
+import IngredientDetail from './pages/IngredientDetail';
 import './styles/index.css';
 
 function App() {
   return (
+    <AuthProvider>
     <IngredientProvider>
       <Router>
         <div className="min-h-screen bg-neutral-50">
@@ -28,11 +31,13 @@ function App() {
               <Route path="/shopping-lists" element={<ShoppingLists />} />
               <Route path="/shopping-lists/:id" element={<ShoppingListDetail />} />
               <Route path="/ingredients" element={<Ingredients />} />
+              <Route path="/ingredients/:id" element={<IngredientDetail />} />
             </Routes>
           </main>
         </div>
       </Router>
     </IngredientProvider>
+    </AuthProvider>
   );
 }
 

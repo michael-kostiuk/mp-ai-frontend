@@ -9,11 +9,13 @@ import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 interface MealPlanCardProps {
   mealPlan: MealPlan;
   onClick?: () => void;
+  isPast?: boolean;
 }
 
 const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
   mealPlan,
-  onClick
+  onClick,
+  isPast = false
 }) => {
   const { t, i18n } = useTranslation();
   
@@ -37,7 +39,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
   return (
     <CardWrapper {...cardProps} className={onClick ? '' : 'block'} data-testid="meal-plan-card">
       <Card
-        className="h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group cursor-pointer"
+        className={`h-full transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group cursor-pointer ${isPast ? 'opacity-60 grayscale' : ''}`}
         hoverable
       >
         <div className="bg-gradient-to-r from-accent-100 to-accent-200 p-3 sm:p-4 rounded-t-lg flex items-center justify-between group-hover:from-accent-200 group-hover:to-accent-300 transition-all duration-300">

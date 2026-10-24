@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useMemo, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Download, ArrowLeft } from 'lucide-react';
+import { Download, ArrowLeft, Calendar, CloudOff, RefreshCw } from 'lucide-react';
 import Container from '../components/layout/Container';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -11,9 +11,11 @@ import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
 import ExportShoppingListModal from '../components/shoppingLists/ExportShoppingListModal';
 import { ShoppingList, ShoppingListItem as ShoppingListItemType } from '../types';
 import useApi from '../hooks/useApi';
+import useShoppingListSync from '../hooks/useShoppingListSync';
 import { getShoppingList, exportShoppingList } from '../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../utils/i18nUtils';
 import { copyTextToClipboard } from '../utils/clipboardUtils';
+import { formatMealPlanRange } from '../utils/mealPlanUtils';
 
 // Helper function to normalize category name (capitalize first letter)
 const normalizeCategory = (category: string): string => {
@@ -46,11 +48,16 @@ const ShoppingListDetail: React.FC = () => {
   const shoppingListId = id ? parseInt(id, 10) : null;
 
   const { data: shoppingList, loading, error, execute: fetchShoppingList } = useApi<ShoppingList>(getShoppingList);
+  // When the request behind `shoppingList` started; lets checkbox sync tell stale responses apart
+  const [fetchedAt, setFetchedAt] = useState(0);
 
   // Load shopping list when component mounts
   const loadShoppingList = useCallback(() => {
     if (shoppingListId) {
-      fetchShoppingList(shoppingListId);
+      const startedAt = Date.now();
+      fetchShoppingList(shoppingListId)
+        .then(() => setFetchedAt(startedAt))
+        .catch(() => undefined); // shown through `error`
     }
   }, [fetchShoppingList, shoppingListId]);
 
@@ -63,6 +70,18 @@ const ShoppingListDetail: React.FC = () => {
 
     loadShoppingList();
   }, [shoppingListId, navigate, loadShoppingList]);
+
+  // Pick up checks made on other devices when the user comes back to this tab
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') loadShoppingList();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [loadShoppingList]);
+
+  const { statuses, toggle, hasPending, syncFailed } = useShoppingListSync(shoppingListId, shoppingList?.items, fetchedAt);
+  const purchasedCount = shoppingList?.items.filter((item) => statuses[item.id] === 'purchased').length ?? 0;
 
   const handleBack = () => {
     navigate('/shopping-lists');
@@ -129,6 +148,17 @@ const ShoppingListDetail: React.FC = () => {
                 {t('shoppingLists.createdOn')} {new Date(shoppingList.created_at).toLocaleDateString(getLocaleFromLanguage(i18n.language))}
               </p>
             )}
+            {shoppingList?.meal_plan && (
+              <Link
+                to={`/meal-plans/${shoppingList.meal_plan.id}`}
+                className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+              >
+                <Calendar className="h-4 w-4" />
+                {t('shoppingLists.fromMealPlan', {
+                  range: formatMealPlanRange(shoppingList.meal_plan, getLocaleFromLanguage(i18n.language)),
+                })}
+              </Link>
+            )}
           </div>
 
           {shoppingList && (
@@ -144,7 +174,7 @@ const ShoppingListDetail: React.FC = () => {
         </div>
       </div>
 
-      {loading && (
+      {loading && !shoppingList && (
         <div className="py-12">
           <Loader centered label={t('shoppingLists.loadingShoppingList')} />
         </div>
@@ -161,9 +191,22 @@ const ShoppingListDetail: React.FC = () => {
       {shoppingList && (
         <Card className="animate-fadeIn">
           <CardHeader>
-            <CardTitle>
-              {t('shoppingLists.items')} ({shoppingList.items.length})
-            </CardTitle>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle>
+                {t('shoppingLists.items')} ({purchasedCount}/{shoppingList.items.length})
+              </CardTitle>
+              {syncFailed ? (
+                <span className="inline-flex items-center gap-1.5 text-xs text-warning-600">
+                  <CloudOff className="h-3.5 w-3.5" />
+                  {t('shoppingLists.syncOffline')}
+                </span>
+              ) : hasPending ? (
+                <span className="inline-flex items-center gap-1.5 text-xs text-neutral-500">
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  {t('shoppingLists.syncSaving')}
+                </span>
+              ) : null}
+            </div>
           </CardHeader>
 
           <CardContent>
@@ -183,6 +226,8 @@ const ShoppingListDetail: React.FC = () => {
                         <ShoppingListItem
                           key={item.id}
                           item={item}
+                          checked={statuses[item.id] === 'purchased'}
+                          onToggle={toggle}
                         />
                       ))}
                     </div>

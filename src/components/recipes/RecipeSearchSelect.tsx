@@ -100,9 +100,10 @@ const RecipeSearchSelect: React.FC<RecipeSearchSelectProps> = ({
     }
   }, [isOpen]);
 
-  // Initialize with existing recipe name if provided
+  // Initialize with existing recipe name if provided, and resync when the value is changed
+  // from outside (e.g. a re-roll) so the input doesn't keep showing the previous recipe
   useEffect(() => {
-    if (initialDisplayName && value > 0 && !selectedRecipe) {
+    if (initialDisplayName && value > 0 && selectedRecipe?.id !== value) {
       // Create a minimal recipe object for display purposes
       const displayRecipe: Recipe = {
         id: value,

@@ -1,22 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import RecipeDetailModal from '../components/recipes/RecipeDetailModal';
 import CreateRecipeModal from '../components/recipes/CreateRecipeModal';
 import { Recipe } from '../types';
 
 const RecipeDetail: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const recipeId = id ? parseInt(id, 10) : null;
   const searchParams = new URLSearchParams(location.search);
+  const isValidId = (value: number) => Number.isFinite(value) && value > 0;
   const fromMealPlanId = Number(searchParams.get('fromMealPlan'));
-  const returnPath = Number.isFinite(fromMealPlanId) && fromMealPlanId > 0
+  const fromShoppingListId = Number(searchParams.get('fromShoppingList'));
+  const returnPath = isValidId(fromMealPlanId)
     ? `/meal-plans/${fromMealPlanId}`
-    : null;
+    : isValidId(fromShoppingListId)
+      ? `/shopping-lists/${fromShoppingListId}`
+      : null;
+  const backLabel = isValidId(fromMealPlanId)
+    ? t('recipes.backToMealPlan')
+    : isValidId(fromShoppingListId)
+      ? t('recipes.backToShoppingList')
+      : t('recipes.backToRecipes');
 
   useEffect(() => {
     // If no valid ID, redirect to recipes list
@@ -37,7 +49,8 @@ const RecipeDetail: React.FC = () => {
   const handleEditSuccess = () => {
     setIsEditModalOpen(false);
     setEditingRecipe(null);
-    // The detail modal will automatically refresh when it detects changes
+    // Remount the detail view so it reloads the updated recipe
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleDelete = () => {
@@ -56,13 +69,15 @@ const RecipeDetail: React.FC = () => {
   return (
     <>
       <RecipeDetailModal
+        key={refreshKey}
+        asPage
         isOpen={true}
         onClose={handleClose}
         recipeId={recipeId}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        backTo={returnPath || undefined}
-        backLabel="Back to Meal Plan"
+        backTo={returnPath || '/recipes'}
+        backLabel={backLabel}
       />
 
       <CreateRecipeModal

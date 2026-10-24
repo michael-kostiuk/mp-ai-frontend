@@ -161,6 +161,7 @@ export interface MealPlanEntry {
   date: string;
   meal_type: string;
   servings: number;
+  is_leftover?: boolean;
   recipe: Recipe;
 }
 
@@ -181,14 +182,23 @@ export interface MealPlanEntryCreate {
 }
 
 // Shopping List Types
+export interface ShoppingListMealPlan {
+  id: number;
+  start_date: string;
+  end_date: string;
+}
+
 export interface ShoppingList {
   id: number;
   meal_plan_id: number;
+  meal_plan?: ShoppingListMealPlan | null;
   status: string;
   export_format: string | null;
   created_at: string;
   items: ShoppingListItem[];
 }
+
+export type ShoppingListItemStatus = 'pending' | 'purchased';
 
 export interface ShoppingListItem {
   id: number;
@@ -197,7 +207,7 @@ export interface ShoppingListItem {
   quantity: number;
   unit: string;
   category: string;
-  status: string;
+  status: ShoppingListItemStatus;
   ingredient: Ingredient;
 }
 

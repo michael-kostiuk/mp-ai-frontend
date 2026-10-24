@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Merge, PlusCircle, Search, Sparkles, X } from 'lucide-react';
 import Container from '../components/layout/Container';
@@ -24,6 +25,7 @@ const isMissingNutrition = (ingredient: Ingredient): boolean => {
 
 const Ingredients: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   
   const formatEstimateError = useCallback((error: ApiError): string => {
@@ -273,7 +275,11 @@ const Ingredients: React.FC = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
                   {filteredIngredients.map((ingredient) => (
-                    <tr key={ingredient.id} className="hover:bg-neutral-50 transition-colors">
+                    <tr
+                      key={ingredient.id}
+                      className="hover:bg-neutral-50 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/ingredients/${ingredient.id}`)}
+                    >
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
                         <div className="truncate max-w-[120px] sm:max-w-none">
                           {ingredient.name}
@@ -304,7 +310,10 @@ const Ingredients: React.FC = () => {
                             variant="outline"
                             size="sm"
                             leftIcon={<Sparkles size={14} />}
-                            onClick={() => handleSingleEstimate(ingredient)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSingleEstimate(ingredient);
+                            }}
                             isLoading={estimatingId === ingredient.id}
                             disabled={bulkEstimating || rowEstimating || (estimatingId !== null && estimatingId !== ingredient.id)}
                             title={estimatingId === ingredient.id ? t('ingredients.estimatingNutrition') : t('ingredients.fillMissingNutrition')}

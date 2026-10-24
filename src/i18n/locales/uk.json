@@ -44,6 +44,17 @@
     "shoppingLists": "Списки покупок",
     "ingredients": "Інгредієнти"
   },
+  "auth": {
+    "demo": "Демо",
+    "login": "Увійти",
+    "logout": "Вийти",
+    "loginTitle": "Введіть PIN-код",
+    "pinLabel": "PIN-код",
+    "wrongPin": "Неправильний PIN-код",
+    "tooManyAttempts": "Забагато спроб, спробуйте через {{minutes}} хв",
+    "tooManyAttemptsHours": "Забагато спроб, спробуйте через {{hours}} год",
+    "loginFailed": "Не вдалося увійти. Спробуйте ще раз."
+  },
   "header": {
     "appName": "MealMaster",
     "api": "API",
@@ -57,6 +68,11 @@
   "home": {
     "title": "MealMaster",
     "subtitle": "Потужний інструмент для планування харчування, управління рецептами та списками покупок.",
+    "today": {
+      "title": "Меню на сьогодні",
+      "viewPlan": "Переглянути план",
+      "now": "Зараз"
+    },
     "features": {
       "recipes": {
         "title": "Рецепти",
@@ -85,6 +101,8 @@
     "description": "Переглядайте, шукайте та керуйте рецептами",
     "addRecipe": "Додати рецепт",
     "addFromImage": "Додати з фото",
+    "backToMealPlan": "Назад до плану харчування",
+    "backToRecipes": "Назад до рецептів",
     "recipeDetails": "Деталі рецепта",
     "createRecipe": "Створити новий рецепт",
     "editRecipe": "Редагувати рецепт",
@@ -178,9 +196,11 @@
       "title": "Додати рецепт з фото",
       "recipeImage": "Фото рецепта",
       "parsingProgress": "Прогрес розпізнавання"
-    }
+    },
+    "backToShoppingList": "Назад до списку покупок"
   },
   "mealPlans": {
+    "leftover": "Залишки",
     "title": "Плани харчування",
     "description": "Плануйте та організовуйте своє харчування на тиждень",
     "createMealPlan": "Створити план харчування",
@@ -225,7 +245,10 @@
       "addMeal": "Додати їжу",
       "recipe": "Рецепт",
       "searchForRecipe": "Шукати рецепт...",
-      "servings": "Порції"
+      "servings": "Порції",
+      "rerollMeal": "Запропонувати інший рецепт",
+      "rerollFailed": "Не вдалося запропонувати інший рецепт. Спробуйте ще раз.",
+      "viewRecipe": "Переглянути рецепт"
     },
     "detail": {
       "days": "Днів",
@@ -240,7 +263,8 @@
       "generateShoppingListHint": "Згенеруйте список покупок, щоб побачити всі необхідні інгредієнти.",
       "editPlan": "Редагувати план",
       "regenerate": "Перегенерувати",
-      "createdOn": "Створено"
+      "createdOn": "Створено",
+      "openShoppingList": "Відкрити список"
     },
     "mealTypes": {
       "breakfast": "Сніданок",
@@ -290,7 +314,11 @@
     "createdOn": "Створено",
     "deleteConfirm": "Ви впевнені, що хочете видалити цей список покупок?",
     "deleteError": "Не вдалося видалити список покупок. Спробуйте ще раз.",
-    "exportFailed": "Не вдалося експортувати список покупок. Спробуйте ще раз."
+    "exportFailed": "Не вдалося експортувати список покупок. Спробуйте ще раз.",
+    "fromMealPlan": "План харчування {{range}}",
+    "syncSaving": "Збереження…",
+    "syncOffline": "Немає зв’язку — синхронізуємо пізніше",
+    "purchasedCount": "Куплено {{purchased}}/{{total}}"
   },
   "ingredients": {
     "title": "Інгредієнти",
@@ -310,6 +338,14 @@
     "searchingIngredients": "Пошук інгредієнтів...",
     "createIngredient": "Створити \"{{name}}\"",
     "addToDatabase": "Додати цей інгредієнт до бази даних",
+    "detail": {
+      "title": "Деталі інгредієнта",
+      "backToIngredients": "Назад до інгредієнтів",
+      "nutrition": "Поживна цінність",
+      "usedInRecipes": "Використовується в рецептах",
+      "notUsed": "Ще не використовується в жодному рецепті",
+      "notFound": "Інгредієнт не знайдено"
+    },
     "calPer100": "{{calories}} ккал на 100{{unit}}",
     "table": {
       "name": "Назва",
