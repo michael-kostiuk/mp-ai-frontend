@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { authApi } from '../api/authApi';
 import { ApiError } from '../types';
+import { clearCacheForSessionChange, syncCacheMode } from '../utils/apiCache';
 
 export type AuthMode = 'owner' | 'demo' | 'loading';
 export type LoginResult = 'ok' | 'wrong' | { lockedFor: number };
@@ -29,6 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .me()
       .then((status) => {
         if (cancelled) return;
+        syncCacheMode(status.mode);
         setMode(status.mode);
         setLockedFor(status.login_locked_for);
       })
@@ -55,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw err;
     }
     // Refetch everything under the new session.
+    clearCacheForSessionChange();
     window.location.reload();
     return 'ok';
   }, []);
@@ -65,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // Reload regardless; the server decides the resulting mode.
     }
+    clearCacheForSessionChange();
     window.location.reload();
   }, []);
 

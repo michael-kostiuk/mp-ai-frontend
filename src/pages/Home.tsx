@@ -9,12 +9,12 @@ import BrandMark from '../components/ui/BrandMark';
 import TodayMeals from '../components/mealPlans/TodayMeals';
 import { findTodayPlan, getCurrentMeal } from '../utils/mealPlanUtils';
 import { MealPlan } from '../types';
-import useApi from '../hooks/useApi';
+import useCachedApi from '../hooks/useCachedApi';
 import { getMealPlans } from '../api/mealPlanApi';
 
 const Home: React.FC = () => {
   const { t } = useTranslation();
-  const { data: mealPlans, execute: fetchMealPlans } = useApi<MealPlan[]>(getMealPlans);
+  const { data: mealPlans, execute: fetchMealPlans } = useCachedApi<MealPlan[], []>('mealPlans', getMealPlans, { initialArgs: [] });
 
   useEffect(() => {
     fetchMealPlans().catch(() => {

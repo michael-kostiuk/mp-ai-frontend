@@ -5,8 +5,10 @@ import RecipeCard from './RecipeCard';
 import RecipeSearchFilters from './RecipeSearchFilters';
 import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
-import useApi from '../../hooks/useApi';
+import useCachedApi from '../../hooks/useCachedApi';
 import { getRecipes } from '../../api/recipeApi';
+
+const FIRST_PAGE: RecipeFilterParams = { skip: 0, limit: 20 };
 
 interface RecipeListProps {
   onSelectRecipe?: (recipe: Recipe) => void;
@@ -14,17 +16,16 @@ interface RecipeListProps {
 
 const RecipeList: React.FC<RecipeListProps> = ({ onSelectRecipe }) => {
   const { t } = useTranslation();
-  const [filters, setFilters] = useState<RecipeFilterParams>({
-    skip: 0,
-    limit: 20
-  });
+  const [filters, setFilters] = useState<RecipeFilterParams>(FIRST_PAGE);
 
-  const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
+  const { data: recipes, loading, error, execute: fetchRecipes } =
+    useCachedApi<Recipe[], [RecipeFilterParams]>('recipes', getRecipes, { initialArgs: [FIRST_PAGE] });
+
+  // Seeded from the cache so the first frame already shows the list
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>(() => recipes ?? []);
   const [hasMore, setHasMore] = useState(true);
   const isFirstRender = useRef(true);
   const loadedIdsRef = useRef<Set<number>>(new Set());
-
-  const { data: recipes, loading, error, execute: fetchRecipes } = useApi<Recipe[]>(getRecipes);
 
   const loadRecipes = useCallback((currentFilters: RecipeFilterParams) => {
     fetchRecipes(currentFilters);

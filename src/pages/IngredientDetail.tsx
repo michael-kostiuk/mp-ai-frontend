@@ -7,6 +7,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import useApi from '../hooks/useApi';
+import useCachedApi from '../hooks/useCachedApi';
 import { getIngredients } from '../api/ingredientApi';
 import { getRecipes } from '../api/recipeApi';
 import { Ingredient, Recipe, RecipeFilterParams } from '../types';
@@ -22,7 +23,7 @@ const IngredientDetail: React.FC = () => {
   const { data: ingredients, loading: loadingIngredients, error: ingredientsError } =
     useApi<Ingredient[], Parameters<typeof getIngredients>>(getIngredients, true);
   const { data: recipes, loading: loadingRecipes, error: recipesError } =
-    useApi<Recipe[], [RecipeFilterParams]>(getRecipes, true, ALL_RECIPES);
+    useCachedApi<Recipe[], [RecipeFilterParams]>('recipes', getRecipes, { immediate: true, initialArgs: ALL_RECIPES });
 
   const ingredient = ingredients?.find((item) => item.id === ingredientId) ?? null;
 

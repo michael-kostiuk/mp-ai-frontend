@@ -9,6 +9,7 @@ import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
+import useCachedApi from '../../hooks/useCachedApi';
 import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
 import { getMealPlanShoppingLists } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
@@ -31,7 +32,9 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
   const [existingShoppingList, setExistingShoppingList] = useState<ShoppingList | null>(null);
   const navigate = useNavigate();
   
-  const { data: mealPlan, loading, error, execute: fetchMealPlan } = useApi<MealPlan>(getMealPlan);
+  const { data: mealPlan, loading, error, execute: fetchMealPlan } = useCachedApi<MealPlan, [number]>('mealPlan', getMealPlan, {
+    initialArgs: mealPlanId ? [mealPlanId] : undefined
+  });
   const { loading: deleting, execute: deletePlan } = useApi(deleteMealPlan);
   const { data: shoppingList, loading: generatingList, execute: generateList } = useApi<ShoppingList>(generateShoppingList);
   const {
