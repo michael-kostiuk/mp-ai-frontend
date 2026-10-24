@@ -196,7 +196,8 @@
       "title": "Додати рецепт з фото",
       "recipeImage": "Фото рецепта",
       "parsingProgress": "Прогрес розпізнавання"
-    }
+    },
+    "backToShoppingList": "Назад до списку покупок"
   },
   "mealPlans": {
     "leftover": "Залишки",
@@ -262,7 +263,8 @@
       "generateShoppingListHint": "Згенеруйте список покупок, щоб побачити всі необхідні інгредієнти.",
       "editPlan": "Редагувати план",
       "regenerate": "Перегенерувати",
-      "createdOn": "Створено"
+      "createdOn": "Створено",
+      "openShoppingList": "Відкрити список"
     },
     "mealTypes": {
       "breakfast": "Сніданок",
@@ -312,7 +314,11 @@
     "createdOn": "Створено",
     "deleteConfirm": "Ви впевнені, що хочете видалити цей список покупок?",
     "deleteError": "Не вдалося видалити список покупок. Спробуйте ще раз.",
-    "exportFailed": "Не вдалося експортувати список покупок. Спробуйте ще раз."
+    "exportFailed": "Не вдалося експортувати список покупок. Спробуйте ще раз.",
+    "fromMealPlan": "План харчування {{range}}",
+    "syncSaving": "Збереження…",
+    "syncOffline": "Немає зв’язку — синхронізуємо пізніше",
+    "purchasedCount": "Куплено {{purchased}}/{{total}}"
   },
   "ingredients": {
     "title": "Інгредієнти",

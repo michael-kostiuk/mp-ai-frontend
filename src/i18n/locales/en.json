@@ -196,7 +196,8 @@
       "title": "Add Recipe from Image",
       "recipeImage": "Recipe Image",
       "parsingProgress": "Parsing Progress"
-    }
+    },
+    "backToShoppingList": "Back to Shopping List"
   },
   "mealPlans": {
     "leftover": "Leftovers",
@@ -262,7 +263,8 @@
       "generateShoppingListHint": "Generate a shopping list to see all required ingredients.",
       "editPlan": "Edit Plan",
       "regenerate": "Regenerate",
-      "createdOn": "Created on"
+      "createdOn": "Created on",
+      "openShoppingList": "Open list"
     },
     "mealTypes": {
       "breakfast": "Breakfast",
@@ -312,7 +314,11 @@
     "createdOn": "Created on",
     "deleteConfirm": "Are you sure you want to delete this shopping list?",
     "deleteError": "Failed to delete shopping list. Please try again.",
-    "exportFailed": "Failed to export shopping list. Please try again."
+    "exportFailed": "Failed to export shopping list. Please try again.",
+    "fromMealPlan": "Meal plan {{range}}",
+    "syncSaving": "Saving…",
+    "syncOffline": "Offline — will sync",
+    "purchasedCount": "{{purchased}}/{{total}} bought"
   },
   "ingredients": {
     "title": "Ingredients",

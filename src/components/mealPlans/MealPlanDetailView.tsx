@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
 import Button from '../ui/Button';
 import Container from '../layout/Container';
@@ -10,7 +10,7 @@ import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
 import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
-import { getShoppingLists } from '../../api/shoppingListApi';
+import { getMealPlanShoppingLists } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
 interface MealPlanDetailViewProps {
@@ -38,7 +38,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
     loading: loadingShoppingLists,
     execute: fetchShoppingLists,
     cancel: cancelShoppingLists
-  } = useApi<ShoppingList[]>(getShoppingLists);
+  } = useApi<ShoppingList[], [number]>(getMealPlanShoppingLists);
   const { loading: regenerating, execute: regenerate } = useApi<MealPlan>(regenerateMealPlan);
 
   // Memoize the fetch function to prevent unnecessary re-renders
@@ -56,11 +56,9 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
     if (!mealPlanId) return;
 
     try {
-      const lists = await fetchShoppingLists();
-      const match = lists
-        .filter((list) => list.meal_plan_id === mealPlanId)
-        .sort((a, b) => b.id - a.id)[0] ?? null;
-      setExistingShoppingList(match);
+      // Newest first from the API
+      const lists = await fetchShoppingLists(mealPlanId);
+      setExistingShoppingList(lists[0] ?? null);
     } catch {
       // Non-blocking: shopping list summary is optional in this modal.
       setExistingShoppingList(null);
@@ -329,14 +327,27 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>{t('mealPlans.detail.shoppingList')}</CardTitle>
-                    <Button
-                      onClick={handleGenerateShoppingList}
-                      isLoading={generatingList}
-                      leftIcon={<ShoppingCart className="h-4 w-4" />}
-                      size="sm"
-                    >
-                      {t('mealPlans.detail.generateList')}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {(shoppingList ?? existingShoppingList) && (
+                        <Link to={`/shopping-lists/${(shoppingList ?? existingShoppingList)!.id}`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            rightIcon={<ExternalLink className="h-4 w-4" />}
+                          >
+                            {t('mealPlans.detail.openShoppingList')}
+                          </Button>
+                        </Link>
+                      )}
+                      <Button
+                        onClick={handleGenerateShoppingList}
+                        isLoading={generatingList}
+                        leftIcon={<ShoppingCart className="h-4 w-4" />}
+                        size="sm"
+                      >
+                        {t('mealPlans.detail.generateList')}
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

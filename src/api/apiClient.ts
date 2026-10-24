@@ -117,6 +117,21 @@ class ApiClient {
     );
   }
 
+  // keepalive lets the request finish while the page is being closed or hidden
+  async patch<T>(endpoint: string, data: unknown, options: { keepalive?: boolean } = {}): Promise<T> {
+    const url = this.createUrl(endpoint);
+
+    return this.handleResponse<T>(
+      fetch(url, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: this.getHeaders(),
+        body: JSON.stringify(data),
+        keepalive: options.keepalive
+      })
+    );
+  }
+
   async delete<T>(endpoint: string): Promise<T> {
     const url = this.createUrl(endpoint);
 

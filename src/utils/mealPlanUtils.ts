@@ -1,4 +1,11 @@
-import { MealPlan, MealPlanEntry } from '../types';
+import { MealPlan, MealPlanEntry, ShoppingListMealPlan } from '../types';
+
+// "5 Oct – 11 Oct" style label for a meal plan's dates
+export const formatMealPlanRange = (plan: Pick<ShoppingListMealPlan, 'start_date' | 'end_date'>, locale: string) => {
+  const format = (value: string) =>
+    new Date(value).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
+  return `${format(plan.start_date)} – ${format(plan.end_date)}`;
+};
 
 const MEAL_TYPE_ORDER: Record<string, number> = { breakfast: 1, lunch: 2, dinner: 3, snack: 4 };
 

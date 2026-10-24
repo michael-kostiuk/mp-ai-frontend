@@ -16,10 +16,19 @@ const RecipeDetail: React.FC = () => {
 
   const recipeId = id ? parseInt(id, 10) : null;
   const searchParams = new URLSearchParams(location.search);
+  const isValidId = (value: number) => Number.isFinite(value) && value > 0;
   const fromMealPlanId = Number(searchParams.get('fromMealPlan'));
-  const returnPath = Number.isFinite(fromMealPlanId) && fromMealPlanId > 0
+  const fromShoppingListId = Number(searchParams.get('fromShoppingList'));
+  const returnPath = isValidId(fromMealPlanId)
     ? `/meal-plans/${fromMealPlanId}`
-    : null;
+    : isValidId(fromShoppingListId)
+      ? `/shopping-lists/${fromShoppingListId}`
+      : null;
+  const backLabel = isValidId(fromMealPlanId)
+    ? t('recipes.backToMealPlan')
+    : isValidId(fromShoppingListId)
+      ? t('recipes.backToShoppingList')
+      : t('recipes.backToRecipes');
 
   useEffect(() => {
     // If no valid ID, redirect to recipes list
@@ -68,7 +77,7 @@ const RecipeDetail: React.FC = () => {
         onEdit={handleEdit}
         onDelete={handleDelete}
         backTo={returnPath || '/recipes'}
-        backLabel={returnPath ? t('recipes.backToMealPlan') : t('recipes.backToRecipes')}
+        backLabel={backLabel}
       />
 
       <CreateRecipeModal

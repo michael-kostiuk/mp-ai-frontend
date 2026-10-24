@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Download, ExternalLink, Trash2 } from 'lucide-react';
+import { Calendar, Download, ExternalLink, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -14,6 +14,8 @@ import { ShoppingList as ShoppingListType, ShoppingListItem as ShoppingListItemT
 import useApi from '../hooks/useApi';
 import { getShoppingLists, deleteShoppingList, exportShoppingList } from '../api/shoppingListApi';
 import { copyTextToClipboard } from '../utils/clipboardUtils';
+import { getLocaleFromLanguage } from '../utils/i18nUtils';
+import { formatMealPlanRange } from '../utils/mealPlanUtils';
 
 // Helper function to normalize category name (capitalize first letter)
 const normalizeCategory = (category: string): string => {
@@ -83,7 +85,7 @@ const ShoppingListPreview: React.FC<{ items: ShoppingListItemType[] }> = ({ item
 };
 
 const ShoppingLists: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data: shoppingLists, loading, error, execute: fetchShoppingLists } = useApi<ShoppingListType[]>(getShoppingLists);
 
   const [exportingId, setExportingId] = useState<number | null>(null);
@@ -171,18 +173,42 @@ const ShoppingLists: React.FC = () => {
             <Card key={list.id}>
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <CardTitle>{t('shoppingLists.shoppingListNumber', { id: list.id })}</CardTitle>
-                    <Link to={`/shopping-lists/${list.id}`}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        rightIcon={<ExternalLink size={14} />}
-                        className="text-primary-600 hover:text-primary-700"
-                      >
-                        {t('common.viewDetails')}
-                      </Button>
-                    </Link>
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <CardTitle>{t('shoppingLists.shoppingListNumber', { id: list.id })}</CardTitle>
+                      <Link to={`/shopping-lists/${list.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          rightIcon={<ExternalLink size={14} />}
+                          className="text-primary-600 hover:text-primary-700"
+                        >
+                          {t('common.viewDetails')}
+                        </Button>
+                      </Link>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-sm text-neutral-500">
+                      <span>
+                        {new Date(list.created_at).toLocaleDateString(getLocaleFromLanguage(i18n.language))}
+                      </span>
+                      {list.meal_plan && (
+                        <Link
+                          to={`/meal-plans/${list.meal_plan.id}`}
+                          className="inline-flex items-center gap-1 font-medium text-primary-600 hover:text-primary-700 transition-colors"
+                        >
+                          <Calendar className="h-3.5 w-3.5" />
+                          {t('shoppingLists.fromMealPlan', {
+                            range: formatMealPlanRange(list.meal_plan, getLocaleFromLanguage(i18n.language)),
+                          })}
+                        </Link>
+                      )}
+                      <span>
+                        {t('shoppingLists.purchasedCount', {
+                          purchased: list.items.filter((item) => item.status === 'purchased').length,
+                          total: list.items.length,
+                        })}
+                      </span>
+                    </div>
                   </div>
                    <div className="flex items-center gap-2">
                      <Button
