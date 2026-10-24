@@ -1,5 +1,6 @@
 import { checkResponse, formatApiError } from '../utils/apiUtils';
 import { resolveApiConfig } from '../config/apiConfig';
+import { invalidateCache, isCacheMutation } from '../utils/apiCache';
 
 class ApiClient {
   private _baseUrl: string;
@@ -77,6 +78,14 @@ class ApiClient {
     }
   }
 
+  // Writes to meal plans/recipes/ingredients drop the client cache once they settle,
+  // before the caller continues, so any follow-up read comes from the server.
+  private handleMutation<T>(endpoint: string, promise: Promise<Response>): Promise<T> {
+    return this.handleResponse<T>(promise).finally(() => {
+      if (isCacheMutation(endpoint)) invalidateCache();
+    });
+  }
+
   async get<T>(endpoint: string, queryParams?: Record<string, string | number | boolean | Array<string | number | boolean>>): Promise<T> {
     const url = this.createUrl(endpoint);
     const queryString = queryParams ? this.buildQueryString(queryParams) : '';
@@ -94,7 +103,7 @@ class ApiClient {
   async post<T>(endpoint: string, data?: unknown): Promise<T> {
     const url = this.createUrl(endpoint);
 
-    return this.handleResponse<T>(
+    return this.handleMutation<T>(endpoint,
       fetch(url, {
         method: 'POST',
         credentials: 'include',
@@ -107,7 +116,7 @@ class ApiClient {
   async put<T>(endpoint: string, data: unknown): Promise<T> {
     const url = this.createUrl(endpoint);
 
-    return this.handleResponse<T>(
+    return this.handleMutation<T>(endpoint,
       fetch(url, {
         method: 'PUT',
         credentials: 'include',
@@ -121,7 +130,7 @@ class ApiClient {
   async patch<T>(endpoint: string, data: unknown, options: { keepalive?: boolean } = {}): Promise<T> {
     const url = this.createUrl(endpoint);
 
-    return this.handleResponse<T>(
+    return this.handleMutation<T>(endpoint,
       fetch(url, {
         method: 'PATCH',
         credentials: 'include',
@@ -135,7 +144,7 @@ class ApiClient {
   async delete<T>(endpoint: string): Promise<T> {
     const url = this.createUrl(endpoint);
 
-    return this.handleResponse<T>(
+    return this.handleMutation<T>(endpoint,
       fetch(url, {
         method: 'DELETE',
         credentials: 'include',
@@ -149,7 +158,7 @@ class ApiClient {
     const formData = new FormData();
     formData.append('file', file);
 
-    return this.handleResponse<T>(
+    return this.handleMutation<T>(endpoint,
       fetch(url, {
         method: 'POST',
         credentials: 'include',

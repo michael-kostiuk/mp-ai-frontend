@@ -5,7 +5,8 @@ import { createQueryString } from '../utils/apiUtils';
 const BASE_PATH = '/meal-plans';
 
 export const getMealPlans = async (): Promise<MealPlan[]> => {
-  return apiClient.get<MealPlan[]>(BASE_PATH);
+  // Trailing slash avoids a redirect round trip
+  return apiClient.get<MealPlan[]>(`${BASE_PATH}/`);
 };
 
 export const getMealPlan = async (id: number): Promise<MealPlan> => {

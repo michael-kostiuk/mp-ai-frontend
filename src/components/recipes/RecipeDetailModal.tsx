@@ -9,6 +9,7 @@ import Loader from '../ui/Loader';
 import Container from '../layout/Container';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
+import useCachedApi from '../../hooks/useCachedApi';
 import { getRecipe, deleteRecipe } from '../../api/recipeApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 
@@ -37,7 +38,9 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const { t, i18n } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
-  const { data: recipe, loading, error, execute: fetchRecipe } = useApi<Recipe>(getRecipe);
+  const { data: recipe, loading, error, execute: fetchRecipe } = useCachedApi<Recipe, [number]>('recipe', getRecipe, {
+    initialArgs: recipeId ? [recipeId] : undefined
+  });
   const { loading: deleting, execute: deleteRecipeById } = useApi(deleteRecipe);
 
   // Memoize the fetch function to prevent unnecessary re-renders

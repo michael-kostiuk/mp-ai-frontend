@@ -11,7 +11,7 @@ import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import Card, { CardContent } from '../components/ui/Card';
 import { MealPlan } from '../types';
-import useApi from '../hooks/useApi';
+import useCachedApi from '../hooks/useCachedApi';
 import { getMealPlans } from '../api/mealPlanApi';
 
 const MealPlans: React.FC = () => {
@@ -19,7 +19,7 @@ const MealPlans: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingMealPlan, setEditingMealPlan] = useState<MealPlan | null>(null);
   
-  const { data: mealPlans, loading, error, execute: fetchMealPlans } = useApi<MealPlan[]>(getMealPlans);
+  const { data: mealPlans, loading, error, execute: fetchMealPlans } = useCachedApi<MealPlan[], []>('mealPlans', getMealPlans, { initialArgs: [] });
   
   // Load meal plans only once on mount
   useEffect(() => {
