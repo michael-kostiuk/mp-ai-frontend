@@ -18,7 +18,7 @@ import { formatQuantity } from '../../utils/unitUtils';
 import { useAuth } from '../../context/AuthContext';
 import DemoEditHint from '../auth/DemoEditHint';
 import RecipeImagePlaceholder from './RecipeImagePlaceholder';
-import { ingredientCategoryLabel, recipeCategoryLabel } from '../../utils/categoryUtils';
+import { recipeCategoryLabel } from '../../utils/categoryUtils';
 
 interface RecipeDetailModalProps {
   isOpen: boolean;
@@ -76,19 +76,6 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const getTotalTime = () => {
     if (!recipe) return 0;
     return recipe.prep_time + recipe.cook_time;
-  };
-
-  const groupIngredientsByCategory = () => {
-    if (!recipe?.ingredients) return {};
-    
-    return recipe.ingredients.reduce((groups, ingredient) => {
-      const category = ingredientCategoryLabel(ingredient.ingredient.category, t);
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push(ingredient);
-      return groups;
-    }, {} as Record<string, typeof recipe.ingredients>);
   };
 
   const formatInstructions = (instructions: string) => {
@@ -247,7 +234,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 <div id="recipe-tab-panel" role="tabpanel" aria-labelledby={`recipe-tab-${activeTab}`} className="p-4 sm:p-6">
                 {activeTab === 'ingredients' ? (
                 <>
-                  <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
+                  <div className="mb-4 flex flex-wrap items-center justify-start gap-3">
                     {recipe.servings > 0 && (
                       <div className="flex items-center gap-2 text-sm text-neutral-600">
                         <span>{t('recipes.detail.servingsFor')}</span>
@@ -272,19 +259,13 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       </div>
                     )}
                   </div>
-                  {Object.keys(groupIngredientsByCategory()).length === 0 ? (
+                  {!recipe.ingredients?.length ? (
                     <div className="text-center py-8 text-neutral-500">
                       {t('recipes.noIngredientsListed')}
                     </div>
                   ) : (
-                    <div className="space-y-6">
-                      {Object.entries(groupIngredientsByCategory()).map(([category, ingredients]) => (
-                        <div key={category}>
-                          <h4 className="font-medium text-neutral-900 mb-3 capitalize text-lg">
-                            {category}
-                          </h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {ingredients.map((ingredient, index) => (
+                            {recipe.ingredients.map((ingredient, index) => (
                               <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
                                 {asPage ? (
                                   <Link
@@ -309,9 +290,6 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                               </div>
                             ))}
                           </div>
-                        </div>
-                      ))}
-                    </div>
                   )}
                 </>
                 ) : recipe.instructions ? (
