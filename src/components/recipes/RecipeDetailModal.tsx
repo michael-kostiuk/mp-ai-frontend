@@ -45,6 +45,8 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const { t, i18n } = useTranslation();
   // How many servings to show ingredient amounts for; null = the recipe's own count
   const [servingsShown, setServingsShown] = useState<number | null>(null);
+  // Ingredients and instructions share one card; tabs switch between them
+  const [activeTab, setActiveTab] = useState<'ingredients' | 'instructions'>('ingredients');
   const { mode } = useAuth();
   const canEdit = mode === 'owner';
   const locale = getLocaleFromLanguage(i18n.language);
@@ -220,11 +222,32 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 </CardContent>
               </Card>
 
-              {/* Ingredients */}
-              <Card>
-                <CardHeader>
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <CardTitle>{t('recipes.detail.ingredients')}</CardTitle>
+              {/* Ingredients and instructions as tabs in one card */}
+              <Card padding="none">
+                <div className="flex border-b border-neutral-200 px-2 sm:px-4" role="tablist">
+                  {(['ingredients', 'instructions'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      role="tab"
+                      id={`recipe-tab-${tab}`}
+                      aria-selected={activeTab === tab}
+                      aria-controls="recipe-tab-panel"
+                      onClick={() => setActiveTab(tab)}
+                      className={`flex-1 sm:flex-none -mb-px border-b-2 px-4 py-3 text-base font-medium transition-colors ${
+                        activeTab === tab
+                          ? 'border-primary-600 text-primary-700'
+                          : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                      }`}
+                    >
+                      {t(`recipes.detail.${tab}`)}
+                    </button>
+                  ))}
+                </div>
+                <div id="recipe-tab-panel" role="tabpanel" aria-labelledby={`recipe-tab-${activeTab}`} className="p-4 sm:p-6">
+                {activeTab === 'ingredients' ? (
+                <>
+                  <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
                     {recipe.servings > 0 && (
                       <div className="flex items-center gap-2 text-sm text-neutral-600">
                         <span>{t('recipes.detail.servingsFor')}</span>
@@ -249,8 +272,6 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       </div>
                     )}
                   </div>
-                </CardHeader>
-                <CardContent>
                   {Object.keys(groupIngredientsByCategory()).length === 0 ? (
                     <div className="text-center py-8 text-neutral-500">
                       {t('recipes.noIngredientsListed')}
@@ -292,16 +313,8 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       ))}
                     </div>
                   )}
-                </CardContent>
-              </Card>
-
-              {/* Instructions */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('recipes.detail.instructions')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {recipe.instructions ? (
+                </>
+                ) : recipe.instructions ? (
                     <div className="space-y-4">
                       {formatInstructions(recipe.instructions).map((step, index) => (
                         <div key={index} className="flex">
@@ -319,7 +332,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       {t('recipes.noInstructionsProvided')}
                     </div>
                   )}
-                </CardContent>
+                </div>
               </Card>
 
               {/* Recipe Meta */}
