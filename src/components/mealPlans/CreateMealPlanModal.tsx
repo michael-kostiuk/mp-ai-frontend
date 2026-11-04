@@ -255,6 +255,7 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
       const endDate = editingMealPlan.end_date.split('T')[0];
 
       setFormData({
+        name: editingMealPlan.name ?? '',
         start_date: startDate,
         end_date: endDate,
         people_count: editingMealPlan.people_count,
@@ -275,6 +276,7 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
       const endDate = generatedMealPlan.end_date.split('T')[0];
 
       setFormData({
+        name: generatedMealPlan.name ?? '',
         start_date: startDate,
         end_date: endDate,
         people_count: generatedMealPlan.people_count,
@@ -546,6 +548,7 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
           ...formData,
           start_date: formData.start_date + 'T00:00:00',
           end_date: formData.end_date + 'T23:59:59',
+          name: formData.name?.trim() || null,
           // Drop empty meal slots (rows added but never assigned a recipe).
           // recipe_id 0 has no matching recipe and would fail the backend FK constraint.
           entries: formData.entries
@@ -866,6 +869,14 @@ const CreateMealPlanModal: React.FC<CreateMealPlanModalProps> = ({
           ) : (
             /* Manual Form */
             <div className="space-y-6">
+              <Input
+                label={t('mealPlans.form.name')}
+                value={formData.name ?? ''}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder={t('mealPlans.form.namePlaceholder')}
+                maxLength={100}
+                fullWidth
+              />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
                   label={t('mealPlans.form.startDate')}

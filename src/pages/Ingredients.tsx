@@ -15,12 +15,15 @@ import { useIngredientContext } from '../context/IngredientContext';
 import useApi from '../hooks/useApi';
 import { estimateIngredientNutrition, estimateMissingIngredientNutrition } from '../api/ingredientApi';
 import { ApiError, Ingredient, IngredientNutritionBulkResponse } from '../types';
-import { getNutritionWarning } from '../utils/nutritionUtils';
+import { ZERO_CALORIE_CATEGORIES, getNutritionWarning } from '../utils/nutritionUtils';
 import { formatUnitLabel } from '../utils/unitUtils';
+import { ingredientCategoryLabel } from '../utils/categoryUtils';
 
 const isMissingNutrition = (ingredient: Ingredient): boolean => {
   const values = [ingredient.calories, ingredient.protein, ingredient.carbs, ingredient.fats];
   const hasMissingValue = values.some((value) => value === null || value === undefined);
+  // Zero is a real value for salt, water and seasoning mixes (matches the server's bulk estimate)
+  if (ZERO_CALORIE_CATEGORIES.includes(ingredient.category.toLowerCase())) return hasMissingValue;
   const allZero = values.every((value) => value === 0);
   return hasMissingValue || allZero;
 };
@@ -58,11 +61,12 @@ const Ingredients: React.FC = () => {
       .filter(
         (ingredient) =>
           ingredient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          ingredient.category.toLowerCase().includes(searchQuery.toLowerCase())
+          ingredient.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          ingredientCategoryLabel(ingredient.category, t).toLowerCase().includes(searchQuery.toLowerCase())
       )
       // Alphabetical regardless of capital letters ("Greek yogurt" no longer jumps to the top)
       .sort((a, b) => a.name.localeCompare(b.name, i18n.language, { sensitivity: 'base' }));
-  }, [ingredients, searchQuery, i18n.language]);
+  }, [ingredients, searchQuery, i18n.language, t]);
 
   const per100 = (ingredient: Ingredient) =>
     t('ingredients.table.per100', { unit: formatUnitLabel(ingredient.base_unit, t) });
@@ -306,7 +310,7 @@ const Ingredients: React.FC = () => {
                     {Math.round(ingredient.calories)} {t('common.cal')} {per100(ingredient)}
                   </div>
                   <div className="text-xs text-neutral-400">
-                    <span className="capitalize">{ingredient.category}</span>
+                    <span>{ingredientCategoryLabel(ingredient.category, t)}</span>
                     {' · '}
                     {t('ingredients.table.macrosShort', {
                       protein: Math.round(ingredient.protein),
@@ -362,7 +366,7 @@ const Ingredients: React.FC = () => {
                       </td>
                       <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                         <span className="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-800 capitalize">
-                          {ingredient.category}
+                          {ingredientCategoryLabel(ingredient.category, t)}
                         </span>
                       </td>
                       <td className="hidden sm:table-cell px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">

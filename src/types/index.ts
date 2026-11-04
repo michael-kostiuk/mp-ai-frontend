@@ -145,6 +145,7 @@ export interface IngredientNutritionBulkResponse {
 export interface MealPlan {
   id: number;
   user_id: number;
+  name?: string | null;
   start_date: string;
   end_date: string;
   people_count: number;
@@ -166,6 +167,7 @@ export interface MealPlanEntry {
 }
 
 export interface MealPlanCreate {
+  name?: string | null;
   start_date: string;
   end_date: string;
   people_count: number;

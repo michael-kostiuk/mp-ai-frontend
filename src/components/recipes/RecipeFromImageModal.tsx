@@ -122,7 +122,7 @@ const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onC
         const draft = buildDraftFromJob(next);
         if (!draft) {
           setStep('error');
-          setError('Parsing completed but no result was returned');
+          setError(t('recipes.import.noResult'));
           return;
         }
         didOpenEditorRef.current = true;
@@ -142,7 +142,7 @@ const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onC
     } catch (e: unknown) {
       if (!isMountedRef.current) return;
       setStep('error');
-      setError(getErrorMessage(e) || 'Failed to get job status');
+      setError(getErrorMessage(e) || t('recipes.import.statusFailed'));
     }
   };
 
@@ -172,7 +172,7 @@ const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onC
     } catch (e: unknown) {
       if (!isMountedRef.current) return;
       setStep('error');
-      setError(getErrorMessage(e) || 'Failed to start parsing');
+      setError(getErrorMessage(e) || t('recipes.import.startFailed'));
     }
   };
 
@@ -190,7 +190,7 @@ const RecipeFromImageModal: React.FC<RecipeFromImageModalProps> = ({ isOpen, onC
       setError('Canceled');
     } catch (e: unknown) {
       if (!isMountedRef.current) return;
-      setError(getErrorMessage(e) || 'Failed to cancel job');
+      setError(getErrorMessage(e) || t('recipes.import.cancelFailed'));
       setStep('processing');
       schedulePoll(job.id);
     }

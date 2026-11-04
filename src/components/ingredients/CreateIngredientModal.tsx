@@ -77,24 +77,25 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
   }, [isOpen]);
 
   const categoryOptions = [
-    { value: 'vegetables', label: t('categories.vegetables') },
-    { value: 'fruits', label: t('categories.fruits') },
-    { value: 'grains', label: t('categories.grains') },
+    { value: 'vegetables', label: t('ingredientCategories.vegetables') },
+    { value: 'fruits', label: t('ingredientCategories.fruits') },
+    { value: 'grains', label: t('ingredientCategories.grains') },
     { value: 'proteins', label: t('ingredientCategories.proteins') },
-    { value: 'dairy', label: t('categories.dairy') },
+    { value: 'dairy', label: t('ingredientCategories.dairy') },
     { value: 'fats', label: t('ingredientCategories.fats') },
     { value: 'herbs', label: t('ingredientCategories.herbs') },
+    { value: 'spices', label: t('ingredientCategories.spices') },
     { value: 'nuts', label: t('ingredientCategories.nuts') },
     { value: 'legumes', label: t('ingredientCategories.legumes') },
-    { value: 'seafood', label: t('categories.seafood') },
-    { value: 'meat', label: t('categories.meat') },
+    { value: 'seafood', label: t('ingredientCategories.seafood') },
+    { value: 'meat', label: t('ingredientCategories.meat') },
     { value: 'beverages', label: t('ingredientCategories.beverages') },
-    { value: 'condiments', label: t('categories.condiments') },
+    { value: 'condiments', label: t('ingredientCategories.condiments') },
     { value: 'baking', label: t('ingredientCategories.baking') },
     { value: 'frozen', label: t('ingredientCategories.frozen') },
     { value: 'canned', label: t('ingredientCategories.canned') },
     { value: 'snacks', label: t('ingredientCategories.snacks') },
-    { value: 'other', label: t('categories.other') },
+    { value: 'other', label: t('ingredientCategories.other') },
   ];
   // Keep a category that isn't in the list (e.g. "fish") selectable so editing doesn't silently change it
   if (formData.category && !categoryOptions.some(option => option.value === formData.category)) {
@@ -122,7 +123,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
     e.preventDefault();
     
     if (!validateForm()) {
-      alert('Please fill in all required fields with valid values.');
+      alert(t('ingredients.modal.fillRequired'));
       return;
     }
 
@@ -317,19 +318,17 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
                 <div>
                   <h5 className="font-medium text-neutral-700 mb-2">{t('ingredientCategories.proteins')}</h5>
                   <ul className="space-y-1 text-neutral-600">
-                    <li>Chicken breast: 165 cal, 31g protein</li>
-                    <li>Salmon: 208 cal, 20g protein, 12g fat</li>
-                    <li>Eggs: 155 cal, 13g protein, 11g fat</li>
-                    <li>Greek yogurt: 59 cal, 10g protein</li>
+                    {[1, 2, 3, 4].map((n) => (
+                      <li key={n}>{t(`ingredients.modal.quickRefProtein${n}`)}</li>
+                    ))}
                   </ul>
                 </div>
                 <div>
                   <h5 className="font-medium text-neutral-700 mb-2">{t('ingredientCategories.carbohydrates')}</h5>
                   <ul className="space-y-1 text-neutral-600">
-                    <li>Brown rice: 111 cal, 23g carbs</li>
-                    <li>Oats: 389 cal, 66g carbs, 17g protein</li>
-                    <li>Sweet potato: 86 cal, 20g carbs</li>
-                    <li>Quinoa: 120 cal, 22g carbs, 4g protein</li>
+                    {[1, 2, 3, 4].map((n) => (
+                      <li key={n}>{t(`ingredients.modal.quickRefCarbs${n}`)}</li>
+                    ))}
                   </ul>
                 </div>
               </div>

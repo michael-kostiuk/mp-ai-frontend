@@ -37,7 +37,9 @@
     "copy": "Copy",
     "share": "Share",
     "copyFailed": "Copy failed. Please select and copy manually.",
-    "moreActions": "More actions"
+    "moreActions": "More actions",
+    "servingsCount_one": "{{count}} serving",
+    "servingsCount_other": "{{count}} servings"
   },
   "nav": {
     "recipes": "Recipes",
@@ -203,7 +205,13 @@
       "recipeImage": "Recipe Image",
       "parsingProgress": "Parsing Progress"
     },
-    "backToShoppingList": "Back to Shopping List"
+    "backToShoppingList": "Back to Shopping List",
+    "import": {
+      "noResult": "Reading finished but nothing came back. Please try another photo.",
+      "statusFailed": "Could not check progress. Please try again.",
+      "startFailed": "Could not start reading the recipe. Please try again.",
+      "cancelFailed": "Could not cancel. Please try again."
+    }
   },
   "mealPlans": {
     "leftover": "Leftovers",
@@ -242,7 +250,9 @@
       "peopleCount_one": "{{count}} person",
       "peopleCount_other": "{{count}} people",
       "current": "Now",
-      "finished": "Finished"
+      "finished": "Finished",
+      "variant": "Version {{index}} of {{total}}",
+      "createdOn": "created {{date}}"
     },
     "form": {
       "startDate": "Start Date",
@@ -260,7 +270,9 @@
       "servings": "Servings",
       "rerollMeal": "Suggest another recipe",
       "rerollFailed": "Couldn't suggest another recipe. Please try again.",
-      "viewRecipe": "View recipe"
+      "viewRecipe": "View recipe",
+      "name": "Name (optional)",
+      "namePlaceholder": "e.g. Light week, Guests on Saturday"
     },
     "detail": {
       "days": "Days",
@@ -279,7 +291,10 @@
       "openShoppingList": "Open list",
       "today": "Today",
       "pastDay": "past",
-      "entryCalories": "{{total}} cal in total · {{perServing}} cal per serving"
+      "entryCalories": "{{total}} cal in total · {{perServing}} cal per serving",
+      "caloriesBelowTarget": "These meals give about {{actual}} cal a day per person, {{difference}} less than the goal of {{target}}.",
+      "caloriesAboveTarget": "These meals give about {{actual}} cal a day per person, {{difference}} more than the goal of {{target}}.",
+      "caloriesHint": "Change servings or swap a few meals to get closer to the goal."
     },
     "mealTypes": {
       "breakfast": "Breakfast",
@@ -341,6 +356,10 @@
       "progress": "{{bought}} of {{total}} bought",
       "allDone": "Everything's bought ✓",
       "bought": "Bought"
+    },
+    "pantry": {
+      "title": "Check at home",
+      "hint": "Usually already in the kitchen. Buy only if you have run out."
     }
   },
   "ingredients": {
@@ -387,7 +406,16 @@
       "recipesNotRecalculated": "Recipes that already use this ingredient keep their saved calories. To update a recipe, open it, choose Edit Recipe and recalculate nutrition.",
       "saveFailed": "Failed to save the ingredient. Please try again.",
       "nutritionTips": "Nutrition Tips",
-      "quickReference": "Quick Reference (per 100g)"
+      "quickReference": "Quick Reference (per 100g)",
+      "quickRefProtein1": "Chicken breast: 120 cal, 22.5 g protein",
+      "quickRefProtein2": "Salmon: 208 cal, 20 g protein, 13 g fat",
+      "quickRefProtein3": "Eggs: 143 cal, 13 g protein, 10 g fat",
+      "quickRefProtein4": "Greek yogurt 2%: 73 cal, 10 g protein",
+      "quickRefCarbs1": "Rice (dry): 360 cal, 79 g carbs",
+      "quickRefCarbs2": "Oats: 379 cal, 68 g carbs, 13 g protein",
+      "quickRefCarbs3": "Sweet potato: 86 cal, 20 g carbs",
+      "quickRefCarbs4": "Quinoa (dry): 368 cal, 64 g carbs, 14 g protein",
+      "fillRequired": "Please fill in all required fields with valid values."
     },
     "merge": {
       "title": "Merge Ingredients",
@@ -453,7 +481,10 @@
     "grains": "Grains",
     "spices": "Spices",
     "condiments": "Condiments",
-    "other": "Other"
+    "other": "Other",
+    "salad": "Salad",
+    "soup": "Soup",
+    "drink": "Drink"
   },
   "dietary": {
     "vegetarian": "Vegetarian",
@@ -494,7 +525,10 @@
       "clove": "cloves",
       "bunch": "bunch",
       "can": "can",
-      "package": "pack"
+      "package": "pack",
+      "pinch": "pinch",
+      "toTaste": "to taste",
+      "asNeeded": "as needed"
     }
   },
   "errors": {
@@ -521,10 +555,10 @@
     "vegetables": "Vegetables",
     "fruits": "Fruits",
     "grains": "Grains & Cereals",
-    "proteins": "Proteins",
-    "dairy": "Dairy & Eggs",
+    "proteins": "Eggs, Tofu & Protein",
+    "dairy": "Dairy",
     "fats": "Fats & Oils",
-    "herbs": "Herbs & Spices",
+    "herbs": "Fresh Herbs",
     "nuts": "Nuts & Seeds",
     "legumes": "Legumes",
     "seafood": "Seafood",
@@ -536,7 +570,8 @@
     "canned": "Canned Goods",
     "snacks": "Snacks",
     "other": "Other",
-    "carbohydrates": "Carbohydrates"
+    "carbohydrates": "Carbohydrates",
+    "spices": "Spices & Seasonings"
   },
   "ingredientForm": {
     "ingredientName": "Ingredient Name",

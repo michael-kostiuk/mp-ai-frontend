@@ -6,6 +6,7 @@ import Input from '../ui/Input';
 import useApi from '../../hooks/useApi';
 import { getIngredients } from '../../api/ingredientApi';
 import { formatUnitLabel } from '../../utils/unitUtils';
+import { ingredientCategoryLabel } from '../../utils/categoryUtils';
 
 interface IngredientSearchSelectProps {
   value: number;
@@ -260,7 +261,7 @@ const IngredientSearchSelect: React.FC<IngredientSearchSelectProps> = ({
                 <div>
                   <div className="font-medium text-neutral-900">{ingredient.name}</div>
                   <div className="text-xs text-neutral-500 capitalize">
-                    {ingredient.category} • {t('ingredients.calPer100', { calories: Math.round(ingredient.calories), unit: formatUnitLabel(ingredient.base_unit, t) })}
+                    {ingredientCategoryLabel(ingredient.category, t)} • {t('ingredients.calPer100', { calories: Math.round(ingredient.calories), unit: formatUnitLabel(ingredient.base_unit, t) })}
                   </div>
                 </div>
                 <div className="text-xs text-neutral-400">

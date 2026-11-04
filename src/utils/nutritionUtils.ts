@@ -1,6 +1,9 @@
 import { Ingredient } from '../types';
 import { normalizeUnit } from './unitUtils';
 
+// Categories where all-zero nutrition is correct rather than missing (salt, water, spice mixes)
+export const ZERO_CALORIE_CATEGORIES = ['spices', 'beverages'];
+
 export type NutritionWarning = 'tooManyCalories' | 'macrosOver100' | 'caloriesDontMatch';
 
 // Flags nutrition that contradicts itself, e.g. 300 kcal with no protein, carbs or fat.
@@ -8,6 +11,8 @@ export type NutritionWarning = 'tooManyCalories' | 'macrosOver100' | 'caloriesDo
 export const getNutritionWarning = (ingredient: Ingredient): NutritionWarning | null => {
   const unit = normalizeUnit(ingredient.base_unit);
   if (unit !== 'g' && unit !== 'ml') return null;
+  // Alcohol has 7 kcal/g, so drinks don't follow the protein/carbs/fat sum
+  if (ZERO_CALORIE_CATEGORIES.includes(ingredient.category.toLowerCase())) return null;
   const { calories, protein, carbs, fats } = ingredient;
   if ([calories, protein, carbs, fats].some((value) => value === null || value === undefined)) return null;
   if (calories === 0 && protein === 0 && carbs === 0 && fats === 0) return null; // "missing", handled separately

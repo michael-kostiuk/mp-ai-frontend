@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useMemo, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Download, ArrowLeft, Calendar, CloudOff, RefreshCw, ShoppingBasket } from 'lucide-react';
+import { Download, ArrowLeft, Calendar, CloudOff, Home, RefreshCw, ShoppingBasket } from 'lucide-react';
 import Container from '../components/layout/Container';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -10,7 +10,7 @@ import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
 import ExportShoppingListModal from '../components/shoppingLists/ExportShoppingListModal';
 import ShoppingModeView from '../components/shoppingLists/ShoppingModeView';
-import { ShoppingList, ShoppingListItem as ShoppingListItemType } from '../types';
+import { ShoppingList } from '../types';
 import useApi from '../hooks/useApi';
 import useShoppingListSync from '../hooks/useShoppingListSync';
 import { getShoppingList, exportShoppingList } from '../api/shoppingListApi';
@@ -18,36 +18,29 @@ import { getLocaleFromLanguage } from '../utils/i18nUtils';
 import { copyTextToClipboard } from '../utils/clipboardUtils';
 import { formatMealPlanRange } from '../utils/mealPlanUtils';
 import { formatDate } from '../utils/dateUtils';
-import { getShoppingListTitle } from '../utils/shoppingListUtils';
-
-// Helper function to normalize category name (capitalize first letter)
-const normalizeCategory = (category: string): string => {
-  if (!category) return 'Other';
-  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
-};
-
-// Helper function to group items by category (case-insensitive)
-const groupItemsByCategory = (items: ShoppingListItemType[]): Record<string, ShoppingListItemType[]> => {
-  return items.reduce((acc, item) => {
-    const category = normalizeCategory(item.category || 'other');
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, ShoppingListItemType[]>);
-};
+import {
+  ShoppingLine,
+  getShoppingListTitle,
+  groupShoppingLines,
+  isLineBought,
+  isPantryItem,
+  toggleLine,
+} from '../utils/shoppingListUtils';
+import { ingredientCategoryLabel } from '../utils/categoryUtils';
+import { formatQuantity } from '../utils/unitUtils';
 
 const ShoppingListDetail: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportModalTitle, setExportModalTitle] = useState('');
   const [exportModalContent, setExportModalContent] = useState('');
   const [exporting, setExporting] = useState(false);
-  const [storeMode, setStoreMode] = useState(false);
+  // "In the store" button on the lists page opens this page straight in store mode
+  const [storeMode, setStoreMode] = useState(() => new URLSearchParams(location.search).get('store') === '1');
 
   const shoppingListId = id ? parseInt(id, 10) : null;
   const locale = getLocaleFromLanguage(i18n.language);
@@ -86,7 +79,21 @@ const ShoppingListDetail: React.FC = () => {
   }, [loadShoppingList]);
 
   const { statuses, toggle, hasPending, syncFailed } = useShoppingListSync(shoppingListId, shoppingList?.items, fetchedAt);
-  const purchasedCount = shoppingList?.items.filter((item) => statuses[item.id] === 'purchased').length ?? 0;
+  // One line per product; salt, water and spices go to "Check at home"
+  const { lines, pantryLines } = useMemo(() => {
+    const all = groupShoppingLines(shoppingList?.items ?? []);
+    return {
+      lines: all.filter((line) => !line.items.every(isPantryItem)),
+      pantryLines: all.filter((line) => line.items.every(isPantryItem)),
+    };
+  }, [shoppingList?.items]);
+  const purchasedCount = lines.filter((line) => isLineBought(line, statuses)).length;
+  const categoryLabel = useCallback((category: string) => ingredientCategoryLabel(category, t), [t]);
+  const quantityOf = useCallback(
+    (line: ShoppingLine) => line.items.map((item) => formatQuantity(item.quantity, item.unit, t, locale)).join(' + '),
+    [t, locale]
+  );
+  const onToggleLine = useCallback((line: ShoppingLine) => toggleLine(line, statuses, toggle), [statuses, toggle]);
 
   const handleBack = () => {
     navigate('/shopping-lists');
@@ -116,16 +123,25 @@ const ShoppingListDetail: React.FC = () => {
     }
   };
 
-  // Group items by category
-  const groupedItems = useMemo(() => {
-    if (!shoppingList?.items) return {};
-    return groupItemsByCategory(shoppingList.items);
-  }, [shoppingList?.items]);
+  // Lines grouped under translated category names, alphabetically
+  const groupedLines = useMemo(() => {
+    const groups: Record<string, ShoppingLine[]> = {};
+    lines.forEach((line) => {
+      (groups[categoryLabel(line.category)] ||= []).push(line);
+    });
+    return groups;
+  }, [lines, categoryLabel]);
+  const sortedCategories = useMemo(() => Object.keys(groupedLines).sort((a, b) => a.localeCompare(b)), [groupedLines]);
 
-  // Sort categories alphabetically
-  const sortedCategories = useMemo(() => {
-    return Object.keys(groupedItems).sort((a, b) => a.localeCompare(b));
-  }, [groupedItems]);
+  const renderLine = (line: ShoppingLine) => (
+    <ShoppingListItem
+      key={line.key}
+      item={line.items[0]}
+      quantityText={quantityOf(line)}
+      checked={isLineBought(line, statuses)}
+      onToggle={() => onToggleLine(line)}
+    />
+  );
 
   if (!shoppingListId) {
     return null;
@@ -213,7 +229,7 @@ const ShoppingListDetail: React.FC = () => {
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
               <CardTitle>
-                {t('shoppingLists.items')} ({purchasedCount}/{shoppingList.items.length})
+                {t('shoppingLists.items')} ({purchasedCount}/{lines.length})
               </CardTitle>
               {syncFailed ? (
                 <span className="inline-flex items-center gap-1.5 text-xs text-warning-600">
@@ -241,18 +257,19 @@ const ShoppingListDetail: React.FC = () => {
                     <h3 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide mb-3 pb-2 border-b border-neutral-200">
                       {category}
                     </h3>
-                    <div className="space-y-2">
-                      {groupedItems[category].map((item) => (
-                        <ShoppingListItem
-                          key={item.id}
-                          item={item}
-                          checked={statuses[item.id] === 'purchased'}
-                          onToggle={toggle}
-                        />
-                      ))}
-                    </div>
+                    <div className="space-y-2">{groupedLines[category].map(renderLine)}</div>
                   </div>
                 ))}
+                {pantryLines.length > 0 && (
+                  <div className="rounded-lg bg-neutral-50 p-3">
+                    <h3 className="flex items-center gap-1.5 text-sm font-semibold text-neutral-700 uppercase tracking-wide">
+                      <Home className="h-4 w-4" aria-hidden="true" />
+                      {t('shoppingLists.pantry.title')}
+                    </h3>
+                    <p className="mt-1 mb-3 text-sm text-neutral-500">{t('shoppingLists.pantry.hint')}</p>
+                    <div className="space-y-2">{pantryLines.map(renderLine)}</div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -262,11 +279,16 @@ const ShoppingListDetail: React.FC = () => {
       {storeMode && shoppingList && (
         <ShoppingModeView
           title={getShoppingListTitle(shoppingList, t, locale)}
-          items={shoppingList.items}
+          lines={lines}
+          pantryLines={pantryLines}
           statuses={statuses}
-          categoryOf={(item) => normalizeCategory(item.category || 'other')}
-          onToggle={toggle}
-          onClose={() => setStoreMode(false)}
+          categoryLabel={categoryLabel}
+          quantityOf={quantityOf}
+          onToggle={onToggleLine}
+          onClose={() => {
+            setStoreMode(false);
+            if (location.search) navigate(location.pathname, { replace: true });
+          }}
         />
       )}
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
 import { MealPlan, ShoppingList } from '../../types';
 import Button from '../ui/Button';
 import Container from '../layout/Container';
@@ -174,8 +174,13 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
           {t('common.back')}
         </button>
         <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6 first-letter:uppercase">
-          {mealPlan ? formatDateRange(mealPlan.start_date, mealPlan.end_date, locale) : t('mealPlans.mealPlanDetails')}
+          {mealPlan ? mealPlan.name || formatDateRange(mealPlan.start_date, mealPlan.end_date, locale) : t('mealPlans.mealPlanDetails')}
         </h1>
+        {mealPlan?.name && (
+          <p className="-mt-4 mb-6 text-neutral-600 first-letter:uppercase">
+            {formatDateRange(mealPlan.start_date, mealPlan.end_date, locale)}
+          </p>
+        )}
 
         <div>
           {loading && !mealPlan && (
@@ -228,6 +233,28 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Warn when the meals are far from the calorie goal (more than 10% either way) */}
+              {(() => {
+                const actual = getCaloriesPerDayPerPerson();
+                const target = mealPlan.target_calories;
+                if (!target || !actual || Math.abs(actual - target) <= target * 0.1) return null;
+                return (
+                  <div className="flex items-start gap-3 rounded-lg border border-warning-200 bg-warning-50 p-4 text-sm text-warning-800" role="status">
+                    <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />
+                    <div>
+                      <p className="font-medium">
+                        {t(actual < target ? 'mealPlans.detail.caloriesBelowTarget' : 'mealPlans.detail.caloriesAboveTarget', {
+                          actual,
+                          target,
+                          difference: Math.abs(target - actual),
+                        })}
+                      </p>
+                      <p className="mt-1">{t('mealPlans.detail.caloriesHint')}</p>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Date Range */}
               <div>
@@ -317,7 +344,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                                             {t('mealPlans.leftover')}
                                           </span>
                                         )}
-                                        {entry.servings} {entry.servings !== 1 ? t('common.servings') : t('common.serving')}
+                                        {t('common.servingsCount', { count: entry.servings })}
                                       </span>
                                     </div>
                                     <div className="font-medium text-neutral-900 mb-1 group-hover:text-primary-700 transition-colors">

@@ -11,18 +11,22 @@ import useApi from '../../hooks/useApi';
 import { getShoppingListItemRecipes } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 import { formatQuantity } from '../../utils/unitUtils';
+import { recipeCategoryLabel } from '../../utils/categoryUtils';
 
 interface ShoppingListItemProps {
   item: ShoppingListItemType;
   checked?: boolean;
   // Without it the checkbox is read-only (e.g. list previews)
   onToggle?: (itemId: number) => void;
+  // Amount for a line that combines several items of the same product ("200 g + to taste")
+  quantityText?: string;
 }
 
 const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
   item,
   checked,
-  onToggle
+  onToggle,
+  quantityText
 }) => {
   const { t, i18n } = useTranslation();
   const locale = getLocaleFromLanguage(i18n.language);
@@ -81,7 +85,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
             {item.ingredient.name}
           </span>
           <span className={`text-sm whitespace-nowrap ${isChecked ? 'text-neutral-400 line-through' : 'text-neutral-600'}`}>
-            {formatQuantity(item.quantity, item.unit, t, locale)}
+            {quantityText ?? formatQuantity(item.quantity, item.unit, t, locale)}
           </span>
         </button>
         
@@ -147,7 +151,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
                             {recipe.name}
                           </Link>
                           <div className="text-xs text-neutral-500 capitalize">
-                            {recipe.category} • {recipe.servings} {t('common.servings')}
+                            {recipeCategoryLabel(recipe.category, t)} • {t('common.servingsCount', { count: recipe.servings })}
                           </div>
                         </div>
                         

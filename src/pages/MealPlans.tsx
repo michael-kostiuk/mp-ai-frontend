@@ -5,8 +5,7 @@ import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import MealPlanCard from '../components/mealPlans/MealPlanCard';
 import CreateMealPlanModal from '../components/mealPlans/CreateMealPlanModal';
-import { getMealPlanDayCount, toDateKey } from '../utils/mealPlanUtils';
-import { parseDateKey } from '../utils/dateUtils';
+import { getMealPlanDayKeys, getPlanVariants, toDateKey } from '../utils/mealPlanUtils';
 import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
@@ -32,6 +31,7 @@ const MealPlans: React.FC = () => {
     [mealPlans]
   );
   const todayKey = toDateKey(new Date());
+  const variants = useMemo(() => getPlanVariants(mealPlans ?? []), [mealPlans]);
 
   const handleCreateSuccess = () => {
     fetchMealPlans(); // Refresh the list after creating
@@ -48,15 +48,8 @@ const MealPlans: React.FC = () => {
     }
 
     const totalPlans = mealPlans.length;
-    // Distinct calendar days, so overlapping plans don't count a day twice
-    const plannedDays = new Set<string>();
-    mealPlans.forEach((plan) => {
-      const day = parseDateKey(plan.start_date);
-      for (let i = 0; i < getMealPlanDayCount(plan); i++) {
-        plannedDays.add(toDateKey(day));
-        day.setDate(day.getDate() + 1);
-      }
-    });
+    // Distinct days with meals, so overlapping plans for the same week don't count a day twice
+    const plannedDays = new Set(mealPlans.flatMap(getMealPlanDayKeys));
     const totalDays = plannedDays.size;
     const avgCalories = Math.round(
       mealPlans.reduce((sum, plan) => sum + plan.target_calories, 0) / totalPlans
@@ -161,6 +154,7 @@ const MealPlans: React.FC = () => {
             <MealPlanCard 
               key={mealPlan.id} 
               mealPlan={mealPlan} 
+              variant={variants[mealPlan.id]}
               isPast={mealPlan.end_date.slice(0, 10) < todayKey}
               isCurrent={mealPlan.start_date.slice(0, 10) <= todayKey && todayKey <= mealPlan.end_date.slice(0, 10)}
             />

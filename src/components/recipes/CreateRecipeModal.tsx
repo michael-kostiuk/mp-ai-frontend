@@ -78,7 +78,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         prep_time: editingRecipe.prep_time,
         cook_time: editingRecipe.cook_time,
         instructions: editingRecipe.instructions,
-        category: editingRecipe.category,
+        category: (editingRecipe.category || 'dinner').toLowerCase(),
         dietary_tags: [...(editingRecipe.dietary_tags || [])],
         calories: editingRecipe.calories,
         protein: editingRecipe.protein,
@@ -119,6 +119,8 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       const merged: RecipeCreate = {
         ...base,
         ...(initialRecipe || {}),
+        // Imported recipes may say "Lunch"; the options are lowercase keys
+        category: (initialRecipe?.category || base.category).toLowerCase(),
         dietary_tags: initialRecipe?.dietary_tags ?? base.dietary_tags,
         ingredients: (initialRecipe?.ingredients ?? base.ingredients).map((ing) => ({
           ...ing,
@@ -154,11 +156,11 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     { value: 'breakfast', label: t('categories.breakfast') },
     { value: 'lunch', label: t('categories.lunch') },
     { value: 'dinner', label: t('categories.dinner') },
+    { value: 'soup', label: t('categories.soup') },
+    { value: 'salad', label: t('categories.salad') },
     { value: 'dessert', label: t('categories.dessert') },
     { value: 'snack', label: t('categories.snack') },
-    { value: 'appetizer', label: t('categories.appetizer') },
-    { value: 'side', label: t('categories.side') },
-    { value: 'beverage', label: t('categories.beverage') },
+    { value: 'drink', label: t('categories.drink') },
   ];
 
   const dietaryTagOptions = [

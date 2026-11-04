@@ -6,6 +6,7 @@ import { Recipe } from '../../types';
 import Card, { CardContent } from '../ui/Card';
 import { formatDuration } from '../../utils/dateUtils';
 import RecipeImagePlaceholder from './RecipeImagePlaceholder';
+import { recipeCategoryLabel } from '../../utils/categoryUtils';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -45,7 +46,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
           {/* Category badge */}
           <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
             <span className="inline-flex items-center rounded-full bg-white/90 backdrop-blur-sm px-2 py-1 text-xs font-medium text-neutral-700 shadow-sm">
-              {recipe.category}
+              {recipeCategoryLabel(recipe.category, t)}
             </span>
           </div>
         </div>

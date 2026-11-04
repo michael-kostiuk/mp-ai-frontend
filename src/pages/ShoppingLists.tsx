@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Download, ExternalLink, MoreHorizontal, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Calendar, Download, ExternalLink, MoreHorizontal, ShoppingBasket, Trash2 } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
@@ -17,70 +17,34 @@ import { copyTextToClipboard } from '../utils/clipboardUtils';
 import { getLocaleFromLanguage } from '../utils/i18nUtils';
 import { formatMealPlanRange } from '../utils/mealPlanUtils';
 import { formatDate } from '../utils/dateUtils';
-import { getShoppingListTitle } from '../utils/shoppingListUtils';
+import { getShoppingListTitle, groupShoppingLines, isPantryItem } from '../utils/shoppingListUtils';
+import { formatQuantity } from '../utils/unitUtils';
 import { useAuth } from '../context/AuthContext';
 
-// Helper function to normalize category name (capitalize first letter)
-const normalizeCategory = (category: string): string => {
-  if (!category) return 'Other';
-  return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
-};
-
-// Helper function to group items by category (case-insensitive)
-const groupItemsByCategory = (items: ShoppingListItemType[]): Record<string, ShoppingListItemType[]> => {
-  return items.reduce((acc, item) => {
-    const category = normalizeCategory(item.category || 'other');
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(item);
-    return acc;
-  }, {} as Record<string, ShoppingListItemType[]>);
-};
-
-// Preview component that shows grouped items with a limit
+// Preview: the first few products to buy (salt, water and spices are left out)
 const ShoppingListPreview: React.FC<{ items: ShoppingListItemType[] }> = ({ items }) => {
-  const { t } = useTranslation();
-  
-  const groupedItems = useMemo(() => groupItemsByCategory(items), [items]);
-  const sortedCategories = useMemo(() => 
-    Object.keys(groupedItems).sort((a, b) => a.localeCompare(b)), 
-    [groupedItems]
+  const { t, i18n } = useTranslation();
+  const locale = getLocaleFromLanguage(i18n.language);
+  const lines = useMemo(
+    () => groupShoppingLines(items).filter((line) => !line.items.every(isPantryItem)),
+    [items]
   );
-  
-  // Limit to show first 5 items total across all categories
+
   const MAX_PREVIEW_ITEMS = 5;
-  let itemCount = 0;
-  
+
   return (
-    <div className="space-y-4">
-      {sortedCategories.map((category) => {
-        if (itemCount >= MAX_PREVIEW_ITEMS) return null;
-        
-        const categoryItems = groupedItems[category];
-        const remainingSlots = MAX_PREVIEW_ITEMS - itemCount;
-        const itemsToShow = categoryItems.slice(0, remainingSlots);
-        itemCount += itemsToShow.length;
-        
-        return (
-          <div key={category}>
-            <h4 className="text-xs font-semibold text-neutral-600 uppercase tracking-wide mb-2">
-              {category}
-            </h4>
-            <div className="space-y-1">
-              {itemsToShow.map((item) => (
-                <ShoppingListItem
-                  key={item.id}
-                  item={item}
-                />
-              ))}
-            </div>
-          </div>
-        );
-      })}
-      {items.length > MAX_PREVIEW_ITEMS && (
+    <div className="space-y-1">
+      {lines.slice(0, MAX_PREVIEW_ITEMS).map((line) => (
+        <ShoppingListItem
+          key={line.key}
+          item={line.items[0]}
+          checked={line.items.every((item) => item.status === 'purchased')}
+          quantityText={line.items.map((item) => formatQuantity(item.quantity, item.unit, t, locale)).join(' + ')}
+        />
+      ))}
+      {lines.length > MAX_PREVIEW_ITEMS && (
         <div className="text-center py-2 text-sm text-neutral-500 border-t border-neutral-200">
-          {t('common.moreItems', { count: items.length - MAX_PREVIEW_ITEMS })}
+          {t('common.moreItems', { count: lines.length - MAX_PREVIEW_ITEMS })}
         </div>
       )}
     </div>
@@ -96,6 +60,7 @@ const ShoppingLists: React.FC = () => {
   const [exportModalTitle, setExportModalTitle] = useState('');
   const [exportModalContent, setExportModalContent] = useState('');
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
+  const navigate = useNavigate();
   const { mode } = useAuth();
   const locale = getLocaleFromLanguage(i18n.language);
 
@@ -228,6 +193,13 @@ const ShoppingLists: React.FC = () => {
                     </div>
                   </div>
                    <div className="flex items-center gap-2">
+                     <Button
+                       size="sm"
+                       leftIcon={<ShoppingBasket size={16} />}
+                       onClick={() => navigate(`/shopping-lists/${list.id}?store=1`)}
+                     >
+                       {t('shoppingLists.storeMode.open')}
+                     </Button>
                      <Button
                        variant="outline"
                        size="sm"

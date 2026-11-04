@@ -5,6 +5,7 @@ import { Calendar, Users, Target } from 'lucide-react';
 import { MealPlan } from '../../types';
 import Card, { CardContent } from '../ui/Card';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
+import { formatDate } from '../../utils/dateUtils';
 import { formatMealPlanRange, getMealPlanDayCount } from '../../utils/mealPlanUtils';
 
 interface MealPlanCardProps {
@@ -12,17 +13,21 @@ interface MealPlanCardProps {
   onClick?: () => void;
   isPast?: boolean;
   isCurrent?: boolean;
+  // Set when several plans cover the same dates
+  variant?: { index: number; total: number };
 }
 
 const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
   mealPlan,
   onClick,
   isPast = false,
-  isCurrent = false
+  isCurrent = false,
+  variant
 }) => {
   const { t, i18n } = useTranslation();
   
   const dayCount = getMealPlanDayCount(mealPlan);
+  const locale = getLocaleFromLanguage(i18n.language);
 
   const CardWrapper = onClick ? 'div' : Link;
   const cardProps = onClick 
@@ -62,9 +67,22 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
         </div>
         
         <CardContent className="p-3 sm:p-4 lg:p-5 space-y-3 sm:space-y-4">
-          <h3 className="font-semibold text-base sm:text-lg text-neutral-900 first-letter:uppercase group-hover:text-primary-700 transition-colors">
-            {formatMealPlanRange(mealPlan, getLocaleFromLanguage(i18n.language))}
-          </h3>
+          <div>
+            <h3 className="font-semibold text-base sm:text-lg text-neutral-900 first-letter:uppercase group-hover:text-primary-700 transition-colors">
+              {mealPlan.name || formatMealPlanRange(mealPlan, locale)}
+            </h3>
+            {mealPlan.name && (
+              <div className="text-sm text-neutral-600 first-letter:uppercase">{formatMealPlanRange(mealPlan, locale)}</div>
+            )}
+            {variant && (
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-neutral-500">
+                <span className="rounded-full bg-accent-100 px-2 py-0.5 font-medium text-accent-800">
+                  {t('mealPlans.card.variant', { index: variant.index, total: variant.total })}
+                </span>
+                <span>{t('mealPlans.card.createdOn', { date: formatDate(mealPlan.created_at, locale) })}</span>
+              </div>
+            )}
+          </div>
           
           <div className="flex items-center justify-between">
             <div>

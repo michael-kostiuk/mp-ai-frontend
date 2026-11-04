@@ -5,9 +5,42 @@ import { formatDateRange, parseDateKey } from './dateUtils';
 export const formatMealPlanRange = (plan: Pick<ShoppingListMealPlan, 'start_date' | 'end_date'>, locale: string) =>
   formatDateRange(plan.start_date, plan.end_date, locale);
 
-// Days covered by a plan, counting both the first and the last day
-export const getMealPlanDayCount = (plan: Pick<MealPlan, 'start_date' | 'end_date'>) =>
-  Math.round((parseDateKey(plan.end_date).getTime() - parseDateKey(plan.start_date).getTime()) / 86400000) + 1;
+// Calendar days a plan really has meals on ("2026-11-02", ...). A plan with no meals yet
+// falls back to every day from its start to its end date.
+export const getMealPlanDayKeys = (plan: Pick<MealPlan, 'start_date' | 'end_date' | 'entries'>): string[] => {
+  const withMeals = new Set((plan.entries ?? []).map((entry) => entry.date.slice(0, 10)));
+  if (withMeals.size > 0) return [...withMeals].sort();
+  const days: string[] = [];
+  const day = parseDateKey(plan.start_date);
+  const last = plan.end_date.slice(0, 10);
+  while (toDateKey(day) <= last) {
+    days.push(toDateKey(day));
+    day.setDate(day.getDate() + 1);
+  }
+  return days;
+};
+
+export const getMealPlanDayCount = (plan: Pick<MealPlan, 'start_date' | 'end_date' | 'entries'>) =>
+  getMealPlanDayKeys(plan).length;
+
+// Plans covering the same dates, numbered by creation: id -> { index: 2, total: 3 }
+export const getPlanVariants = (plans: MealPlan[]) => {
+  const groups: Record<string, MealPlan[]> = {};
+  plans.forEach((plan) => {
+    const key = `${plan.start_date.slice(0, 10)}_${plan.end_date.slice(0, 10)}`;
+    (groups[key] ||= []).push(plan);
+  });
+  const variants: Record<number, { index: number; total: number }> = {};
+  Object.values(groups).forEach((group) => {
+    if (group.length < 2) return;
+    [...group]
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .forEach((plan, i) => {
+        variants[plan.id] = { index: i + 1, total: group.length };
+      });
+  });
+  return variants;
+};
 
 const MEAL_TYPE_ORDER: Record<string, number> = { breakfast: 1, lunch: 2, dinner: 3, snack: 4 };
 

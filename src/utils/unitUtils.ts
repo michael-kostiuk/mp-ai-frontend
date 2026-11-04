@@ -201,6 +201,12 @@ export const coerceUnit = (value: unknown, fallback: Unit = 'piece'): Unit => {
   return normalizeUnit(value) ?? fallback;
 };
 
+const VAGUE_UNITS: Record<string, string> = {
+  pinch: 'pinch',
+  'to taste': 'toTaste',
+  'as needed': 'asNeeded',
+};
+
 const COUNT_UNITS = new Set<Unit>(['piece', 'slice', 'clove', 'bunch', 'can', 'package']);
 const SPOON_UNITS = new Set<Unit>(['cup', 'tbsp', 'tsp']);
 
@@ -225,6 +231,12 @@ export const formatQuantity = (
   t: (key: string, fallback: string) => string,
   locale: string
 ): string => {
+  // "to taste" / "as needed" have no amount; a pinch keeps its count when it's more than one
+  const vague = VAGUE_UNITS[(unit || '').trim().toLowerCase()];
+  if (vague) {
+    const label = t(`units.short.${vague}`, unit);
+    return vague === 'pinch' && quantity > 1 ? `${roundQuantity(quantity, unit).toLocaleString(locale)} ${label}` : label;
+  }
   const normalized = normalizeUnit(unit);
   const label = normalized ? t(`units.short.${normalized}`, normalized) : unit;
   return `${roundQuantity(quantity, unit).toLocaleString(locale)} ${label}`.trim();

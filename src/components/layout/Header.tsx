@@ -166,7 +166,8 @@ const Header: React.FC = () => {
             </nav>
           </div>
           
-          <div className="flex items-center lg:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
+            <LanguageSwitcher />
             <button
               type="button"
               className="inline-flex items-center justify-center rounded-md p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-colors"
@@ -212,9 +213,6 @@ const Header: React.FC = () => {
           
           <div className="border-t border-neutral-200 pt-4 pb-3">
             <div className="px-4">
-              <LanguageSwitcher />
-            </div>
-            <div className="px-4 mt-2">
               {authButton('text-sm text-neutral-600 hover:text-neutral-800 py-1', true)}
             </div>
           </div>

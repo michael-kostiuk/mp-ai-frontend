@@ -28,8 +28,11 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
     { value: 'breakfast', label: t('categories.breakfast') },
     { value: 'lunch', label: t('categories.lunch') },
     { value: 'dinner', label: t('categories.dinner') },
+    { value: 'soup', label: t('categories.soup') },
+    { value: 'salad', label: t('categories.salad') },
     { value: 'dessert', label: t('categories.dessert') },
     { value: 'snack', label: t('categories.snack') },
+    { value: 'drink', label: t('categories.drink') },
   ];
 
   const dietaryTagOptions = [
@@ -190,7 +193,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
               <div className="flex space-x-2">
                 <Input
                   type="number"
-                  placeholder="Min"
+                  placeholder={t('recipes.filters.min')}
                   value={minCalories?.toString() || ''}
                   onChange={(e) => setMinCalories(e.target.value ? Number(e.target.value) : undefined)}
                   fullWidth
@@ -199,7 +202,7 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
                 />
                 <Input
                   type="number"
-                  placeholder="Max"
+                  placeholder={t('recipes.filters.max')}
                   value={maxCalories?.toString() || ''}
                   onChange={(e) => setMaxCalories(e.target.value ? Number(e.target.value) : undefined)}
                   fullWidth

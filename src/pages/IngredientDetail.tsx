@@ -17,6 +17,7 @@ import { getLocaleFromLanguage } from '../utils/i18nUtils';
 import { getNutritionWarning } from '../utils/nutritionUtils';
 import { formatQuantity, formatUnitLabel } from '../utils/unitUtils';
 import { useAuth } from '../context/AuthContext';
+import { ingredientCategoryLabel } from '../utils/categoryUtils';
 
 // The API has no single-ingredient or "recipes by ingredient" endpoint, so both lists are loaded once and filtered here
 const ALL_RECIPES: [RecipeFilterParams] = [{ limit: 1000 }];
@@ -85,7 +86,7 @@ const IngredientDetail: React.FC = () => {
               <div className="text-center">
                 <h1 className="text-3xl font-bold text-neutral-900 mb-2 first-letter:uppercase">{ingredient.name}</h1>
                 <span className="inline-flex items-center rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-800 capitalize">
-                  {ingredient.category}
+                  {ingredientCategoryLabel(ingredient.category, t)}
                 </span>
               </div>
 

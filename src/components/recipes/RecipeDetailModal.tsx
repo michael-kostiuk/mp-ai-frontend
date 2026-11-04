@@ -17,6 +17,7 @@ import { formatQuantity } from '../../utils/unitUtils';
 import { useAuth } from '../../context/AuthContext';
 import DemoEditHint from '../auth/DemoEditHint';
 import RecipeImagePlaceholder from './RecipeImagePlaceholder';
+import { ingredientCategoryLabel, recipeCategoryLabel } from '../../utils/categoryUtils';
 
 interface RecipeDetailModalProps {
   isOpen: boolean;
@@ -79,7 +80,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     if (!recipe?.ingredients) return {};
     
     return recipe.ingredients.reduce((groups, ingredient) => {
-      const category = ingredient.ingredient.category;
+      const category = ingredientCategoryLabel(ingredient.ingredient.category, t);
       if (!groups[category]) {
         groups[category] = [];
       }
@@ -144,7 +145,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   <RecipeImagePlaceholder category={recipe.category} className="h-28 sm:h-48 rounded-lg mb-4" />
                 )}
                 <h1 className="text-3xl font-bold text-neutral-900 mb-2">{recipe.name}</h1>
-                <p className="text-lg text-neutral-600 capitalize">{recipe.category}</p>
+                <p className="text-lg text-neutral-600">{recipeCategoryLabel(recipe.category, t)}</p>
               </div>
 
               {/* Quick Stats */}
@@ -345,7 +346,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     </div>
                     <div>
                       <span className="font-medium text-neutral-700">{t('recipes.detail.category')}:</span>
-                      <span className="ml-2 text-neutral-600 capitalize">{recipe.category}</span>
+                      <span className="ml-2 text-neutral-600">{recipeCategoryLabel(recipe.category, t)}</span>
                     </div>
                     <div>
                       <span className="font-medium text-neutral-700">{t('recipes.detail.created')}:</span>
