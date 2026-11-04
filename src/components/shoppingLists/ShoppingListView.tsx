@@ -7,6 +7,7 @@ import { ShoppingLine, isLineBought } from '../../utils/shoppingListUtils';
 import { getShoppingListItemRecipes } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 import { formatQuantity } from '../../utils/unitUtils';
+import RecipeImagePlaceholder from '../recipes/RecipeImagePlaceholder';
 
 interface ShoppingListViewProps {
   listId: number;
@@ -28,26 +29,39 @@ const LineDishes: React.FC<{ line: ShoppingLine; listId: number }> = ({ line, li
     getShoppingListItemRecipes(line.items[0].id).then(setRecipes).catch(() => setFailed(true));
   }, [line]);
 
-  if (failed) return <p className="px-4 pb-3 pl-16 text-sm text-error-600">{t('shoppingListItem.failedToLoadRecipes')}</p>;
-  if (!recipes) return <p className="px-4 pb-3 pl-16 text-sm text-neutral-400">{t('common.loading')}</p>;
-  if (recipes.length === 0) return <p className="px-4 pb-3 pl-16 text-sm text-neutral-500">{t('shoppingListItem.noRecipesFound')}</p>;
+  // A tinted full-width panel under the product, so the dishes read as its details and not
+  // as more products
+  const panel = (content: React.ReactNode) => (
+    <div className="border-l-2 border-primary-300 bg-neutral-50 px-4 py-2.5">
+      {content}
+    </div>
+  );
+
+  if (failed) return panel(<p className="text-xs text-error-600">{t('shoppingListItem.failedToLoadRecipes')}</p>);
+  if (!recipes) return panel(<p className="text-xs text-neutral-400">{t('common.loading')}</p>);
+  if (recipes.length === 0) return panel(<p className="text-xs text-neutral-500">{t('shoppingListItem.noRecipesFound')}</p>);
 
   const ingredientId = line.items[0].ingredient_id;
-  return (
-    <ul className="space-y-1 px-4 pb-3 pl-16">
+  return panel(
+    <ul className="space-y-1.5">
       {recipes.map((recipe) => {
         const use = recipe.ingredients.find((ing) => ing.ingredient_id === ingredientId);
         return (
-          <li key={recipe.id} className="flex items-baseline justify-between gap-3 text-sm">
+          <li key={recipe.id}>
             <Link
               to={`/recipes/${recipe.id}?fromShoppingList=${listId}`}
-              className="text-primary-700 hover:underline"
+              className="flex items-center gap-2.5 rounded-md p-1 -m-1 hover:bg-white"
             >
-              {recipe.name}
+              {recipe.image_url ? (
+                <img src={recipe.image_url} alt="" loading="lazy" className="h-8 w-8 shrink-0 rounded object-cover" />
+              ) : (
+                <RecipeImagePlaceholder category={recipe.category} className="h-8 w-8 shrink-0 rounded" iconClassName="h-4 w-4" />
+              )}
+              <span className="min-w-0 flex-1 truncate text-sm text-neutral-700">{recipe.name}</span>
+              {use && (
+                <span className="shrink-0 text-xs text-neutral-500">{formatQuantity(use.quantity, use.unit, t, locale)}</span>
+              )}
             </Link>
-            {use && (
-              <span className="shrink-0 text-neutral-500">{formatQuantity(use.quantity, use.unit, t, locale)}</span>
-            )}
           </li>
         );
       })}
@@ -82,19 +96,19 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
             type="button"
             onClick={() => onToggle(line)}
             aria-pressed={checked}
-            className="flex min-h-[56px] flex-1 items-center gap-4 py-3 pl-4 pr-2 text-left active:bg-neutral-100"
+            className="flex min-h-[48px] flex-1 items-center gap-3 py-2.5 pl-4 pr-1 text-left active:bg-neutral-50"
           >
             <span
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 ${
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-[1.5px] transition-colors ${
                 checked ? 'border-primary-500 bg-primary-500 text-white' : 'border-neutral-300 bg-white'
               }`}
             >
-              {checked && <Check className="h-5 w-5" />}
+              {checked && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
             </span>
-            <span className={`flex-1 text-lg ${checked ? 'text-neutral-400 line-through' : 'text-neutral-900'}`}>
+            <span className={`flex-1 text-[15px] leading-snug ${checked ? 'text-neutral-400 line-through' : 'text-neutral-800'}`}>
               {line.name}
             </span>
-            <span className={`text-base text-right ${checked ? 'text-neutral-400 line-through' : 'text-neutral-600'}`}>
+            <span className={`shrink-0 text-sm tabular-nums text-right ${checked ? 'text-neutral-300 line-through' : 'text-neutral-500'}`}>
               {quantityOf(line)}
             </span>
           </button>
@@ -104,10 +118,12 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
             aria-expanded={open}
             aria-label={t('shoppingListItem.recipes')}
             title={t('shoppingListItem.recipes')}
-            className="flex w-12 shrink-0 items-center justify-center gap-0.5 text-neutral-400 hover:text-primary-600"
+            className={`flex w-11 shrink-0 items-center justify-center gap-0.5 transition-colors ${
+              open ? 'text-primary-600' : 'text-neutral-300 hover:text-neutral-500'
+            }`}
           >
             <ChefHat className="h-4 w-4" aria-hidden="true" />
-            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
+            <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden="true" />
           </button>
         </div>
         {open && <LineDishes line={line} listId={listId} />}
@@ -115,12 +131,12 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
     );
   };
 
-  const sectionHeading = 'sticky top-14 sm:top-16 z-10 bg-neutral-50 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-neutral-600';
+  const sectionHeading = 'sticky top-14 sm:top-16 z-10 bg-neutral-50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-neutral-500';
 
   return (
     <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
       {toBuy.length === 0 && (
-        <p className="px-4 py-8 text-center text-lg text-success-600">{t('shoppingLists.storeMode.allDone')}</p>
+        <p className="px-4 py-6 text-center text-base text-success-600">{t('shoppingLists.storeMode.allDone')}</p>
       )}
       {toBuy.length > 0 && <ul className="divide-y divide-neutral-100">{toBuy.map(renderLine)}</ul>}
       {bought.length > 0 && (
@@ -135,7 +151,7 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
             <Home className="h-3.5 w-3.5" aria-hidden="true" />
             {t('shoppingLists.pantry.title')}
           </h3>
-          <p className="px-4 pt-2 text-sm text-neutral-500">{t('shoppingLists.pantry.hint')}</p>
+          <p className="px-4 pt-2 text-xs text-neutral-500">{t('shoppingLists.pantry.hint')}</p>
           <ul className="divide-y divide-neutral-100">{pantryLines.map(renderLine)}</ul>
         </section>
       )}
