@@ -16,6 +16,11 @@ import { createRecipe, updateRecipe, uploadRecipeImage } from '../../api/recipeA
 import { estimateNutrition, IngredientInput } from '../../api/nutritionApi';
 import { UNIT_OPTIONS, coerceUnit } from '../../utils/unitUtils';
 
+// "To taste" / "pinch" / "as needed" carry no amount (0 is fine) and must not turn into pieces
+const VAGUE_UNITS = ['to taste', 'pinch', 'as needed'];
+const isVagueUnit = (unit: unknown) => VAGUE_UNITS.includes(String(unit ?? '').trim().toLowerCase());
+const keepUnit = (unit: unknown) => (isVagueUnit(unit) ? String(unit).trim().toLowerCase() : coerceUnit(unit, 'piece'));
+
 interface CreateRecipeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -91,7 +96,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         ingredients: editingRecipe.ingredients.map((ing) => ({
           ingredient_id: ing.ingredient_id,
           quantity: ing.quantity,
-          unit: coerceUnit(ing.unit, 'piece'),
+          unit: keepUnit(ing.unit),
         })),
         image_url: editingRecipe.image_url,
       });
@@ -128,7 +133,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         dietary_tags: initialRecipe?.dietary_tags ?? base.dietary_tags,
         ingredients: (initialRecipe?.ingredients ?? base.ingredients).map((ing) => ({
           ...ing,
-          unit: coerceUnit((ing as { unit?: unknown }).unit, 'piece'),
+          unit: keepUnit((ing as { unit?: unknown }).unit),
         })),
       };
 
@@ -180,7 +185,12 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
     { value: 'mediterranean', label: t('dietary.mediterranean') },
   ];
 
-  const unitOptions = UNIT_OPTIONS;
+  const unitOptions = [
+    ...UNIT_OPTIONS,
+    { value: 'to taste', label: t('units.short.toTaste') },
+    { value: 'pinch', label: t('units.short.pinch') },
+    { value: 'as needed', label: t('units.short.asNeeded') },
+  ];
 
   const handleInputChange = <K extends keyof RecipeCreate>(field: K, value: RecipeCreate[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -344,7 +354,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
 
     // Check if all ingredients are properly filled
     return formData.ingredients.every(ing =>
-      ing.ingredient_id > 0 && ing.quantity > 0 && ing.unit.trim()
+      ing.ingredient_id > 0 && ing.unit.trim() && (ing.quantity > 0 || isVagueUnit(ing.unit))
     );
   };
 
