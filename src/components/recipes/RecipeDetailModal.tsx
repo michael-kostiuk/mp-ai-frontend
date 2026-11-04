@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Clock, Users, Timer, Edit, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
+import { X, Clock, Users, Edit, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
 import { Recipe } from '../../types';
 import Button from '../ui/Button';
 import MoreMenu from '../ui/MoreMenu';
@@ -141,16 +141,10 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       <Users className="h-4 w-4 text-primary-600" aria-hidden="true" />
                       {t('common.servingsCount', { count: recipe.servings })}
                     </span>
-                    {recipe.prep_time > 0 && (
+                    {recipe.prep_time + recipe.cook_time > 0 && (
                       <span className="inline-flex items-center gap-1.5">
                         <Clock className="h-4 w-4 text-accent-600" aria-hidden="true" />
-                        {t('recipes.detail.prepTime')}: {formatTime(recipe.prep_time)}
-                      </span>
-                    )}
-                    {recipe.cook_time > 0 && (
-                      <span className="inline-flex items-center gap-1.5">
-                        <Timer className="h-4 w-4 text-secondary-600" aria-hidden="true" />
-                        {t('recipes.detail.cookTime')}: {formatTime(recipe.cook_time)}
+                        {t('recipes.detail.timeTotal', { time: formatTime(recipe.prep_time + recipe.cook_time) })}
                       </span>
                     )}
                   </div>

@@ -195,7 +195,8 @@
       "lunch": "Lunch",
       "dinner": "Dinner",
       "weightDescription": "Likelihood of this recipe being selected for each meal type during auto-generation",
-      "servingsFor": "Servings:"
+      "servingsFor": "Servings:",
+      "timeTotal": "Cooking time: {{time}}"
     },
     "filters": {
       "searchRecipes": "Search recipes...",
