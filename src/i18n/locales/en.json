@@ -310,10 +310,7 @@
       "listReady": "Plan saved, and its shopping list is ready.",
       "listProgress": "{{bought}} of {{total}} bought",
       "noListYet": "No list yet",
-      "listOutdated": "Meals changed: the shopping list needs an update.",
-      "updateList": "Update list",
       "entrySummary": "{{servings}} · {{perServing}} cal per serving",
-      "caloriesHintSwap": "Tap \"Swap\" on a meal to pick another one or change servings.",
       "versionOf": "Version {{index}} of {{total}}:",
       "openVersion": "open version {{index}}",
       "pastDays_one": "Past days ({{count}})",
@@ -352,20 +349,7 @@
     "noCurrentPlan": "There is no plan for this or next week yet.",
     "archive_one": "Past weeks ({{count}})",
     "archive_other": "Past weeks ({{count}})",
-    "deleteConfirm": "Delete this meal plan? This cannot be undone.",
-    "swap": {
-      "open": "Swap",
-      "title": "Swap {{meal}}",
-      "current": "In the plan now",
-      "calories": "{{count}} cal per serving",
-      "alternatives": "Swap for",
-      "moreOptions": "Other options",
-      "noOptions": "There are no other recipes for this meal.",
-      "servings": "Servings",
-      "fewerServings": "Fewer servings",
-      "moreServings": "More servings",
-      "saveFailed": "Could not save. Please try again."
-    }
+    "deleteConfirm": "Delete this meal plan? This cannot be undone."
   },
   "shoppingLists": {
     "title": "Shopping Lists",

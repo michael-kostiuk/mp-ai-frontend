@@ -320,10 +320,7 @@
       "listReady": "План збережено, список покупок уже готовий.",
       "listProgress": "Куплено {{bought}} з {{total}}",
       "noListYet": "Списку ще немає",
-      "listOutdated": "Страви змінилися: список покупок треба оновити.",
-      "updateList": "Оновити список",
       "entrySummary": "{{servings}} · {{perServing}} ккал на порцію",
-      "caloriesHintSwap": "Натисніть «Замінити» на страві, щоб вибрати іншу або змінити кількість порцій.",
       "versionOf": "Версія {{index}} з {{total}}:",
       "openVersion": "відкрити версію {{index}}",
       "pastDays_one": "Минулі дні ({{count}})",
@@ -366,20 +363,7 @@
     "archive_few": "Минулі тижні ({{count}})",
     "archive_many": "Минулі тижні ({{count}})",
     "archive_other": "Минулі тижні ({{count}})",
-    "deleteConfirm": "Видалити цей план харчування? Це не можна скасувати.",
-    "swap": {
-      "open": "Замінити",
-      "title": "Замінити {{meal}}",
-      "current": "Зараз у плані",
-      "calories": "{{count}} ккал на порцію",
-      "alternatives": "Можна замінити на",
-      "moreOptions": "Інші варіанти",
-      "noOptions": "Інших рецептів для цього прийому їжі немає.",
-      "servings": "Порцій",
-      "fewerServings": "Менше порцій",
-      "moreServings": "Більше порцій",
-      "saveFailed": "Не вдалося зберегти. Спробуйте ще раз."
-    }
+    "deleteConfirm": "Видалити цей план харчування? Це не можна скасувати."
   },
   "shoppingLists": {
     "title": "Списки покупок",

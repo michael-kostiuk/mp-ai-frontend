@@ -10,7 +10,6 @@ import {
   Clock,
   Edit,
   RefreshCw,
-  Repeat,
   ShoppingBasket,
   ShoppingCart,
   Target,
@@ -35,7 +34,6 @@ import { getListProgress } from '../../utils/shoppingListUtils';
 import { useAuth } from '../../context/AuthContext';
 import DemoEditHint from '../auth/DemoEditHint';
 import RecipeImagePlaceholder from '../recipes/RecipeImagePlaceholder';
-import SwapMealModal from './SwapMealModal';
 
 interface MealPlanDetailViewProps {
   onClose: () => void;
@@ -54,10 +52,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
-  // Meals were swapped after the list was made: the list no longer matches the plan
-  const [listOutdated, setListOutdated] = useState(false);
   const [showPastDays, setShowPastDays] = useState(false);
-  const [swappingEntry, setSwappingEntry] = useState<MealPlanEntry | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
   // Set when the plan was just generated and saved together with its shopping list
@@ -109,7 +104,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
 
   useEffect(() => {
     setShoppingList(null);
-    setListOutdated(false);
     loadShoppingList();
     return cancelShoppingLists;
   }, [loadShoppingList, cancelShoppingLists]);
@@ -164,7 +158,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
 
     try {
       setShoppingList(await generateList(mealPlanId));
-      setListOutdated(false);
     } catch (error) {
       console.error('Failed to generate shopping list:', error);
     }
@@ -181,12 +174,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
     } catch (error) {
       console.error('Failed to regenerate meal plan:', error);
     }
-  };
-
-  const handleSwapSaved = () => {
-    setSwappingEntry(null);
-    loadMealPlan();
-    if (shoppingList) setListOutdated(true);
   };
 
   const renderEntry = (entry: MealPlanEntry) => (
@@ -228,16 +215,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
           </span>
         </span>
       </button>
-      {canEdit && (
-        <button
-          type="button"
-          onClick={() => setSwappingEntry(entry)}
-          className="mx-3 mb-3 inline-flex items-center justify-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
-        >
-          <Repeat className="h-4 w-4" aria-hidden="true" />
-          {t('mealPlans.swap.open')}
-        </button>
-      )}
     </div>
   );
 
@@ -353,20 +330,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                       )}
                     </div>
                   </div>
-                  {listOutdated && (
-                    <div className="mt-3 flex flex-col gap-2 rounded-md bg-warning-50 p-3 text-sm text-warning-800 sm:flex-row sm:items-center sm:justify-between">
-                      <span>{t('mealPlans.detail.listOutdated')}</span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleGenerateShoppingList}
-                        isLoading={generatingList}
-                        leftIcon={<RefreshCw className="h-4 w-4" />}
-                      >
-                        {t('mealPlans.detail.updateList')}
-                      </Button>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
 
@@ -432,7 +395,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                           difference: Math.abs(target - actual),
                         })}
                       </p>
-                      <p className="mt-1">{t(canEdit ? 'mealPlans.detail.caloriesHintSwap' : 'mealPlans.detail.caloriesHint')}</p>
+                      <p className="mt-1">{t('mealPlans.detail.caloriesHint')}</p>
                     </div>
                   </div>
                 );
@@ -511,14 +474,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
         </div>
       </div>
 
-      {swappingEntry && mealPlan && (
-        <SwapMealModal
-          mealPlan={mealPlan}
-          entry={swappingEntry}
-          onClose={() => setSwappingEntry(null)}
-          onSaved={handleSwapSaved}
-        />
-      )}
     </Container>
   );
 };
