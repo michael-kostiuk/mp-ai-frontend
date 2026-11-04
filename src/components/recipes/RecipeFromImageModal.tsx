@@ -36,8 +36,8 @@ const buildDraftFromJob = (job: RecipeFromImageJob): { recipe: Partial<RecipeCre
   const recipe: Partial<RecipeCreate> = {
     name: result.name || '',
     servings: result.servings ?? 4,
-    prep_time: result.prep_time ?? 15,
-    cook_time: result.cook_time ?? 30,
+    prep_time: result.prep_time ?? 0,
+    cook_time: result.cook_time ?? 0,
     instructions: result.instructions || '',
     category: result.category || 'dinner',
     dietary_tags: [],

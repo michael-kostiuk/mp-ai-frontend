@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Clock, Users, Timer, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { X, Clock, Users, Timer, Edit, Trash2, ArrowLeft, ChevronDown } from 'lucide-react';
 import { Recipe } from '../../types';
 import Button from '../ui/Button';
+import MoreMenu from '../ui/MoreMenu';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Loader from '../ui/Loader';
 import Container from '../layout/Container';
@@ -42,7 +43,6 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   asPage = false
 }) => {
   const { t, i18n } = useTranslation();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   // How many servings to show ingredient amounts for; null = the recipe's own count
   const [servingsShown, setServingsShown] = useState<number | null>(null);
   const { mode } = useAuth();
@@ -100,8 +100,8 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   };
 
   const handleDelete = async () => {
-    if (!recipeId) return;
-    
+    if (!recipeId || !window.confirm(t('recipes.deleteConfirm'))) return;
+
     try {
       await deleteRecipeById(recipeId);
       onDelete?.();
@@ -148,40 +148,29 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 <p className="text-lg text-neutral-600">{recipeCategoryLabel(recipe.category, t)}</p>
               </div>
 
-              {/* Quick Stats */}
-              <div className="grid grid-cols-4 gap-2 md:gap-4">
-                <Card padding="none">
-                  <CardContent className="px-1 py-3 md:p-9 text-center">
-                    <Users className="h-6 w-6 md:h-8 md:w-8 text-primary-600 mx-auto mb-2" />
-                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{recipe.servings}</div>
-                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.servings')}</div>
-                  </CardContent>
-                </Card>
-
-                <Card padding="none">
-                  <CardContent className="px-1 py-3 md:p-9 text-center">
-                    <Clock className="h-6 w-6 md:h-8 md:w-8 text-accent-600 mx-auto mb-2" />
-                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{formatTime(recipe.prep_time)}</div>
-                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.prepTime')}</div>
-                  </CardContent>
-                </Card>
-
-                <Card padding="none">
-                  <CardContent className="px-1 py-3 md:p-9 text-center">
-                    <Clock className="h-6 w-6 md:h-8 md:w-8 text-secondary-600 mx-auto mb-2" />
-                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{formatTime(recipe.cook_time)}</div>
-                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.cookTime')}</div>
-                  </CardContent>
-                </Card>
-
-                <Card padding="none">
-                  <CardContent className="px-1 py-3 md:p-9 text-center">
-                    <Timer className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />
-                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{formatTime(getTotalTime())}</div>
-                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.totalTime')}</div>
-                  </CardContent>
-                </Card>
-              </div>
+              {/* Quick Stats: times are left out when the recipe doesn't have them (0) */}
+              {(() => {
+                const stats = [
+                  { icon: <Users className="h-6 w-6 md:h-8 md:w-8 text-primary-600 mx-auto mb-2" />, value: String(recipe.servings), label: t('recipes.detail.servings') },
+                  ...(recipe.prep_time > 0 ? [{ icon: <Clock className="h-6 w-6 md:h-8 md:w-8 text-accent-600 mx-auto mb-2" />, value: formatTime(recipe.prep_time), label: t('recipes.detail.prepTime') }] : []),
+                  ...(recipe.cook_time > 0 ? [{ icon: <Clock className="h-6 w-6 md:h-8 md:w-8 text-secondary-600 mx-auto mb-2" />, value: formatTime(recipe.cook_time), label: t('recipes.detail.cookTime') }] : []),
+                  ...(recipe.prep_time > 0 && recipe.cook_time > 0 ? [{ icon: <Timer className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />, value: formatTime(getTotalTime()), label: t('recipes.detail.totalTime') }] : []),
+                ];
+                const columns = ['grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4'][stats.length - 1];
+                return (
+                  <div className={`grid ${columns} gap-2 md:gap-4`}>
+                    {stats.map((stat) => (
+                      <Card key={stat.label} padding="none">
+                        <CardContent className="px-1 py-3 md:p-9 text-center">
+                          {stat.icon}
+                          <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{stat.value}</div>
+                          <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{stat.label}</div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* Dietary Tags */}
               {dietaryTags.length > 0 && (
@@ -340,10 +329,12 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-neutral-700">{t('recipes.detail.totalTime')}:</span>
-                      <span className="ml-2 text-neutral-600">{formatTime(getTotalTime())}</span>
-                    </div>
+                    {getTotalTime() > 0 && (
+                      <div>
+                        <span className="font-medium text-neutral-700">{t('recipes.detail.totalTime')}:</span>
+                        <span className="ml-2 text-neutral-600">{formatTime(getTotalTime())}</span>
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium text-neutral-700">{t('recipes.detail.category')}:</span>
                       <span className="ml-2 text-neutral-600">{recipeCategoryLabel(recipe.category, t)}</span>
@@ -358,89 +349,72 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 </CardContent>
               </Card>
 
-              {/* Meal Type Weights (for developers/advanced users) */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('recipes.detail.mealPlanningWeights')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-neutral-900">
-                        {(recipe.breakfast_weight * 100).toFixed(0)}%
+              {/* How auto-planning picks this recipe: a technical detail, folded away */}
+              <details className="group rounded-lg border border-neutral-200 bg-white">
+                <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-medium text-neutral-600 hover:text-neutral-800">
+                  {t('common.advanced')}
+                  <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+                </summary>
+                <div className="border-t border-neutral-200">
+                  <CardHeader>
+                    <CardTitle>{t('recipes.detail.mealPlanningWeights')}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-neutral-900">
+                          {(recipe.breakfast_weight * 100).toFixed(0)}%
+                        </div>
+                        <div className="text-sm text-neutral-500">{t('recipes.detail.breakfast')}</div>
                       </div>
-                      <div className="text-sm text-neutral-500">{t('recipes.detail.breakfast')}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-neutral-900">
-                        {(recipe.lunch_weight * 100).toFixed(0)}%
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-neutral-900">
+                          {(recipe.lunch_weight * 100).toFixed(0)}%
+                        </div>
+                        <div className="text-sm text-neutral-500">{t('recipes.detail.lunch')}</div>
                       </div>
-                      <div className="text-sm text-neutral-500">{t('recipes.detail.lunch')}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-neutral-900">
-                        {(recipe.dinner_weight * 100).toFixed(0)}%
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-neutral-900">
+                          {(recipe.dinner_weight * 100).toFixed(0)}%
+                        </div>
+                        <div className="text-sm text-neutral-500">{t('recipes.detail.dinner')}</div>
                       </div>
-                      <div className="text-sm text-neutral-500">{t('recipes.detail.dinner')}</div>
                     </div>
-                  </div>
-                  <p className="text-xs text-neutral-500 mt-3 text-center">
-                    {t('recipes.detail.weightDescription')}
-                  </p>
-                </CardContent>
-              </Card>
+                    <p className="text-xs text-neutral-500 mt-3 text-center">
+                      {t('recipes.detail.weightDescription')}
+                    </p>
+                  </CardContent>
+                </div>
+              </details>
 
               {/* Actions */}
               {!canEdit && (onEdit || onDelete) && <DemoEditHint />}
-              <div className="flex justify-between pt-6 border-t border-neutral-200">
-                <div>
-                  {/* Delete is only offered where the caller handles it (not in read-only lookups) */}
-                  {onDelete && canEdit && (!showDeleteConfirm ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowDeleteConfirm(true)}
-                      leftIcon={<Trash2 className="h-4 w-4" />}
-                      className="text-error-600 border-error-300 hover:bg-error-50"
-                    >
-                      {t('recipes.deleteRecipe')}
-                    </Button>
-                  ) : (
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowDeleteConfirm(false)}
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleDelete}
-                        isLoading={deleting}
-                        className="text-error-600 border-error-300 hover:bg-error-50"
-                      >
-                        {t('recipes.confirmDelete')}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex space-x-3">
-                  {!asPage && (
-                    <Button variant="outline" onClick={onClose}>
-                      {t('common.close')}
-                    </Button>
-                  )}
-                  {onEdit && canEdit && (
-                    <Button
-                      onClick={() => onEdit(recipe)}
-                      leftIcon={<Edit className="h-4 w-4" />}
-                    >
-                      {t('recipes.editRecipe')}
-                    </Button>
-                  )}
-                </div>
+              <div className="flex justify-end gap-3 pt-6 border-t border-neutral-200">
+                {!asPage && (
+                  <Button variant="outline" onClick={onClose}>
+                    {t('common.close')}
+                  </Button>
+                )}
+                {onEdit && canEdit && (
+                  <Button
+                    onClick={() => onEdit(recipe)}
+                    leftIcon={<Edit className="h-4 w-4" />}
+                  >
+                    {t('recipes.editRecipe')}
+                  </Button>
+                )}
+                {/* Delete is only offered where the caller handles it (not in read-only lookups) */}
+                {onDelete && canEdit && (
+                  <MoreMenu
+                    placement="up"
+                    items={[{
+                      label: deleting ? t('common.loading') : t('recipes.deleteRecipe'),
+                      icon: <Trash2 className="h-4 w-4" />,
+                      onClick: handleDelete,
+                      danger: true,
+                    }]}
+                  />
+                )}
               </div>
             </div>
           )}

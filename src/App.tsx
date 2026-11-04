@@ -21,7 +21,8 @@ function App() {
       <Router>
         <div className="min-h-screen bg-neutral-50">
           <Header />
-          <main>
+          {/* Room for the phone tab bar at the bottom */}
+          <main className="pb-20 lg:pb-0">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/recipes" element={<Recipes />} />

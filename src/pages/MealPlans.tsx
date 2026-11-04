@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PlusCircle, Calendar, CalendarCheck, Target } from 'lucide-react';
+import { PlusCircle, Calendar, Archive, ChevronDown } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import MealPlanCard from '../components/mealPlans/MealPlanCard';
 import CreateMealPlanModal from '../components/mealPlans/CreateMealPlanModal';
-import { getMealPlanDayKeys, getPlanVariants, toDateKey } from '../utils/mealPlanUtils';
+import { getLatestPlans, toDateKey } from '../utils/mealPlanUtils';
 import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
@@ -26,12 +26,16 @@ const MealPlans: React.FC = () => {
     fetchMealPlans();
   }, [fetchMealPlans]);
 
-  const sortedMealPlans = useMemo(
-    () => (mealPlans ? [...mealPlans].sort((a, b) => b.end_date.localeCompare(a.end_date)) : []),
-    [mealPlans]
-  );
   const todayKey = toDateKey(new Date());
-  const variants = useMemo(() => getPlanVariants(mealPlans ?? []), [mealPlans]);
+  const [showArchive, setShowArchive] = useState(false);
+  // One card per week (its newest version); finished weeks go to the archive
+  const { currentPlans, pastPlans } = useMemo(() => {
+    const latest = getLatestPlans(mealPlans ?? []).sort((a, b) => b.plan.end_date.localeCompare(a.plan.end_date));
+    return {
+      currentPlans: latest.filter(({ plan }) => plan.end_date.slice(0, 10) >= todayKey),
+      pastPlans: latest.filter(({ plan }) => plan.end_date.slice(0, 10) < todayKey),
+    };
+  }, [mealPlans, todayKey]);
 
   const handleCreateSuccess = () => {
     fetchMealPlans(); // Refresh the list after creating
@@ -42,24 +46,6 @@ const MealPlans: React.FC = () => {
     setEditingMealPlan(null); // Clear editing meal plan when closing
   };
 
-  const getTotalStats = () => {
-    if (!mealPlans || mealPlans.length === 0) {
-      return { totalPlans: 0, totalDays: 0, avgCalories: 0 };
-    }
-
-    const totalPlans = mealPlans.length;
-    // Distinct days with meals, so overlapping plans for the same week don't count a day twice
-    const plannedDays = new Set(mealPlans.flatMap(getMealPlanDayKeys));
-    const totalDays = plannedDays.size;
-    const avgCalories = Math.round(
-      mealPlans.reduce((sum, plan) => sum + plan.target_calories, 0) / totalPlans
-    );
-
-    return { totalPlans, totalDays, avgCalories };
-  };
-
-  const stats = getTotalStats();
-  
   return (
     <Container className="py-6 sm:py-8 lg:py-12">
       <PageHeader
@@ -79,35 +65,6 @@ const MealPlans: React.FC = () => {
         }
       />
 
-      {/* Stats Cards */}
-      {mealPlans && mealPlans.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-12">
-          <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
-            <CardContent className="px-1 py-3 sm:p-11 text-center">
-              <Calendar className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.totalPlans}</div>
-              <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.totalPlans')}</div>
-            </CardContent>
-          </Card>
-
-          <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
-            <CardContent className="px-1 py-3 sm:p-11 text-center">
-              <CalendarCheck className="h-6 w-6 sm:h-8 sm:w-8 text-accent-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.totalDays}</div>
-              <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.daysPlanned')}</div>
-            </CardContent>
-          </Card>
-
-          <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
-            <CardContent className="px-1 py-3 sm:p-11 text-center">
-              <Target className="h-6 w-6 sm:h-8 sm:w-8 text-secondary-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.avgCalories}</div>
-              <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.avgCaloriesDay')}</div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      
       {loading && mealPlans === null && (
         <div className="py-12 lg:py-16">
           <Loader centered label={t('mealPlans.loadingMealPlans')} />
@@ -149,16 +106,57 @@ const MealPlans: React.FC = () => {
       )}
       
       {mealPlans && mealPlans.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 animate-fadeIn">
-          {sortedMealPlans.map((mealPlan) => (
-            <MealPlanCard 
-              key={mealPlan.id} 
-              mealPlan={mealPlan} 
-              variant={variants[mealPlan.id]}
-              isPast={mealPlan.end_date.slice(0, 10) < todayKey}
-              isCurrent={mealPlan.start_date.slice(0, 10) <= todayKey && todayKey <= mealPlan.end_date.slice(0, 10)}
-            />
-          ))}
+        <div className="space-y-6 animate-fadeIn">
+          {currentPlans.length === 0 && (
+            <Card className="py-8 text-center">
+              <CardContent>
+                <p className="text-neutral-600 mb-4">{t('mealPlans.noCurrentPlan')}</p>
+                <Button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  leftIcon={<PlusCircle size={18} />}
+                  className="w-full sm:w-auto"
+                >
+                  {t('mealPlans.createMealPlan')}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+          {currentPlans.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+              {currentPlans.map(({ plan, versionCount }) => (
+                <MealPlanCard
+                  key={plan.id}
+                  mealPlan={plan}
+                  versionCount={versionCount}
+                  isCurrent={plan.start_date.slice(0, 10) <= todayKey}
+                />
+              ))}
+            </div>
+          )}
+
+          {pastPlans.length > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowArchive(!showArchive)}
+                aria-expanded={showArchive}
+                className="flex w-full items-center justify-between rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                <span className="flex items-center gap-2">
+                  <Archive className="h-4 w-4" aria-hidden="true" />
+                  {t('mealPlans.archive', { count: pastPlans.length })}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showArchive ? 'rotate-180' : ''}`} aria-hidden="true" />
+              </button>
+              {showArchive && (
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+                  {pastPlans.map(({ plan, versionCount }) => (
+                    <MealPlanCard key={plan.id} mealPlan={plan} versionCount={versionCount} isPast />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -168,6 +166,7 @@ const MealPlans: React.FC = () => {
         onClose={handleCreateModalClose}
         onSuccess={handleCreateSuccess}
         editingMealPlan={editingMealPlan}
+        previousPlan={currentPlans[0]?.plan ?? pastPlans[0]?.plan ?? null}
       />
     </Container>
   );

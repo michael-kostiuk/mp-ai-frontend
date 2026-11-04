@@ -20,6 +20,7 @@ import { formatMealPlanRange } from '../utils/mealPlanUtils';
 import { formatDate } from '../utils/dateUtils';
 import {
   ShoppingLine,
+  formatLineQuantity,
   getShoppingListTitle,
   groupShoppingLines,
   isLineBought,
@@ -27,7 +28,6 @@ import {
   toggleLine,
 } from '../utils/shoppingListUtils';
 import { ingredientCategoryLabel } from '../utils/categoryUtils';
-import { formatQuantity } from '../utils/unitUtils';
 
 const ShoppingListDetail: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -90,7 +90,7 @@ const ShoppingListDetail: React.FC = () => {
   const purchasedCount = lines.filter((line) => isLineBought(line, statuses)).length;
   const categoryLabel = useCallback((category: string) => ingredientCategoryLabel(category, t), [t]);
   const quantityOf = useCallback(
-    (line: ShoppingLine) => line.items.map((item) => formatQuantity(item.quantity, item.unit, t, locale)).join(' + '),
+    (line: ShoppingLine) => formatLineQuantity(line, t, locale),
     [t, locale]
   );
   const onToggleLine = useCallback((line: ShoppingLine) => toggleLine(line, statuses, toggle), [statuses, toggle]);

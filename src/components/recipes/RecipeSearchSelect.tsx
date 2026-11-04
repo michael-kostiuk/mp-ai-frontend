@@ -374,7 +374,7 @@ const handleClear = () => {
                           </div>
                         </div>
                         <div className="text-xs text-neutral-400">
-                          {recipe.prep_time + recipe.cook_time}m
+                          {recipe.prep_time + recipe.cook_time > 0 && `${recipe.prep_time + recipe.cook_time}m`}
                         </div>
                       </div>
                     </button>
@@ -414,7 +414,7 @@ const handleClear = () => {
                       </div>
                     </div>
                     <div className="text-xs text-neutral-400">
-                      {recipe.prep_time + recipe.cook_time}m
+                      {recipe.prep_time + recipe.cook_time > 0 && `${recipe.prep_time + recipe.cook_time}m`}
                     </div>
                   </div>
                 </button>

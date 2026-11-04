@@ -74,9 +74,14 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
           </div>
           
           <div className="grid grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm text-neutral-500 whitespace-nowrap">
+            {/* No time set (0): leave the slot empty rather than show a made-up number */}
             <div className="flex items-center justify-center sm:justify-start">
-              <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              <span>{formatDuration(totalTime, { minutes: t('common.minutes'), hours: t('common.hours') })}</span>
+              {totalTime > 0 && (
+                <>
+                  <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  <span>{formatDuration(totalTime, { minutes: t('common.minutes'), hours: t('common.hours') })}</span>
+                </>
+              )}
             </div>
             
             <div className="flex items-center justify-center">

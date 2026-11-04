@@ -124,8 +124,8 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-neutral-200 transition-all">
       <div className="p-4">
-        <div className="flex items-center space-x-4">
-          <div className="flex-1">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex-1 min-w-0">
             <div className="relative">
               <Input
                 placeholder={t('recipes.filters.searchRecipes')}
@@ -142,9 +142,10 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
             </div>
           </div>
 
+          {/* Typing already searches; on phones the button only took room from the field */}
           <Button
             onClick={() => handleSearch()}
-            className="flex-shrink-0"
+            className="hidden sm:inline-flex flex-shrink-0"
             disabled={searchQuery.trim().length > 0 && searchQuery.trim().length < 3}
           >
             {t('common.search')}
@@ -154,9 +155,11 @@ const RecipeSearchFilters: React.FC<RecipeSearchFiltersProps> = ({
             variant="ghost"
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex-shrink-0"
+            aria-label={t('recipes.filters.filters')}
+            aria-expanded={isExpanded}
           >
-            <Sliders className="h-5 w-5 mr-1" />
-            {t('recipes.filters.filters')}
+            <Sliders className="h-5 w-5 sm:mr-1" />
+            <span className="hidden sm:inline">{t('recipes.filters.filters')}</span>
           </Button>
         </div>
       </div>

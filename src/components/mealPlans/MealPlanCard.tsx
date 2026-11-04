@@ -1,11 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Users, Target } from 'lucide-react';
+import { Calendar, Target } from 'lucide-react';
 import { MealPlan } from '../../types';
 import Card, { CardContent } from '../ui/Card';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
-import { formatDate } from '../../utils/dateUtils';
 import { formatMealPlanRange, getMealPlanDayCount } from '../../utils/mealPlanUtils';
 
 interface MealPlanCardProps {
@@ -13,8 +12,8 @@ interface MealPlanCardProps {
   onClick?: () => void;
   isPast?: boolean;
   isCurrent?: boolean;
-  // Set when several plans cover the same dates
-  variant?: { index: number; total: number };
+  // How many versions of this week exist (the card shows the newest)
+  versionCount?: number;
 }
 
 const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
@@ -22,7 +21,7 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
   onClick,
   isPast = false,
   isCurrent = false,
-  variant
+  versionCount = 1
 }) => {
   const { t, i18n } = useTranslation();
   
@@ -59,10 +58,6 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
                 {t('mealPlans.card.finished')}
               </span>
             )}
-            <span className="flex items-center text-accent-900 text-sm sm:text-base" title={t('mealPlans.detail.people')}>
-              <Users className="h-4 w-4 sm:h-5 sm:w-5 text-accent-700 mr-1" aria-hidden="true" />
-              {t('mealPlans.card.peopleCount', { count: mealPlan.people_count })}
-            </span>
           </div>
         </div>
         
@@ -74,12 +69,9 @@ const MealPlanCard: React.FC<MealPlanCardProps> = React.memo(({
             {mealPlan.name && (
               <div className="text-sm text-neutral-600 first-letter:uppercase">{formatMealPlanRange(mealPlan, locale)}</div>
             )}
-            {variant && (
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-neutral-500">
-                <span className="rounded-full bg-accent-100 px-2 py-0.5 font-medium text-accent-800">
-                  {t('mealPlans.card.variant', { index: variant.index, total: variant.total })}
-                </span>
-                <span>{t('mealPlans.card.createdOn', { date: formatDate(mealPlan.created_at, locale) })}</span>
+            {versionCount > 1 && (
+              <div className="mt-1 text-xs text-neutral-500">
+                {t('mealPlans.card.versions', { count: versionCount })}
               </div>
             )}
           </div>

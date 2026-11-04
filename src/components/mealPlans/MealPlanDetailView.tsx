@@ -1,23 +1,41 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, ArrowLeft, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
-import { MealPlan, ShoppingList } from '../../types';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Edit,
+  RefreshCw,
+  Repeat,
+  ShoppingBasket,
+  ShoppingCart,
+  Target,
+  Trash2,
+  Users,
+} from 'lucide-react';
+import { MealPlan, MealPlanEntry, ShoppingList } from '../../types';
 import Button from '../ui/Button';
+import MoreMenu from '../ui/MoreMenu';
 import Container from '../layout/Container';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
 import useCachedApi from '../../hooks/useCachedApi';
-import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
+import { getMealPlan, getMealPlans, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
 import { getMealPlanShoppingLists } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 import { formatDate, formatDateRange, formatDayHeading } from '../../utils/dateUtils';
-import { getMealPlanDayCount, toDateKey } from '../../utils/mealPlanUtils';
-import { formatQuantity } from '../../utils/unitUtils';
+import { getMealPlanDayCount, getPlanVersions, toDateKey } from '../../utils/mealPlanUtils';
+import { getListProgress } from '../../utils/shoppingListUtils';
 import { useAuth } from '../../context/AuthContext';
 import DemoEditHint from '../auth/DemoEditHint';
+import RecipeImagePlaceholder from '../recipes/RecipeImagePlaceholder';
+import SwapMealModal from './SwapMealModal';
 
 interface MealPlanDetailViewProps {
   onClose: () => void;
@@ -26,6 +44,8 @@ interface MealPlanDetailViewProps {
   onDelete?: () => void;
 }
 
+const MEAL_TYPE_ORDER: Record<string, number> = { breakfast: 1, lunch: 2, dinner: 3, snack: 4 };
+
 const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
   onClose,
   mealPlanId,
@@ -33,21 +53,26 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
   onDelete
 }) => {
   const { t, i18n } = useTranslation();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [existingShoppingList, setExistingShoppingList] = useState<ShoppingList | null>(null);
+  const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
+  // Meals were swapped after the list was made: the list no longer matches the plan
+  const [listOutdated, setListOutdated] = useState(false);
+  const [showPastDays, setShowPastDays] = useState(false);
+  const [swappingEntry, setSwappingEntry] = useState<MealPlanEntry | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  // Set when the plan was just generated and saved together with its shopping list
+  const justCreated = new URLSearchParams(location.search).get('listReady') === '1';
   const { mode } = useAuth();
   const canEdit = mode === 'owner';
   const locale = getLocaleFromLanguage(i18n.language);
   const todayKey = toDateKey(new Date());
-  const todayRef = useRef<HTMLDivElement>(null);
-  const scrolledToToday = useRef(false);
-  
+
   const { data: mealPlan, loading, error, execute: fetchMealPlan } = useCachedApi<MealPlan, [number]>('mealPlan', getMealPlan, {
     initialArgs: mealPlanId ? [mealPlanId] : undefined
   });
+  const { data: allPlans, execute: fetchAllPlans } = useCachedApi<MealPlan[], []>('mealPlans', getMealPlans, { initialArgs: [] });
   const { loading: deleting, execute: deletePlan } = useApi(deleteMealPlan);
-  const { data: shoppingList, loading: generatingList, execute: generateList } = useApi<ShoppingList>(generateShoppingList);
+  const { loading: generatingList, execute: generateList } = useApi<ShoppingList>(generateShoppingList);
   const {
     loading: loadingShoppingLists,
     execute: fetchShoppingLists,
@@ -55,7 +80,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
   } = useApi<ShoppingList[], [number]>(getMealPlanShoppingLists);
   const { loading: regenerating, execute: regenerate } = useApi<MealPlan>(regenerateMealPlan);
 
-  // Memoize the fetch function to prevent unnecessary re-renders
   const loadMealPlan = useCallback(() => {
     if (mealPlanId) {
       fetchMealPlan(mealPlanId);
@@ -66,71 +90,66 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
     loadMealPlan();
   }, [loadMealPlan]);
 
-  const loadExistingShoppingList = useCallback(async () => {
+  useEffect(() => {
+    fetchAllPlans().catch(() => undefined); // only used for the "other versions" links
+  }, [fetchAllPlans]);
+
+  const loadShoppingList = useCallback(async () => {
     if (!mealPlanId) return;
 
     try {
       // Newest first from the API
       const lists = await fetchShoppingLists(mealPlanId);
-      setExistingShoppingList(lists[0] ?? null);
+      setShoppingList(lists[0] ?? null);
     } catch {
-      // Non-blocking: shopping list summary is optional in this modal.
-      setExistingShoppingList(null);
+      // Non-blocking: the plan works without its shopping list summary
+      setShoppingList(null);
     }
   }, [mealPlanId, fetchShoppingLists]);
 
   useEffect(() => {
-    setExistingShoppingList(null);
-    loadExistingShoppingList();
+    setShoppingList(null);
+    setListOutdated(false);
+    loadShoppingList();
     return cancelShoppingLists;
-  }, [loadExistingShoppingList, cancelShoppingLists]);
+  }, [loadShoppingList, cancelShoppingLists]);
 
-  const getDaysDifference = () => (mealPlan ? getMealPlanDayCount(mealPlan) : 0);
+  const days = mealPlan ? getMealPlanDayCount(mealPlan) : 0;
 
-  // Bring today's meals into view once, when the plan first loads
-  useEffect(() => {
-    if (mealPlan && todayRef.current && !scrolledToToday.current) {
-      scrolledToToday.current = true;
-      todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+  const caloriesPerDayPerPerson = useMemo(() => {
+    if (!mealPlan || days === 0) return 0;
+    const total = mealPlan.entries.reduce((sum, entry) => sum + entry.recipe.calories * entry.servings, 0);
+    return Math.round(total / (days * Math.max(mealPlan.people_count, 1)));
+  }, [mealPlan, days]);
+
+  const dayGroups = useMemo(() => {
+    if (!mealPlan) return [];
+    const groups: Record<string, MealPlanEntry[]> = {};
+    mealPlan.entries.forEach((entry) => {
+      (groups[entry.date.slice(0, 10)] ||= []).push(entry);
+    });
+    return Object.entries(groups)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, entries]) => ({
+        date,
+        entries: [...entries].sort((a, b) => (MEAL_TYPE_ORDER[a.meal_type] || 5) - (MEAL_TYPE_ORDER[b.meal_type] || 5)),
+      }));
   }, [mealPlan]);
+  // Days already gone fold away while the plan still runs, so today is the first thing shown
+  const planRunning = dayGroups.some(({ date }) => date >= todayKey);
+  const pastDays = planRunning ? dayGroups.filter(({ date }) => date < todayKey) : [];
+  const shownDays = planRunning ? dayGroups.filter(({ date }) => date >= todayKey) : dayGroups;
 
-  const getTotalPlanCalories = () => {
-    if (!mealPlan) return 0;
-    return mealPlan.entries.reduce((total, entry) => {
-      return total + (entry.recipe.calories * entry.servings);
-    }, 0);
-  };
+  const versions = useMemo(
+    () => (mealPlan && allPlans ? getPlanVersions(allPlans, mealPlan) : []),
+    [allPlans, mealPlan]
+  );
 
-  const getCaloriesPerDayPerPerson = () => {
-    if (!mealPlan) return 0;
-    const days = getDaysDifference();
-    const people = Math.max(mealPlan.people_count, 1);
-    return days > 0 ? Math.round(getTotalPlanCalories() / (days * people)) : 0;
-  };
-
-  const groupEntriesByDate = () => {
-    if (!mealPlan) return {};
-    
-    return mealPlan.entries.reduce((groups, entry) => {
-      const date = entry.date.split('T')[0];
-      if (!groups[date]) {
-        groups[date] = [];
-      }
-      groups[date].push(entry);
-      return groups;
-    }, {} as Record<string, typeof mealPlan.entries>);
-  };
-
-  // Define meal type order for sorting
-  const getMealTypeOrder = (mealType: string): number => {
-    const order = { breakfast: 1, lunch: 2, dinner: 3, snack: 4 };
-    return order[mealType as keyof typeof order] || 5;
-  };
+  const listProgress = shoppingList ? getListProgress(shoppingList.items) : null;
 
   const handleDelete = async () => {
-    if (!mealPlanId) return;
-    
+    if (!mealPlanId || !window.confirm(t('mealPlans.deleteConfirm'))) return;
+
     try {
       await deletePlan(mealPlanId);
       onDelete?.();
@@ -140,27 +159,111 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
     }
   };
 
- const handleGenerateShoppingList = async () => {
-     if (!mealPlanId) return;
-     
-     try {
-       const created = await generateList(mealPlanId);
-       setExistingShoppingList(created);
-     } catch (error) {
-       console.error('Failed to generate shopping list:', error);
-     }
-   };
+  const handleGenerateShoppingList = async () => {
+    if (!mealPlanId) return;
 
+    try {
+      setShoppingList(await generateList(mealPlanId));
+      setListOutdated(false);
+    } catch (error) {
+      console.error('Failed to generate shopping list:', error);
+    }
+  };
+
+  // All meals change, so the shopping list is made again together with the plan
   const handleRegenerate = async () => {
-    if (!mealPlanId || regenerating) return;
-    
+    if (!mealPlanId || regenerating || !window.confirm(t('mealPlans.detail.regenerateConfirm'))) return;
+
     try {
       await regenerate(mealPlanId);
-      // Refresh the meal plan data after regeneration
       loadMealPlan();
+      await handleGenerateShoppingList();
     } catch (error) {
       console.error('Failed to regenerate meal plan:', error);
     }
+  };
+
+  const handleSwapSaved = () => {
+    setSwappingEntry(null);
+    loadMealPlan();
+    if (shoppingList) setListOutdated(true);
+  };
+
+  const renderEntry = (entry: MealPlanEntry) => (
+    <div key={entry.id} className="flex flex-col rounded-lg bg-neutral-50">
+      <button
+        type="button"
+        onClick={() => navigate(`/recipes/${entry.recipe.id}?fromMealPlan=${mealPlanId}`)}
+        className="group flex w-full items-center gap-3 rounded-lg p-3 text-left hover:bg-neutral-100 transition-colors"
+      >
+        {entry.recipe.image_url ? (
+          <img
+            src={entry.recipe.image_url}
+            alt=""
+            loading="lazy"
+            className="h-16 w-16 shrink-0 rounded-lg object-cover"
+          />
+        ) : (
+          <RecipeImagePlaceholder category={entry.recipe.category} className="h-16 w-16 shrink-0 rounded-lg" iconClassName="h-6 w-6" />
+        )}
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="text-sm font-medium text-primary-600">
+              {t(`mealPlans.mealTypes.${entry.meal_type}`, entry.meal_type)}
+            </span>
+            {entry.is_leftover && (
+              <span className="text-xs font-medium text-amber-700 bg-amber-100 rounded px-2 py-0.5">
+                {t('mealPlans.leftover')}
+              </span>
+            )}
+          </span>
+          <span className="block font-medium text-neutral-900 line-clamp-2 group-hover:text-primary-700 transition-colors">
+            {entry.recipe.name}
+          </span>
+          <span className="block text-sm text-neutral-500">
+            {t('mealPlans.detail.entrySummary', {
+              servings: t('common.servingsCount', { count: entry.servings }),
+              perServing: Math.round(entry.recipe.calories),
+            })}
+          </span>
+        </span>
+      </button>
+      {canEdit && (
+        <button
+          type="button"
+          onClick={() => setSwappingEntry(entry)}
+          className="mx-3 mb-3 inline-flex items-center justify-center gap-1.5 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100"
+        >
+          <Repeat className="h-4 w-4" aria-hidden="true" />
+          {t('mealPlans.swap.open')}
+        </button>
+      )}
+    </div>
+  );
+
+  const renderDay = ({ date, entries }: { date: string; entries: MealPlanEntry[] }) => {
+    const isToday = date === todayKey;
+    const isPastDay = date < todayKey;
+    return (
+      <div
+        key={date}
+        className={`bg-white border rounded-lg p-3 sm:p-4 ${
+          isToday ? 'border-primary-500 ring-2 ring-primary-500' : 'border-neutral-200'
+        } ${isPastDay ? 'opacity-70' : ''}`}
+      >
+        <h4 className="flex items-center gap-2 font-medium text-neutral-900 pb-3 mb-3 border-b border-neutral-200">
+          <span className="first-letter:uppercase">{formatDayHeading(date, locale)}</span>
+          {isToday && (
+            <span className="rounded-full bg-primary-600 px-2 py-0.5 text-xs font-medium text-white">
+              {t('mealPlans.detail.today')}
+            </span>
+          )}
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {entries.map(renderEntry)}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -190,53 +293,132 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
           )}
 
           {error && (
-            <ErrorMessage 
-              title={t('mealPlans.failedToLoad')} 
+            <ErrorMessage
+              title={t('mealPlans.failedToLoad')}
               message={error.message}
-              onRetry={loadMealPlan} 
+              onRetry={loadMealPlan}
             />
           )}
 
           {mealPlan && (
             <div className="space-y-6">
+              {/* Shopping list first: it is what the plan is turned into */}
+              <Card padding="none">
+                <CardContent className="p-4">
+                  {justCreated && shoppingList && (
+                    <p className="mb-3 flex items-center gap-2 text-sm font-medium text-success-700">
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                      {t('mealPlans.detail.listReady')}
+                    </p>
+                  )}
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-3">
+                      <ShoppingCart className="h-6 w-6 shrink-0 text-primary-600" aria-hidden="true" />
+                      <div>
+                        <div className="font-medium text-neutral-900">{t('mealPlans.detail.shoppingList')}</div>
+                        <div className="text-sm text-neutral-500">
+                          {listProgress
+                            ? t('mealPlans.detail.listProgress', { bought: listProgress.bought, total: listProgress.total })
+                            : loadingShoppingLists
+                              ? t('shoppingLists.loadingShoppingLists')
+                              : t('mealPlans.detail.noListYet')}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      {shoppingList ? (
+                        <>
+                          <Link to={`/shopping-lists/${shoppingList.id}?store=1`} className="flex-1 sm:flex-none">
+                            <Button leftIcon={<ShoppingBasket className="h-4 w-4" />} fullWidth>
+                              {t('shoppingLists.storeMode.open')}
+                            </Button>
+                          </Link>
+                          <Link to={`/shopping-lists/${shoppingList.id}`} className="flex-1 sm:flex-none">
+                            <Button variant="outline" fullWidth>
+                              {t('mealPlans.detail.openShoppingList')}
+                            </Button>
+                          </Link>
+                        </>
+                      ) : (
+                        !loadingShoppingLists && (
+                          <Button
+                            onClick={handleGenerateShoppingList}
+                            isLoading={generatingList}
+                            leftIcon={<ShoppingCart className="h-4 w-4" />}
+                            className="w-full sm:w-auto"
+                          >
+                            {t('mealPlans.detail.generateList')}
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  </div>
+                  {listOutdated && (
+                    <div className="mt-3 flex flex-col gap-2 rounded-md bg-warning-50 p-3 text-sm text-warning-800 sm:flex-row sm:items-center sm:justify-between">
+                      <span>{t('mealPlans.detail.listOutdated')}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={handleGenerateShoppingList}
+                        isLoading={generatingList}
+                        leftIcon={<RefreshCw className="h-4 w-4" />}
+                      >
+                        {t('mealPlans.detail.updateList')}
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Meal Schedule */}
+              <div>
+                <h2 className="mb-4 text-lg font-semibold text-neutral-900">{t('mealPlans.detail.mealSchedule')}</h2>
+                {dayGroups.length === 0 ? (
+                  <div className="text-center py-8 text-neutral-500">
+                    {t('mealPlans.noMealsScheduled')}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pastDays.length > 0 && (
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setShowPastDays(!showPastDays)}
+                          aria-expanded={showPastDays}
+                          className="flex w-full items-center justify-between rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
+                        >
+                          {t('mealPlans.detail.pastDays', { count: pastDays.length })}
+                          <ChevronDown className={`h-4 w-4 transition-transform ${showPastDays ? 'rotate-180' : ''}`} aria-hidden="true" />
+                        </button>
+                        {showPastDays && <div className="mt-4 space-y-4">{pastDays.map(renderDay)}</div>}
+                      </div>
+                    )}
+                    {shownDays.map(renderDay)}
+                  </div>
+                )}
+              </div>
+
               {/* Header Info */}
               <div className="grid grid-cols-4 gap-2 md:gap-4">
-                <Card padding="none">
-                  <CardContent className="px-1 py-3 md:p-9 text-center">
-                    <Calendar className="h-6 w-6 md:h-8 md:w-8 text-primary-600 mx-auto mb-2" />
-                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{getDaysDifference()}</div>
-                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.days')}</div>
-                  </CardContent>
-                </Card>
-
-                <Card padding="none">
-                  <CardContent className="px-1 py-3 md:p-9 text-center">
-                    <Users className="h-6 w-6 md:h-8 md:w-8 text-accent-600 mx-auto mb-2" />
-                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{mealPlan.people_count}</div>
-                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.people')}</div>
-                  </CardContent>
-                </Card>
-
-                <Card padding="none">
-                  <CardContent className="px-1 py-3 md:p-9 text-center">
-                    <Target className="h-6 w-6 md:h-8 md:w-8 text-secondary-600 mx-auto mb-2" />
-                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{mealPlan.target_calories}</div>
-                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.targetCalDay')}</div>
-                  </CardContent>
-                </Card>
-
-                <Card padding="none">
-                  <CardContent className="px-1 py-3 md:p-9 text-center">
-                    <Clock className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />
-                    <div className="text-lg md:text-2xl font-bold text-neutral-900">{getCaloriesPerDayPerPerson()}</div>
-                    <div className="text-xs md:text-sm leading-tight text-neutral-500">{t('mealPlans.detail.actualCalDay')}</div>
-                  </CardContent>
-                </Card>
+                {[
+                  { icon: <Calendar className="h-6 w-6 md:h-8 md:w-8 text-primary-600 mx-auto mb-2" />, value: days, label: t('mealPlans.detail.days') },
+                  { icon: <Users className="h-6 w-6 md:h-8 md:w-8 text-accent-600 mx-auto mb-2" />, value: mealPlan.people_count, label: t('mealPlans.detail.people') },
+                  { icon: <Target className="h-6 w-6 md:h-8 md:w-8 text-secondary-600 mx-auto mb-2" />, value: mealPlan.target_calories, label: t('mealPlans.detail.targetCalDay') },
+                  { icon: <Clock className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />, value: caloriesPerDayPerPerson, label: t('mealPlans.detail.actualCalDay') },
+                ].map((stat) => (
+                  <Card key={stat.label} padding="none">
+                    <CardContent className="px-1 py-3 md:p-6 text-center">
+                      {stat.icon}
+                      <div className="text-lg md:text-2xl font-bold text-neutral-900">{stat.value}</div>
+                      <div className="text-xs md:text-sm leading-tight text-neutral-500">{stat.label}</div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
 
               {/* Warn when the meals are far from the calorie goal (more than 10% either way) */}
               {(() => {
-                const actual = getCaloriesPerDayPerPerson();
+                const actual = caloriesPerDayPerPerson;
                 const target = mealPlan.target_calories;
                 if (!target || !actual || Math.abs(actual - target) <= target * 0.1) return null;
                 return (
@@ -250,21 +432,26 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                           difference: Math.abs(target - actual),
                         })}
                       </p>
-                      <p className="mt-1">{t('mealPlans.detail.caloriesHint')}</p>
+                      <p className="mt-1">{t(canEdit ? 'mealPlans.detail.caloriesHintSwap' : 'mealPlans.detail.caloriesHint')}</p>
                     </div>
                   </div>
                 );
               })()}
 
-              {/* Date Range */}
-              <div>
-                <CardContent>
-                  <div className="text-center">
-                    <div className="text-sm text-neutral-500">
-                      {t('mealPlans.detail.createdOn')} {formatDate(mealPlan.created_at, locale)}
-                    </div>
+              <div className="text-center text-sm text-neutral-500">
+                {t('mealPlans.detail.createdOn')} {formatDate(mealPlan.created_at, locale)}
+                {versions.length > 1 && (
+                  <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2">
+                    <span>{t('mealPlans.detail.versionOf', { index: versions.findIndex((v) => v.id === mealPlan.id) + 1, total: versions.length })}</span>
+                    {versions.map((version, i) =>
+                      version.id === mealPlan.id ? null : (
+                        <Link key={version.id} to={`/meal-plans/${version.id}`} className="font-medium text-primary-600 hover:text-primary-700">
+                          {t('mealPlans.detail.openVersion', { index: i + 1 })}
+                        </Link>
+                      )
+                    )}
                   </div>
-                </CardContent>
+                )}
               </div>
 
               {/* Dietary Preferences */}
@@ -276,7 +463,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
                       {mealPlan.dietary_preferences.map((pref) => (
-                        <span 
+                        <span
                           key={pref}
                           className="inline-flex items-center rounded-full bg-primary-100 px-3 py-1 text-sm font-medium text-primary-800"
                         >
@@ -288,198 +475,50 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                 </Card>
               )}
 
-              {/* Meal Schedule */}
-              <div>
-                <CardHeader>
-                  <CardTitle>{t('mealPlans.detail.mealSchedule')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {Object.keys(groupEntriesByDate()).length === 0 ? (
-                    <div className="text-center py-8 text-neutral-500">
-                      {t('mealPlans.noMealsScheduled')}
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {Object.entries(groupEntriesByDate())
-                        .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-                        .map(([date, entries]) => {
-                          const isToday = date === todayKey;
-                          const isPastDay = date < todayKey;
-                          return (
-                          <div
-                            key={date}
-                            ref={isToday ? todayRef : undefined}
-                            className={`bg-white border rounded-lg p-3 sm:p-4 scroll-mt-20 ${
-                              isToday ? 'border-primary-500 ring-2 ring-primary-500' : 'border-neutral-200'
-                            } ${isPastDay ? 'opacity-60' : ''}`}
-                          >
-                            <h4 className="flex items-center gap-2 font-medium text-neutral-900 pb-3 mb-3 border-b border-neutral-200 first-letter:uppercase">
-                              <span className="first-letter:uppercase">{formatDayHeading(date, locale)}</span>
-                              {isToday && (
-                                <span className="rounded-full bg-primary-600 px-2 py-0.5 text-xs font-medium text-white">
-                                  {t('mealPlans.detail.today')}
-                                </span>
-                              )}
-                              {isPastDay && (
-                                <span className="text-xs font-normal text-neutral-500">{t('mealPlans.detail.pastDay')}</span>
-                              )}
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                              {entries
-                                .sort((a, b) => getMealTypeOrder(a.meal_type) - getMealTypeOrder(b.meal_type))
-                                .map((entry) => (
-                                  <button
-                                    type="button"
-                                    key={entry.id}
-                                    onClick={() => navigate(`/recipes/${entry.recipe.id}?fromMealPlan=${mealPlanId}`)}
-                                    className="group w-full text-left bg-neutral-50 rounded-lg p-4 hover:bg-neutral-100 transition-colors"
-                                  >
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-sm font-medium text-primary-600">
-                                        {t(`mealPlans.mealTypes.${entry.meal_type}`, entry.meal_type)}
-                                      </span>
-                                      <span className="text-sm text-neutral-500">
-                                        {entry.is_leftover && (
-                                          <span className="mr-2 text-xs font-medium text-amber-700 bg-amber-100 rounded px-2 py-0.5">
-                                            {t('mealPlans.leftover')}
-                                          </span>
-                                        )}
-                                        {t('common.servingsCount', { count: entry.servings })}
-                                      </span>
-                                    </div>
-                                    <div className="font-medium text-neutral-900 mb-1 group-hover:text-primary-700 transition-colors">
-                                      {entry.recipe.name}
-                                    </div>
-                                    <div className="text-sm text-neutral-500">
-                                      {t('mealPlans.detail.entryCalories', {
-                                        total: Math.round(entry.recipe.calories * entry.servings),
-                                        perServing: Math.round(entry.recipe.calories),
-                                      })}
-                                    </div>
-                                  </button>
-                                ))}
-                            </div>
-                          </div>
-                          );
-                        })}
-                    </div>
-                  )}
-                </CardContent>
-              </div>
-
-              {/* Shopping List Section */}
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{t('mealPlans.detail.shoppingList')}</CardTitle>
-                    <div className="flex items-center gap-2">
-                      {(shoppingList ?? existingShoppingList) && (
-                        <Link to={`/shopping-lists/${(shoppingList ?? existingShoppingList)!.id}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            rightIcon={<ExternalLink className="h-4 w-4" />}
-                          >
-                            {t('mealPlans.detail.openShoppingList')}
-                          </Button>
-                        </Link>
-                      )}
-                      <Button
-                        onClick={handleGenerateShoppingList}
-                        isLoading={generatingList}
-                        leftIcon={<ShoppingCart className="h-4 w-4" />}
-                        size="sm"
-                      >
-                        {t('mealPlans.detail.generateList')}
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {(shoppingList ?? existingShoppingList) ? (
-                    <div className="space-y-2">
-                      <div className="text-sm text-success-600 mb-4">
-                        ✓ {t('mealPlans.detail.shoppingListGenerated', { count: (shoppingList ?? existingShoppingList)!.items.length })}
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {(shoppingList ?? existingShoppingList)!.items.slice(0, 6).map((item) => (
-                          <div key={item.id} className="flex items-center justify-between p-2 bg-neutral-50 rounded">
-                            <span className="text-sm">{item.ingredient.name}</span>
-                            <span className="text-sm text-neutral-500">
-                              {formatQuantity(item.quantity, item.unit, t, locale)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      {(shoppingList ?? existingShoppingList)!.items.length > 6 && (
-                        <div className="text-sm text-neutral-500 text-center mt-2">
-                          {t('common.moreItems', { count: (shoppingList ?? existingShoppingList)!.items.length - 6 })}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-neutral-500">
-                      {loadingShoppingLists ? t('shoppingLists.loadingShoppingLists') : t('mealPlans.detail.generateShoppingListHint')}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
               {/* Actions */}
               {!canEdit && <DemoEditHint />}
-              <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-6 border-t border-neutral-200">
-                {onEdit && canEdit && (
-                  <Button
-                    onClick={() => onEdit(mealPlan)}
-                    leftIcon={<Edit className="h-4 w-4" />}
-                    className="w-full sm:w-auto"
-                  >
-                    {t('mealPlans.detail.editPlan')}
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={handleRegenerate}
-                  isLoading={regenerating}
-                  disabled={regenerating || !canEdit}
-                  leftIcon={<RefreshCw className="h-4 w-4" />}
-                  className="w-full sm:w-auto"
-                >
-                  {t('mealPlans.detail.regenerate')}
-                </Button>
-                {!canEdit ? null : !showDeleteConfirm ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowDeleteConfirm(true)}
-                    leftIcon={<Trash2 className="h-4 w-4" />}
-                    className="w-full sm:w-auto !text-error-600 !border-error-300 hover:!bg-error-50"
-                  >
-                    {t('mealPlans.deletePlan')}
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
+              {canEdit && (
+                <div className="flex flex-wrap justify-end gap-3 pt-6 border-t border-neutral-200">
+                  {onEdit && (
                     <Button
-                      variant="outline"
-                      onClick={() => setShowDeleteConfirm(false)}
+                      onClick={() => onEdit(mealPlan)}
+                      leftIcon={<Edit className="h-4 w-4" />}
                       className="flex-1 sm:flex-none"
                     >
-                      {t('common.cancel')}
+                      {t('mealPlans.detail.editPlan')}
                     </Button>
-                    <Button
-                      variant="danger"
-                      onClick={handleDelete}
-                      isLoading={deleting}
-                      className="flex-1 sm:flex-none"
-                    >
-                      {t('mealPlans.confirmDelete')}
-                    </Button>
-                  </div>
-                )}
-              </div>
+                  )}
+                  <MoreMenu
+                    placement="up"
+                    items={[
+                      {
+                        label: regenerating ? t('common.loading') : t('mealPlans.detail.regenerate'),
+                        icon: <RefreshCw className="h-4 w-4" />,
+                        onClick: handleRegenerate,
+                      },
+                      {
+                        label: deleting ? t('common.loading') : t('mealPlans.deletePlan'),
+                        icon: <Trash2 className="h-4 w-4" />,
+                        onClick: handleDelete,
+                        danger: true,
+                      },
+                    ]}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
+
+      {swappingEntry && mealPlan && (
+        <SwapMealModal
+          mealPlan={mealPlan}
+          entry={swappingEntry}
+          onClose={() => setSwappingEntry(null)}
+          onSaved={handleSwapSaved}
+        />
+      )}
     </Container>
   );
 };

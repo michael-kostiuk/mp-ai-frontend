@@ -41,13 +41,21 @@
     "servingsCount_one": "{{count}} порція",
     "servingsCount_few": "{{count}} порції",
     "servingsCount_many": "{{count}} порцій",
-    "servingsCount_other": "{{count}} порції"
+    "servingsCount_other": "{{count}} порції",
+    "advanced": "Розширені налаштування"
   },
   "nav": {
     "recipes": "Рецепти",
     "mealPlans": "Плани харчування",
     "shoppingLists": "Списки покупок",
-    "ingredients": "Інгредієнти"
+    "ingredients": "Інгредієнти",
+    "short": {
+      "today": "Сьогодні",
+      "recipes": "Рецепти",
+      "mealPlans": "Плани",
+      "shoppingLists": "Покупки",
+      "ingredients": "Продукти"
+    }
   },
   "auth": {
     "demo": "Демо",
@@ -70,7 +78,8 @@
     "openMenu": "Відкрити меню",
     "closeMenu": "Закрити меню",
     "timeout": "таймаут",
-    "offline": "Немає зв'язку із сервером. Зміни можуть не зберегтися."
+    "offline": "Немає зв'язку із сервером. Зміни можуть не зберегтися.",
+    "mobileNavigation": "Розділи"
   },
   "home": {
     "title": "MealMaster",
@@ -215,7 +224,8 @@
       "statusFailed": "Не вдалося перевірити хід розпізнавання. Спробуйте ще раз.",
       "startFailed": "Не вдалося почати розпізнавання рецепта. Спробуйте ще раз.",
       "cancelFailed": "Не вдалося скасувати. Спробуйте ще раз."
-    }
+    },
+    "deleteConfirm": "Видалити цей рецепт? Це не можна скасувати."
   },
   "mealPlans": {
     "leftover": "Залишки",
@@ -260,7 +270,11 @@
       "current": "Зараз",
       "finished": "Завершено",
       "variant": "Варіант {{index}} з {{total}}",
-      "createdOn": "створено {{date}}"
+      "createdOn": "створено {{date}}",
+      "versions_one": "{{count}} версія, показано останню",
+      "versions_few": "{{count}} версії, показано останню",
+      "versions_many": "{{count}} версій, показано останню",
+      "versions_other": "{{count}} версії, показано останню"
     },
     "form": {
       "startDate": "Дата початку",
@@ -302,7 +316,21 @@
       "entryCalories": "{{total}} ккал разом · {{perServing}} ккал / порція",
       "caloriesBelowTarget": "Ці страви дають близько {{actual}} ккал на день на людину. Це на {{difference}} менше за ціль {{target}}.",
       "caloriesAboveTarget": "Ці страви дають близько {{actual}} ккал на день на людину. Це на {{difference}} більше за ціль {{target}}.",
-      "caloriesHint": "Змініть кількість порцій або замініть кілька страв, щоб наблизитися до цілі."
+      "caloriesHint": "Змініть кількість порцій або замініть кілька страв, щоб наблизитися до цілі.",
+      "listReady": "План збережено, список покупок уже готовий.",
+      "listProgress": "Куплено {{bought}} з {{total}}",
+      "noListYet": "Списку ще немає",
+      "listOutdated": "Страви змінилися: список покупок треба оновити.",
+      "updateList": "Оновити список",
+      "entrySummary": "{{servings}} · {{perServing}} ккал на порцію",
+      "caloriesHintSwap": "Натисніть «Замінити» на страві, щоб вибрати іншу або змінити кількість порцій.",
+      "versionOf": "Версія {{index}} з {{total}}:",
+      "openVersion": "відкрити версію {{index}}",
+      "pastDays_one": "Минулі дні ({{count}})",
+      "pastDays_few": "Минулі дні ({{count}})",
+      "pastDays_many": "Минулі дні ({{count}})",
+      "pastDays_other": "Минулі дні ({{count}})",
+      "regenerateConfirm": "Скласти план заново? Усі страви зміняться, список покупок теж створиться заново."
     },
     "mealTypes": {
       "breakfast": "Сніданок",
@@ -332,6 +360,25 @@
     },
     "generated": {
       "successMessage": "План харчування успішно згенеровано! Перегляньте та налаштуйте їжу нижче, потім натисніть \"Зберегти план харчування\" щоб зберегти зміни."
+    },
+    "noCurrentPlan": "На цей і наступний тиждень плану ще немає.",
+    "archive_one": "Минулі тижні ({{count}})",
+    "archive_few": "Минулі тижні ({{count}})",
+    "archive_many": "Минулі тижні ({{count}})",
+    "archive_other": "Минулі тижні ({{count}})",
+    "deleteConfirm": "Видалити цей план харчування? Це не можна скасувати.",
+    "swap": {
+      "open": "Замінити",
+      "title": "Замінити {{meal}}",
+      "current": "Зараз у плані",
+      "calories": "{{count}} ккал на порцію",
+      "alternatives": "Можна замінити на",
+      "moreOptions": "Інші варіанти",
+      "noOptions": "Інших рецептів для цього прийому їжі немає.",
+      "servings": "Порцій",
+      "fewerServings": "Менше порцій",
+      "moreServings": "Більше порцій",
+      "saveFailed": "Не вдалося зберегти. Спробуйте ще раз."
     }
   },
   "shoppingLists": {
@@ -368,7 +415,12 @@
     "pantry": {
       "title": "Перевірте вдома",
       "hint": "Зазвичай це вже є на кухні. Купуйте, лише якщо закінчилося."
-    }
+    },
+    "moreToBuy": "ще {{count}} купити",
+    "archive_one": "Старі списки ({{count}})",
+    "archive_few": "Старі списки ({{count}})",
+    "archive_many": "Старі списки ({{count}})",
+    "archive_other": "Старі списки ({{count}})"
   },
   "ingredients": {
     "title": "Інгредієнти",

@@ -40,8 +40,8 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
   const [formData, setFormData] = useState<RecipeCreate>({
     name: '',
     servings: 4,
-    prep_time: 15,
-    cook_time: 30,
+    prep_time: 0,
+    cook_time: 0,
     instructions: '',
     category: 'dinner',
     dietary_tags: [],
@@ -100,8 +100,8 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       const base: RecipeCreate = {
         name: '',
         servings: 4,
-        prep_time: 15,
-        cook_time: 30,
+        prep_time: 0,
+        cook_time: 0,
         instructions: '',
         category: 'dinner',
         dietary_tags: [],
@@ -407,8 +407,8 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
         setFormData({
           name: '',
           servings: 4,
-          prep_time: 15,
-          cook_time: 30,
+          prep_time: 0,
+          cook_time: 0,
           instructions: '',
           category: 'dinner',
           dietary_tags: [],
@@ -436,8 +436,8 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       setFormData({
         name: '',
         servings: 4,
-        prep_time: 15,
-        cook_time: 30,
+        prep_time: 0,
+        cook_time: 0,
         instructions: '',
         category: 'dinner',
         dietary_tags: [],
@@ -538,7 +538,6 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 leftIcon={<Clock className="h-5 w-5" />}
                 min={0}
                 max={480}
-                required
                 fullWidth
               />
 
@@ -549,7 +548,6 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 leftIcon={<Clock className="h-5 w-5" />}
                 min={0}
                 max={480}
-                required
                 fullWidth
               />
             </div>

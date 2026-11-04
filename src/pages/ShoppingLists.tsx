@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Calendar, Download, ExternalLink, MoreHorizontal, ShoppingBasket, Trash2 } from 'lucide-react';
+import { Archive, Calendar, ChevronDown, Download, ExternalLink, MoreHorizontal, ShoppingBasket, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
@@ -17,38 +17,48 @@ import { copyTextToClipboard } from '../utils/clipboardUtils';
 import { getLocaleFromLanguage } from '../utils/i18nUtils';
 import { formatMealPlanRange } from '../utils/mealPlanUtils';
 import { formatDate } from '../utils/dateUtils';
-import { getShoppingListTitle, groupShoppingLines, isPantryItem } from '../utils/shoppingListUtils';
-import { formatQuantity } from '../utils/unitUtils';
+import { formatLineQuantity, getListProgress, getShoppingListTitle } from '../utils/shoppingListUtils';
+import { toDateKey } from '../utils/mealPlanUtils';
 import { useAuth } from '../context/AuthContext';
 
-// Preview: the first few products to buy (salt, water and spices are left out)
+// Preview: the first few products still to buy (salt, water and spices are left out)
 const ShoppingListPreview: React.FC<{ items: ShoppingListItemType[] }> = ({ items }) => {
   const { t, i18n } = useTranslation();
   const locale = getLocaleFromLanguage(i18n.language);
-  const lines = useMemo(
-    () => groupShoppingLines(items).filter((line) => !line.items.every(isPantryItem)),
+  const toBuy = useMemo(
+    () => getListProgress(items).lines.filter((line) => !line.items.every((item) => item.status === 'purchased')),
     [items]
   );
 
   const MAX_PREVIEW_ITEMS = 5;
 
+  if (toBuy.length === 0) {
+    return <p className="py-2 text-sm font-medium text-success-600">{t('shoppingLists.storeMode.allDone')}</p>;
+  }
+
   return (
     <div className="space-y-1">
-      {lines.slice(0, MAX_PREVIEW_ITEMS).map((line) => (
+      {toBuy.slice(0, MAX_PREVIEW_ITEMS).map((line) => (
         <ShoppingListItem
           key={line.key}
           item={line.items[0]}
-          checked={line.items.every((item) => item.status === 'purchased')}
-          quantityText={line.items.map((item) => formatQuantity(item.quantity, item.unit, t, locale)).join(' + ')}
+          checked={false}
+          quantityText={formatLineQuantity(line, t, locale)}
         />
       ))}
-      {lines.length > MAX_PREVIEW_ITEMS && (
+      {toBuy.length > MAX_PREVIEW_ITEMS && (
         <div className="text-center py-2 text-sm text-neutral-500 border-t border-neutral-200">
-          {t('common.moreItems', { count: lines.length - MAX_PREVIEW_ITEMS })}
+          {t('shoppingLists.moreToBuy', { count: toBuy.length - MAX_PREVIEW_ITEMS })}
         </div>
       )}
     </div>
   );
+};
+
+// Lists for a week that hasn't ended (or made in the last week) stay on top; the rest is archive
+const isActiveList = (list: ShoppingListType, todayKey: string) => {
+  if (list.meal_plan) return list.meal_plan.end_date.slice(0, 10) >= todayKey;
+  return Date.now() - new Date(list.created_at).getTime() < 7 * 24 * 60 * 60 * 1000;
 };
 
 const ShoppingLists: React.FC = () => {
@@ -63,6 +73,16 @@ const ShoppingLists: React.FC = () => {
   const navigate = useNavigate();
   const { mode } = useAuth();
   const locale = getLocaleFromLanguage(i18n.language);
+  const [showArchive, setShowArchive] = useState(false);
+
+  // Newest first from the API. When no list is current, the newest one still stays on top.
+  const { activeLists, archivedLists } = useMemo(() => {
+    const all = shoppingLists ?? [];
+    const todayKey = toDateKey(new Date());
+    const active = all.filter((list) => isActiveList(list, todayKey));
+    const top = active.length > 0 ? active : all.slice(0, 1);
+    return { activeLists: top, archivedLists: all.filter((list) => !top.includes(list)) };
+  }, [shoppingLists]);
 
   // Load shopping lists only once on mount
   useEffect(() => {
@@ -151,7 +171,7 @@ const ShoppingLists: React.FC = () => {
 
       {shoppingLists && shoppingLists.length > 0 && (
         <div className="space-y-6 animate-fadeIn">
-          {shoppingLists.map((list) => (
+          {activeLists.map((list) => (
             <Card key={list.id}>
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -185,10 +205,10 @@ const ShoppingLists: React.FC = () => {
                         </Link>
                       )}
                       <span>
-                        {t('shoppingLists.purchasedCount', {
-                          purchased: list.items.filter((item) => item.status === 'purchased').length,
-                          total: list.items.length,
-                        })}
+                        {(() => {
+                          const { bought, total } = getListProgress(list.items);
+                          return t('shoppingLists.purchasedCount', { purchased: bought, total });
+                        })()}
                       </span>
                     </div>
                   </div>
@@ -247,6 +267,43 @@ const ShoppingLists: React.FC = () => {
               </CardContent>
             </Card>
           ))}
+
+          {archivedLists.length > 0 && (
+            <div>
+              <button
+                type="button"
+                onClick={() => setShowArchive(!showArchive)}
+                aria-expanded={showArchive}
+                className="flex w-full items-center justify-between rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+              >
+                <span className="flex items-center gap-2">
+                  <Archive className="h-4 w-4" aria-hidden="true" />
+                  {t('shoppingLists.archive', { count: archivedLists.length })}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showArchive ? 'rotate-180' : ''}`} aria-hidden="true" />
+              </button>
+              {showArchive && (
+                <ul className="mt-2 divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-white">
+                  {archivedLists.map((list) => {
+                    const { bought, total } = getListProgress(list.items);
+                    return (
+                      <li key={list.id}>
+                        <Link
+                          to={`/shopping-lists/${list.id}`}
+                          className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-neutral-50"
+                        >
+                          <span className="font-medium text-neutral-900">{getShoppingListTitle(list, t, locale)}</span>
+                          <span className="shrink-0 text-sm text-neutral-500">
+                            {t('shoppingLists.purchasedCount', { purchased: bought, total })}
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       )}
 

@@ -39,13 +39,21 @@
     "copyFailed": "Copy failed. Please select and copy manually.",
     "moreActions": "More actions",
     "servingsCount_one": "{{count}} serving",
-    "servingsCount_other": "{{count}} servings"
+    "servingsCount_other": "{{count}} servings",
+    "advanced": "Advanced"
   },
   "nav": {
     "recipes": "Recipes",
     "mealPlans": "Meal Plans",
     "shoppingLists": "Shopping Lists",
-    "ingredients": "Ingredients"
+    "ingredients": "Ingredients",
+    "short": {
+      "today": "Today",
+      "recipes": "Recipes",
+      "mealPlans": "Plans",
+      "shoppingLists": "Shopping",
+      "ingredients": "Products"
+    }
   },
   "auth": {
     "demo": "Demo",
@@ -68,7 +76,8 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
     "timeout": "timeout",
-    "offline": "No connection to the server. Changes may not be saved."
+    "offline": "No connection to the server. Changes may not be saved.",
+    "mobileNavigation": "Sections"
   },
   "home": {
     "title": "MealMaster",
@@ -211,7 +220,8 @@
       "statusFailed": "Could not check progress. Please try again.",
       "startFailed": "Could not start reading the recipe. Please try again.",
       "cancelFailed": "Could not cancel. Please try again."
-    }
+    },
+    "deleteConfirm": "Delete this recipe? This cannot be undone."
   },
   "mealPlans": {
     "leftover": "Leftovers",
@@ -252,7 +262,9 @@
       "current": "Now",
       "finished": "Finished",
       "variant": "Version {{index}} of {{total}}",
-      "createdOn": "created {{date}}"
+      "createdOn": "created {{date}}",
+      "versions_one": "{{count}} version, showing the latest",
+      "versions_other": "{{count}} versions, showing the latest"
     },
     "form": {
       "startDate": "Start Date",
@@ -294,7 +306,19 @@
       "entryCalories": "{{total}} cal in total · {{perServing}} cal per serving",
       "caloriesBelowTarget": "These meals give about {{actual}} cal a day per person, {{difference}} less than the goal of {{target}}.",
       "caloriesAboveTarget": "These meals give about {{actual}} cal a day per person, {{difference}} more than the goal of {{target}}.",
-      "caloriesHint": "Change servings or swap a few meals to get closer to the goal."
+      "caloriesHint": "Change servings or swap a few meals to get closer to the goal.",
+      "listReady": "Plan saved, and its shopping list is ready.",
+      "listProgress": "{{bought}} of {{total}} bought",
+      "noListYet": "No list yet",
+      "listOutdated": "Meals changed: the shopping list needs an update.",
+      "updateList": "Update list",
+      "entrySummary": "{{servings}} · {{perServing}} cal per serving",
+      "caloriesHintSwap": "Tap \"Swap\" on a meal to pick another one or change servings.",
+      "versionOf": "Version {{index}} of {{total}}:",
+      "openVersion": "open version {{index}}",
+      "pastDays_one": "Past days ({{count}})",
+      "pastDays_other": "Past days ({{count}})",
+      "regenerateConfirm": "Make the plan again? All meals will change and the shopping list will be made again too."
     },
     "mealTypes": {
       "breakfast": "Breakfast",
@@ -324,6 +348,23 @@
     },
     "generated": {
       "successMessage": "Meal plan generated successfully! Review and customize the meals below, then click \"Save Meal Plan\" to keep your changes."
+    },
+    "noCurrentPlan": "There is no plan for this or next week yet.",
+    "archive_one": "Past weeks ({{count}})",
+    "archive_other": "Past weeks ({{count}})",
+    "deleteConfirm": "Delete this meal plan? This cannot be undone.",
+    "swap": {
+      "open": "Swap",
+      "title": "Swap {{meal}}",
+      "current": "In the plan now",
+      "calories": "{{count}} cal per serving",
+      "alternatives": "Swap for",
+      "moreOptions": "Other options",
+      "noOptions": "There are no other recipes for this meal.",
+      "servings": "Servings",
+      "fewerServings": "Fewer servings",
+      "moreServings": "More servings",
+      "saveFailed": "Could not save. Please try again."
     }
   },
   "shoppingLists": {
@@ -360,7 +401,10 @@
     "pantry": {
       "title": "Check at home",
       "hint": "Usually already in the kitchen. Buy only if you have run out."
-    }
+    },
+    "moreToBuy": "{{count}} more to buy",
+    "archive_one": "Older lists ({{count}})",
+    "archive_other": "Older lists ({{count}})"
   },
   "ingredients": {
     "title": "Ingredients",

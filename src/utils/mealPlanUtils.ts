@@ -23,24 +23,24 @@ export const getMealPlanDayKeys = (plan: Pick<MealPlan, 'start_date' | 'end_date
 export const getMealPlanDayCount = (plan: Pick<MealPlan, 'start_date' | 'end_date' | 'entries'>) =>
   getMealPlanDayKeys(plan).length;
 
-// Plans covering the same dates, numbered by creation: id -> { index: 2, total: 3 }
-export const getPlanVariants = (plans: MealPlan[]) => {
+const rangeKey = (plan: Pick<MealPlan, 'start_date' | 'end_date'>) =>
+  `${plan.start_date.slice(0, 10)}_${plan.end_date.slice(0, 10)}`;
+
+// One plan per set of dates: the newest version, with how many versions there are
+export const getLatestPlans = (plans: MealPlan[]): Array<{ plan: MealPlan; versionCount: number }> => {
   const groups: Record<string, MealPlan[]> = {};
-  plans.forEach((plan) => {
-    const key = `${plan.start_date.slice(0, 10)}_${plan.end_date.slice(0, 10)}`;
-    (groups[key] ||= []).push(plan);
-  });
-  const variants: Record<number, { index: number; total: number }> = {};
-  Object.values(groups).forEach((group) => {
-    if (group.length < 2) return;
-    [...group]
-      .sort((a, b) => a.created_at.localeCompare(b.created_at))
-      .forEach((plan, i) => {
-        variants[plan.id] = { index: i + 1, total: group.length };
-      });
-  });
-  return variants;
+  plans.forEach((plan) => (groups[rangeKey(plan)] ||= []).push(plan));
+  return Object.values(groups).map((group) => ({
+    plan: group.reduce((latest, plan) => (plan.created_at > latest.created_at ? plan : latest)),
+    versionCount: group.length,
+  }));
 };
+
+// Every version of the plan's dates, oldest first ("Version 1", "Version 2", ...)
+export const getPlanVersions = (plans: MealPlan[], plan: Pick<MealPlan, 'start_date' | 'end_date'>) =>
+  plans
+    .filter((other) => rangeKey(other) === rangeKey(plan))
+    .sort((a, b) => a.created_at.localeCompare(b.created_at));
 
 const MEAL_TYPE_ORDER: Record<string, number> = { breakfast: 1, lunch: 2, dinner: 3, snack: 4 };
 

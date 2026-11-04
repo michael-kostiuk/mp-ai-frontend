@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, WifiOff } from 'lucide-react';
+import { WifiOff, Home, BookOpen, CalendarDays, ShoppingCart, Carrot } from 'lucide-react';
 import { useApiContext } from '../../context/ApiContext';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 import BrandMark from '../ui/BrandMark';
@@ -15,9 +15,7 @@ const Header: React.FC = () => {
   const { t } = useTranslation();
   const { config } = useApiContext();
   const { mode, logout } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const menuToggleRef = useRef<HTMLButtonElement>(null);
   const loginTriggerRef = useRef<HTMLElement | null>(null);
 
   const closeLogin = () => {
@@ -34,14 +32,22 @@ const Header: React.FC = () => {
   const retryTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const navigation = [
-    { name: t('nav.recipes'), href: '/recipes' },
-    { name: t('nav.mealPlans'), href: '/meal-plans' },
-    { name: t('nav.shoppingLists'), href: '/shopping-lists' },
-    { name: t('nav.ingredients'), href: '/ingredients' },
+    { name: t('nav.recipes'), short: t('nav.short.recipes'), href: '/recipes', icon: BookOpen },
+    { name: t('nav.mealPlans'), short: t('nav.short.mealPlans'), href: '/meal-plans', icon: CalendarDays },
+    { name: t('nav.shoppingLists'), short: t('nav.short.shoppingLists'), href: '/shopping-lists', icon: ShoppingCart },
+    { name: t('nav.ingredients'), short: t('nav.short.ingredients'), href: '/ingredients', icon: Carrot },
   ];
-  
+  // Phones get a tab bar at the bottom: today first, then the sections in the order they are used
+  const tabs = [
+    { name: t('nav.short.today'), href: '/', icon: Home },
+    navigation[1],
+    navigation[2],
+    navigation[0],
+    navigation[3],
+  ].map((tab) => ({ name: 'short' in tab ? tab.short : tab.name, href: tab.href, icon: tab.icon }));
+
   const isActive = (path: string) => {
-    return location.pathname.startsWith(path);
+    return path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
   };
   
   const testConnection = useCallback(async (isManual = false) => {
@@ -106,7 +112,7 @@ const Header: React.FC = () => {
     };
   }, [testConnection]);
   
-  const authButton = (className: string, closeMenu = false) => {
+  const authButton = (className: string) => {
     // Reserve the button's space while the session loads so the header doesn't jump
     if (mode === 'loading') {
       return <span className={`${className} invisible`} aria-hidden="true">{t('auth.login')}</span>;
@@ -117,9 +123,7 @@ const Header: React.FC = () => {
         type="button"
         className={className}
         onClick={(e) => {
-          // The mobile menu item unmounts with the menu; return focus to the menu toggle then.
-          loginTriggerRef.current = closeMenu ? menuToggleRef.current : e.currentTarget;
-          if (closeMenu) setIsMenuOpen(false);
+          loginTriggerRef.current = e.currentTarget;
           if (isOwner) void logout();
           else setIsLoginOpen(true);
         }}
@@ -168,20 +172,7 @@ const Header: React.FC = () => {
           
           <div className="flex items-center gap-2 lg:hidden">
             <LanguageSwitcher />
-            <button
-              type="button"
-              className="inline-flex items-center justify-center rounded-md p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 transition-colors"
-              ref={menuToggleRef}
-              aria-expanded={isMenuOpen}
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              <span className="sr-only">{isMenuOpen ? t('header.closeMenu') : t('header.openMenu')}</span>
-              {isMenuOpen ? (
-                <X className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
+            {authButton('text-sm text-neutral-500 hover:text-neutral-700 px-2 py-1 rounded transition-colors')}
           </div>
           
           <div className="hidden lg:ml-6 lg:flex lg:items-center gap-2">
@@ -191,33 +182,30 @@ const Header: React.FC = () => {
         </div>
       </div>
       
-      {isMenuOpen && (
-        <div className="lg:hidden border-t border-neutral-200 bg-neutral-50">
-          <div className="space-y-1 pt-2 pb-3">
-            {navigation.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={`block border-l-4 py-2 pl-3 pr-4 text-base font-medium transition-colors ${
-                  isActive(item.href)
-                    ? 'border-primary-500 bg-primary-50 text-primary-700'
-                    : 'border-transparent text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700'
-                }`}
-                aria-current={isActive(item.href) ? 'page' : undefined}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-          
-          <div className="border-t border-neutral-200 pt-4 pb-3">
-            <div className="px-4">
-              {authButton('text-sm text-neutral-600 hover:text-neutral-800 py-1', true)}
-            </div>
-          </div>
-        </div>
-      )}
+      <nav
+        className="lg:hidden fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-white/95 backdrop-blur pb-[env(safe-area-inset-bottom)]"
+        aria-label={t('header.mobileNavigation')}
+      >
+        <ul className="grid grid-cols-5">
+          {tabs.map(({ name, href, icon: Icon }) => {
+            const active = isActive(href);
+            return (
+              <li key={href}>
+                <Link
+                  to={href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+                    active ? 'text-primary-700' : 'text-neutral-500 hover:text-neutral-700'
+                  }`}
+                >
+                  <Icon className={`h-6 w-6 ${active ? 'stroke-[2.25]' : ''}`} aria-hidden="true" />
+                  <span className="max-w-full truncate px-0.5">{name}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
       {connectionStatus === 'disconnected' && (
         <div className="border-t border-error-200 bg-error-50" role="status">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-2 flex items-center justify-between gap-3 text-sm text-error-700">

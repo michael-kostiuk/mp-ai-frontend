@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Merge, PlusCircle, Search, Sparkles, X } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
+import MoreMenu from '../components/ui/MoreMenu';
 import CreateIngredientModal from '../components/ingredients/CreateIngredientModal';
 import MergeIngredientsModal from '../components/ingredients/MergeIngredientsModal';
 import Card, { CardContent } from '../components/ui/Card';
@@ -181,32 +182,23 @@ const Ingredients: React.FC = () => {
         title={t('ingredients.title')}
         description={t('ingredients.description')}
         actions={
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
-            <Button 
-              variant="outline"
-              leftIcon={<Sparkles size={18} />}
-              onClick={handleOpenBulkModal}
-              disabled={bulkEstimating || rowEstimating || estimatingId !== null || missingCount === 0}
-              className="w-full sm:w-auto"
-              title={missingCount === 0 ? t('ingredients.bulk.allHaveNutrition') : t('ingredients.fillMissingNutrition')}
-            >
-              {t('ingredients.fillMissingNutrition')}
-            </Button>
-            <Button 
-              variant="outline"
-              leftIcon={<Merge size={18} />}
-              onClick={() => setIsMergeModalOpen(true)}
-              className="w-full sm:w-auto"
-            >
-              {t('ingredients.mergeIngredients')}
-            </Button>
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button 
               leftIcon={<PlusCircle size={18} />}
               onClick={() => setIsCreateModalOpen(true)}
-              className="w-full sm:w-auto"
+              className="flex-1 sm:flex-none"
             >
               {t('ingredients.addIngredient')}
             </Button>
+            {/* Data clean-up tools live behind "⋯": they are rarely needed */}
+            <MoreMenu
+              items={[
+                ...(missingCount > 0 && !bulkEstimating && !rowEstimating && estimatingId === null
+                  ? [{ label: t('ingredients.fillMissingNutrition'), icon: <Sparkles size={16} />, onClick: handleOpenBulkModal }]
+                  : []),
+                { label: t('ingredients.mergeIngredients'), icon: <Merge size={16} />, onClick: () => setIsMergeModalOpen(true) },
+              ]}
+            />
           </div>
         }
       />
@@ -346,9 +338,6 @@ const Ingredients: React.FC = () => {
                     <th scope="col" className="hidden lg:table-cell px-4 lg:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       {t('ingredients.table.macros')}
                     </th>
-                    <th scope="col" className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                      {t('ingredients.table.ai')}
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-neutral-200">
@@ -362,6 +351,7 @@ const Ingredients: React.FC = () => {
                         <div className="flex items-center gap-1.5">
                           <span className="first-letter:uppercase">{ingredient.name}</span>
                           {renderWarning(ingredient)}
+                          {renderEstimate(ingredient)}
                         </div>
                       </td>
                       <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
@@ -381,9 +371,6 @@ const Ingredients: React.FC = () => {
                           carbs: Math.round(ingredient.carbs),
                           fats: Math.round(ingredient.fats),
                         })}
-                      </td>
-                      <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-right">
-                        {renderEstimate(ingredient) ?? <span className="text-xs text-neutral-400">—</span>}
                       </td>
                     </tr>
                   ))}
