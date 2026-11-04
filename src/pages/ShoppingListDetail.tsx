@@ -1,21 +1,19 @@
 import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Download, ArrowLeft, Calendar, CloudOff, Home, RefreshCw, ShoppingBasket } from 'lucide-react';
+import { ArrowLeft, Calendar, CloudOff, Home, RefreshCw, ShoppingBasket } from 'lucide-react';
 import Container from '../components/layout/Container';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Skeleton from '../components/ui/Skeleton';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
-import ExportShoppingListModal from '../components/shoppingLists/ExportShoppingListModal';
 import ShoppingModeView from '../components/shoppingLists/ShoppingModeView';
 import { ShoppingList } from '../types';
 import useApi from '../hooks/useApi';
 import useShoppingListSync from '../hooks/useShoppingListSync';
-import { getShoppingList, exportShoppingList } from '../api/shoppingListApi';
+import { getShoppingList } from '../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../utils/i18nUtils';
-import { copyTextToClipboard } from '../utils/clipboardUtils';
 import { formatMealPlanRange } from '../utils/mealPlanUtils';
 import { formatDate } from '../utils/dateUtils';
 import {
@@ -34,10 +32,6 @@ const ShoppingListDetail: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [exportModalTitle, setExportModalTitle] = useState('');
-  const [exportModalContent, setExportModalContent] = useState('');
-  const [exporting, setExporting] = useState(false);
   // "In the store" button on the lists page opens this page straight in store mode
   const [storeMode, setStoreMode] = useState(() => new URLSearchParams(location.search).get('store') === '1');
 
@@ -96,31 +90,6 @@ const ShoppingListDetail: React.FC = () => {
   const handleBack = () => {
     navigate('/shopping-lists');
   };
-
-  const handleExport = async () => {
-    if (!shoppingList) return;
-
-    setExporting(true);
-    try {
-      const result = await exportShoppingList(shoppingList.id);
-      const text = typeof (result as any)?.content === 'string' ? (result as any).content : JSON.stringify(result, null, 2);
-      const copied = await copyTextToClipboard(text);
-      if (copied) {
-        alert(t('common.copiedToClipboard'));
-        return;
-      }
-
-      setExportModalTitle(`${getShoppingListTitle(shoppingList, t, locale)} - ${t('common.export')}`);
-      setExportModalContent(text);
-      setExportModalOpen(true);
-    } catch (err) {
-      console.error('Failed to export shopping list:', err);
-      alert(t('shoppingLists.exportFailed'));
-    } finally {
-      setExporting(false);
-    }
-  };
-
 
   const renderLine = (line: ShoppingLine) => (
     <ShoppingListItem
@@ -182,14 +151,6 @@ const ShoppingListDetail: React.FC = () => {
                   {t('shoppingLists.storeMode.open')}
                 </Button>
               )}
-              <Button
-                variant="outline"
-                leftIcon={<Download className="h-4 w-4" />}
-                onClick={handleExport}
-                isLoading={exporting}
-              >
-                {t('shoppingLists.exportList')}
-              </Button>
             </div>
           )}
         </div>
@@ -274,12 +235,6 @@ const ShoppingListDetail: React.FC = () => {
         />
       )}
 
-      <ExportShoppingListModal
-        isOpen={exportModalOpen}
-        title={exportModalTitle}
-        content={exportModalContent}
-        onClose={() => setExportModalOpen(false)}
-      />
     </Container>
   );
 };
