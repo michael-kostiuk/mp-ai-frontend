@@ -8,7 +8,7 @@ import NumericInput from '../ui/NumericInput';
 import Select from '../ui/Select';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import useApi from '../../hooks/useApi';
-import { createIngredient } from '../../api/ingredientApi';
+import { createIngredient, updateIngredient } from '../../api/ingredientApi';
 import { UNIT_OPTIONS, coerceUnit } from '../../utils/unitUtils';
 
 interface CreateIngredientModalProps {
@@ -17,6 +17,8 @@ interface CreateIngredientModalProps {
   onSuccess: () => void;
   initialName?: string;
   onCreated?: (ingredient: Ingredient) => void;
+  // When set, the modal edits this ingredient instead of creating a new one
+  ingredient?: Ingredient;
 }
 
 const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
@@ -24,8 +26,10 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
   onClose,
   onSuccess,
   initialName,
-  onCreated
+  onCreated,
+  ingredient
 }) => {
+  const isEditing = Boolean(ingredient);
   const { t } = useTranslation();
   const [formData, setFormData] = useState<IngredientCreate>({
     name: '',
@@ -38,16 +42,31 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
   });
 
   const { loading: creating, execute: createNewIngredient } = useApi(createIngredient);
+  const { loading: saving, execute: saveIngredient } = useApi(updateIngredient);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !ingredient) return;
+    setFormData({
+      name: ingredient.name,
+      // Older ingredients were stored with capitalised categories ("Dairy"); the options are lowercase
+      category: ingredient.category.toLowerCase(),
+      base_unit: ingredient.base_unit,
+      calories: ingredient.calories,
+      protein: ingredient.protein,
+      carbs: ingredient.carbs,
+      fats: ingredient.fats
+    });
+  }, [isOpen, ingredient]);
+
+  useEffect(() => {
+    if (!isOpen || ingredient) return;
     setFormData(prev => {
       const nextName = (initialName || '').trim();
       if (!nextName) return prev;
       if (prev.name.trim()) return prev;
       return { ...prev, name: nextName };
     });
-  }, [isOpen, initialName]);
+  }, [isOpen, initialName, ingredient]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -77,6 +96,10 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
     { value: 'snacks', label: t('ingredientCategories.snacks') },
     { value: 'other', label: t('categories.other') },
   ];
+  // Keep a category that isn't in the list (e.g. "fish") selectable so editing doesn't silently change it
+  if (formData.category && !categoryOptions.some(option => option.value === formData.category)) {
+    categoryOptions.push({ value: formData.category, label: formData.category });
+  }
 
   const unitOptions = UNIT_OPTIONS;
 
@@ -100,6 +123,18 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
     
     if (!validateForm()) {
       alert('Please fill in all required fields with valid values.');
+      return;
+    }
+
+    if (ingredient) {
+      try {
+        await saveIngredient(ingredient.id, formData);
+        onSuccess();
+        onClose();
+      } catch (error) {
+        console.error('Failed to update ingredient:', error);
+        alert(t('ingredients.modal.saveFailed'));
+      }
       return;
     }
 
@@ -146,7 +181,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
     
     // Auto-suggest calories based on category
     const suggestedCalories = getCalorieSuggestion(category);
-    if (suggestedCalories > 0 && formData.calories === 0) {
+    if (!isEditing && suggestedCalories > 0 && formData.calories === 0) {
       handleInputChange('calories', suggestedCalories);
     }
   };
@@ -157,7 +192,9 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-neutral-200">
-          <h2 className="text-xl font-semibold text-neutral-900">{t('ingredients.modal.addNewIngredient')}</h2>
+          <h2 className="text-xl font-semibold text-neutral-900">
+            {isEditing ? t('ingredients.modal.editIngredient') : t('ingredients.modal.addNewIngredient')}
+          </h2>
           <button
             onClick={onClose}
             className="text-neutral-400 hover:text-neutral-600 transition-colors"
@@ -221,7 +258,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
                   value={formData.calories}
                   onChange={(val) => handleInputChange('calories', val)}
                   min={0}
-                  step={1}
+                  step="any"
                   placeholder="0"
                   fullWidth
                 />
@@ -231,7 +268,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
                   value={formData.protein}
                   onChange={(val) => handleInputChange('protein', val)}
                   min={0}
-                  step={0.1}
+                  step="any"
                   placeholder="0.0"
                   fullWidth
                 />
@@ -241,7 +278,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
                   value={formData.carbs}
                   onChange={(val) => handleInputChange('carbs', val)}
                   min={0}
-                  step={0.1}
+                  step="any"
                   placeholder="0.0"
                   fullWidth
                 />
@@ -251,7 +288,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
                   value={formData.fats}
                   onChange={(val) => handleInputChange('fats', val)}
                   min={0}
-                  step={0.1}
+                  step="any"
                   placeholder="0.0"
                   fullWidth
                 />
@@ -299,17 +336,23 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
             </CardContent>
           </Card>
 
+          {isEditing && (
+            <p className="text-sm text-neutral-600 bg-neutral-50 p-3 rounded-md">
+              {t('ingredients.modal.recipesNotRecalculated')}
+            </p>
+          )}
+
           {/* Form Actions */}
           <div className="flex justify-end space-x-3 pt-6 border-t border-neutral-200">
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button 
-              type="submit" 
-              isLoading={creating}
+            <Button
+              type="submit"
+              isLoading={creating || saving}
               disabled={!validateForm()}
             >
-              {t('ingredients.addIngredient')}
+              {isEditing ? t('ingredients.modal.saveChanges') : t('ingredients.addIngredient')}
             </Button>
           </div>
         </form>

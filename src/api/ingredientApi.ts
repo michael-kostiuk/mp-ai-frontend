@@ -25,7 +25,11 @@ export const createIngredient = async (ingredient: IngredientCreate): Promise<In
   return apiClient.post<Ingredient>(BASE_PATH, ingredient);
 };
 
-export const mergeIngredients = async (keepIngredientId: number, mergeIngredientIds: number[]): Promise<Ingredient> => {
+export const updateIngredient = async (id: number, ingredient: IngredientCreate): Promise<Ingredient> => {
+  return apiClient.put<Ingredient>(`${BASE_PATH}/${id}`, ingredient);
+};
+
+export const mergeIngredients =async (keepIngredientId: number, mergeIngredientIds: number[]): Promise<Ingredient> => {
   return apiClient.post<Ingredient>(`${BASE_PATH}/merge?keep_ingredient_id=${keepIngredientId}`, mergeIngredientIds);
 };
 

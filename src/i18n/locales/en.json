@@ -358,6 +358,10 @@
     },
     "modal": {
       "addNewIngredient": "Add New Ingredient",
+      "editIngredient": "Edit Ingredient",
+      "saveChanges": "Save Changes",
+      "recipesNotRecalculated": "Recipes that already use this ingredient keep their saved calories. To update a recipe, open it, choose Edit Recipe and recalculate nutrition.",
+      "saveFailed": "Failed to save the ingredient. Please try again.",
       "nutritionTips": "Nutrition Tips",
       "quickReference": "Quick Reference (per 100g)"
     },

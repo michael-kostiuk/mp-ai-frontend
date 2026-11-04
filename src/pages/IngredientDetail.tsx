@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Edit } from 'lucide-react';
 import Container from '../components/layout/Container';
+import Button from '../components/ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import CreateIngredientModal from '../components/ingredients/CreateIngredientModal';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import useApi from '../hooks/useApi';
@@ -20,7 +22,9 @@ const IngredientDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const ingredientId = Number(id);
 
-  const { data: ingredients, loading: loadingIngredients, error: ingredientsError } =
+  const [isEditOpen, setIsEditOpen] = useState(false);
+
+  const { data: ingredients, loading: loadingIngredients, error: ingredientsError, execute: fetchIngredients } =
     useApi<Ingredient[], Parameters<typeof getIngredients>>(getIngredients, true);
   const { data: recipes, loading: loadingRecipes, error: recipesError } =
     useCachedApi<Recipe[], [RecipeFilterParams]>('recipes', getRecipes, { immediate: true, initialArgs: ALL_RECIPES });
@@ -48,10 +52,17 @@ const IngredientDetail: React.FC = () => {
           <ArrowLeft className="h-4 w-4 mr-1" />
           {t('ingredients.detail.backToIngredients')}
         </Link>
-        <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6">{t('ingredients.detail.title')}</h1>
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl">{t('ingredients.detail.title')}</h1>
+          {ingredient && (
+            <Button variant="outline" leftIcon={<Edit size={18} />} onClick={() => setIsEditOpen(true)}>
+              {t('common.edit')}
+            </Button>
+          )}
+        </div>
 
         <div>
-          {(loadingIngredients || loadingRecipes) && (
+          {((loadingIngredients && !ingredients) || loadingRecipes) && (
             <div className="py-12">
               <Loader centered label={t('ingredients.loadingIngredients')} />
             </div>
@@ -131,6 +142,15 @@ const IngredientDetail: React.FC = () => {
           )}
         </div>
       </div>
+
+      {ingredient && (
+        <CreateIngredientModal
+          isOpen={isEditOpen}
+          onClose={() => setIsEditOpen(false)}
+          onSuccess={() => fetchIngredients()}
+          ingredient={ingredient}
+        />
+      )}
     </Container>
   );
 };
