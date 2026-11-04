@@ -13,7 +13,7 @@ import useApi from '../../hooks/useApi';
 import useCachedApi from '../../hooks/useCachedApi';
 import { getRecipe, deleteRecipe } from '../../api/recipeApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
-import { formatDate, formatDuration } from '../../utils/dateUtils';
+import { formatDuration } from '../../utils/dateUtils';
 import { formatQuantity } from '../../utils/unitUtils';
 import { useAuth } from '../../context/AuthContext';
 import DemoEditHint from '../auth/DemoEditHint';
@@ -333,33 +333,6 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     </div>
                   )}
                 </div>
-              </Card>
-
-              {/* Recipe Meta */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('recipes.detail.recipeInfo')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    {getTotalTime() > 0 && (
-                      <div>
-                        <span className="font-medium text-neutral-700">{t('recipes.detail.totalTime')}:</span>
-                        <span className="ml-2 text-neutral-600">{formatTime(getTotalTime())}</span>
-                      </div>
-                    )}
-                    <div>
-                      <span className="font-medium text-neutral-700">{t('recipes.detail.category')}:</span>
-                      <span className="ml-2 text-neutral-600">{recipeCategoryLabel(recipe.category, t)}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-neutral-700">{t('recipes.detail.created')}:</span>
-                      <span className="ml-2 text-neutral-600">
-                        {formatDate(recipe.created_at, locale)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
               </Card>
 
               {/* How auto-planning picks this recipe: a technical detail, folded away */}
