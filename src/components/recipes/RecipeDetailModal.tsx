@@ -73,11 +73,6 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   const formatTime = (minutes: number) =>
     formatDuration(minutes, { minutes: t('common.minutes'), hours: t('common.hours') });
 
-  const getTotalTime = () => {
-    if (!recipe) return 0;
-    return recipe.prep_time + recipe.cook_time;
-  };
-
   const formatInstructions = (instructions: string) => {
     // Split by line breaks, dropping a leading step number ("1. ") on each line
     const steps = instructions
@@ -121,45 +116,60 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
           )}
 
           {recipe && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Recipe Header */}
               <div className="text-center">
                 {recipe.image_url ? (
                   <img
                     src={recipe.image_url}
                     alt={recipe.name}
-                    className="w-full h-40 sm:h-64 object-cover rounded-lg mb-4"
+                    className="w-full h-36 sm:h-64 object-cover rounded-lg mb-3 sm:mb-4"
                   />
                 ) : (
-                  <RecipeImagePlaceholder category={recipe.category} className="h-28 sm:h-48 rounded-lg mb-4" />
+                  <RecipeImagePlaceholder category={recipe.category} className="h-24 sm:h-48 rounded-lg mb-3 sm:mb-4" />
                 )}
-                <h1 className="text-3xl font-bold text-neutral-900 mb-2">{recipe.name}</h1>
-                <p className="text-lg text-neutral-600">{recipeCategoryLabel(recipe.category, t)}</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-1 sm:mb-2">{recipe.name}</h1>
+                <p className="text-base sm:text-lg text-neutral-600">{recipeCategoryLabel(recipe.category, t)}</p>
               </div>
 
-              {/* Quick Stats: times are left out when the recipe doesn't have them (0) */}
-              {(() => {
-                const stats = [
-                  { icon: <Users className="h-6 w-6 md:h-8 md:w-8 text-primary-600 mx-auto mb-2" />, value: String(recipe.servings), label: t('recipes.detail.servings') },
-                  ...(recipe.prep_time > 0 ? [{ icon: <Clock className="h-6 w-6 md:h-8 md:w-8 text-accent-600 mx-auto mb-2" />, value: formatTime(recipe.prep_time), label: t('recipes.detail.prepTime') }] : []),
-                  ...(recipe.cook_time > 0 ? [{ icon: <Clock className="h-6 w-6 md:h-8 md:w-8 text-secondary-600 mx-auto mb-2" />, value: formatTime(recipe.cook_time), label: t('recipes.detail.cookTime') }] : []),
-                  ...(recipe.prep_time > 0 && recipe.cook_time > 0 ? [{ icon: <Timer className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />, value: formatTime(getTotalTime()), label: t('recipes.detail.totalTime') }] : []),
-                ];
-                const columns = ['grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4'][stats.length - 1];
-                return (
-                  <div className={`grid ${columns} gap-2 md:gap-4`}>
-                    {stats.map((stat) => (
-                      <Card key={stat.label} padding="none">
-                        <CardContent className="px-1 py-3 md:p-9 text-center">
-                          {stat.icon}
-                          <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{stat.value}</div>
-                          <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{stat.label}</div>
-                        </CardContent>
-                      </Card>
+              {/* Servings, times and nutrition in one compact card, so the ingredients
+                  and instructions start on the first screen; unknown times (0) are left out */}
+              <Card padding="none">
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-700">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users className="h-4 w-4 text-primary-600" aria-hidden="true" />
+                      {t('common.servingsCount', { count: recipe.servings })}
+                    </span>
+                    {recipe.prep_time > 0 && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Clock className="h-4 w-4 text-accent-600" aria-hidden="true" />
+                        {t('recipes.detail.prepTime')}: {formatTime(recipe.prep_time)}
+                      </span>
+                    )}
+                    {recipe.cook_time > 0 && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <Timer className="h-4 w-4 text-secondary-600" aria-hidden="true" />
+                        {t('recipes.detail.cookTime')}: {formatTime(recipe.cook_time)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-3 grid grid-cols-4 gap-2 border-t border-neutral-100 pt-3 text-center">
+                    {[
+                      { value: Math.round(recipe.calories), label: t('recipes.detail.calories'), color: 'text-neutral-900' },
+                      { value: `${Math.round(recipe.protein)} ${t('units.short.g')}`, label: t('recipes.detail.protein'), color: 'text-primary-600' },
+                      { value: `${Math.round(recipe.carbs)} ${t('units.short.g')}`, label: t('recipes.detail.carbs'), color: 'text-accent-600' },
+                      { value: `${Math.round(recipe.fats)} ${t('units.short.g')}`, label: t('recipes.detail.fats'), color: 'text-secondary-600' },
+                    ].map((item) => (
+                      <div key={item.label}>
+                        <div className={`text-base sm:text-lg font-semibold leading-tight ${item.color}`}>{item.value}</div>
+                        <div className="text-xs text-neutral-500">{item.label}</div>
+                      </div>
                     ))}
                   </div>
-                );
-              })()}
+                  <p className="mt-2 text-center text-xs text-neutral-400">{t('recipes.detail.nutritionPerServing')}</p>
+                </CardContent>
+              </Card>
 
               {/* Dietary Tags */}
               {dietaryTags.length > 0 && (
@@ -181,33 +191,6 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                   </CardContent>
                 </Card>
               )}
-
-              {/* Nutrition Information */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>{t('recipes.detail.nutritionPerServing')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-4 gap-2 md:gap-6">
-                    <div className="text-center">
-                      <div className="text-lg md:text-2xl font-bold text-neutral-900">{Math.round(recipe.calories)}</div>
-                      <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.calories')}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg md:text-2xl font-bold text-primary-600">{Math.round(recipe.protein)} {t('units.short.g')}</div>
-                      <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.protein')}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg md:text-2xl font-bold text-accent-600">{Math.round(recipe.carbs)} {t('units.short.g')}</div>
-                      <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.carbs')}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg md:text-2xl font-bold text-secondary-600">{Math.round(recipe.fats)} {t('units.short.g')}</div>
-                      <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.fats')}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Ingredients and instructions as tabs in one card */}
               <Card padding="none">

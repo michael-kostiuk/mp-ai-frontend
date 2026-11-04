@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   ArrowLeft,
   Calendar,
-  CheckCircle2,
   ChevronDown,
   Clock,
   Edit,
   RefreshCw,
   ShoppingBasket,
-  ShoppingCart,
   Target,
   Trash2,
   Users,
@@ -30,7 +28,6 @@ import { getMealPlanShoppingLists } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
 import { formatDate, formatDateRange, formatDayHeading } from '../../utils/dateUtils';
 import { getMealPlanDayCount, getPlanVersions, toDateKey } from '../../utils/mealPlanUtils';
-import { getListProgress } from '../../utils/shoppingListUtils';
 import { useAuth } from '../../context/AuthContext';
 import DemoEditHint from '../auth/DemoEditHint';
 import RecipeImagePlaceholder from '../recipes/RecipeImagePlaceholder';
@@ -54,9 +51,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
   const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
   const [showPastDays, setShowPastDays] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
-  // Set when the plan was just generated and saved together with its shopping list
-  const justCreated = new URLSearchParams(location.search).get('listReady') === '1';
   const { mode } = useAuth();
   const canEdit = mode === 'owner';
   const locale = getLocaleFromLanguage(i18n.language);
@@ -139,7 +133,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
     [allPlans, mealPlan]
   );
 
-  const listProgress = shoppingList ? getListProgress(shoppingList.items) : null;
 
   const handleDelete = async () => {
     if (!mealPlanId || !window.confirm(t('mealPlans.deleteConfirm'))) return;
@@ -151,6 +144,20 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
     } catch (error) {
       console.error('Failed to delete meal plan:', error);
     }
+  };
+
+  const openStore = async () => {
+    let list = shoppingList;
+    if (!list && mealPlanId) {
+      try {
+        list = await generateList(mealPlanId);
+        setShoppingList(list);
+      } catch (error) {
+        console.error('Failed to generate shopping list:', error);
+        return;
+      }
+    }
+    if (list) navigate(`/shopping-lists/${list.id}?store=1`);
   };
 
   const handleGenerateShoppingList = async () => {
@@ -253,9 +260,24 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
           <ArrowLeft className="h-4 w-4 mr-1" />
           {t('common.back')}
         </button>
-        <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6 first-letter:uppercase">
-          {mealPlan ? mealPlan.name || formatDateRange(mealPlan.start_date, mealPlan.end_date, locale) : t('mealPlans.mealPlanDetails')}
-        </h1>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl first-letter:uppercase">
+            {mealPlan ? mealPlan.name || formatDateRange(mealPlan.start_date, mealPlan.end_date, locale) : t('mealPlans.mealPlanDetails')}
+          </h1>
+          {/* Straight to the in-store list; a plan without a list gets one made first */}
+          {mealPlan && (
+            <Button
+              onClick={openStore}
+              isLoading={generatingList}
+              disabled={loadingShoppingLists && !shoppingList}
+              aria-label={t('shoppingLists.storeMode.open')}
+              title={t('shoppingLists.storeMode.open')}
+              className="h-11 w-11 shrink-0 !p-0"
+            >
+              {!generatingList && <ShoppingBasket className="h-5 w-5" aria-hidden="true" />}
+            </Button>
+          )}
+        </div>
         {mealPlan?.name && (
           <p className="-mt-4 mb-6 text-neutral-600 first-letter:uppercase">
             {formatDateRange(mealPlan.start_date, mealPlan.end_date, locale)}
@@ -279,60 +301,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
 
           {mealPlan && (
             <div className="space-y-6">
-              {/* Shopping list first: it is what the plan is turned into */}
-              <Card padding="none">
-                <CardContent className="p-4">
-                  {justCreated && shoppingList && (
-                    <p className="mb-3 flex items-center gap-2 text-sm font-medium text-success-700">
-                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                      {t('mealPlans.detail.listReady')}
-                    </p>
-                  )}
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                      <ShoppingCart className="h-6 w-6 shrink-0 text-primary-600" aria-hidden="true" />
-                      <div>
-                        <div className="font-medium text-neutral-900">{t('mealPlans.detail.shoppingList')}</div>
-                        <div className="text-sm text-neutral-500">
-                          {listProgress
-                            ? t('mealPlans.detail.listProgress', { bought: listProgress.bought, total: listProgress.total })
-                            : loadingShoppingLists
-                              ? t('shoppingLists.loadingShoppingLists')
-                              : t('mealPlans.detail.noListYet')}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      {shoppingList ? (
-                        <>
-                          <Link to={`/shopping-lists/${shoppingList.id}?store=1`} className="flex-1 sm:flex-none">
-                            <Button leftIcon={<ShoppingBasket className="h-4 w-4" />} fullWidth>
-                              {t('shoppingLists.storeMode.open')}
-                            </Button>
-                          </Link>
-                          <Link to={`/shopping-lists/${shoppingList.id}`} className="flex-1 sm:flex-none">
-                            <Button variant="outline" fullWidth>
-                              {t('mealPlans.detail.openShoppingList')}
-                            </Button>
-                          </Link>
-                        </>
-                      ) : (
-                        !loadingShoppingLists && (
-                          <Button
-                            onClick={handleGenerateShoppingList}
-                            isLoading={generatingList}
-                            leftIcon={<ShoppingCart className="h-4 w-4" />}
-                            className="w-full sm:w-auto"
-                          >
-                            {t('mealPlans.detail.generateList')}
-                          </Button>
-                        )
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Meal Schedule */}
               <div>
                 <h2 className="mb-4 text-lg font-semibold text-neutral-900">{t('mealPlans.detail.mealSchedule')}</h2>
