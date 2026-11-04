@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Archive, ChevronDown, ChevronRight, Download, ShoppingBasket, Trash2 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import Card, { CardContent } from '../components/ui/Card';
@@ -34,7 +34,6 @@ const ShoppingLists: React.FC = () => {
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportModalTitle, setExportModalTitle] = useState('');
   const [exportModalContent, setExportModalContent] = useState('');
-  const navigate = useNavigate();
   const { mode } = useAuth();
   const locale = getLocaleFromLanguage(i18n.language);
   const [showArchive, setShowArchive] = useState(false);
@@ -143,20 +142,21 @@ const ShoppingLists: React.FC = () => {
           {activeLists.map((list) => (
             <Card key={list.id} padding="none">
               <CardContent className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4">
-                {/* The name opens the list; the products are inside, not repeated here */}
-                <Link to={`/shopping-lists/${list.id}`} className="group min-w-0 flex-1">
+                {/* The whole card opens the list, which is also the in-store view */}
+                <Link to={`/shopping-lists/${list.id}`} className="group flex min-w-0 flex-1 items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+                    <ShoppingBasket size={20} aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
                   <h2 className="truncate text-base sm:text-lg font-semibold text-neutral-900 first-letter:uppercase group-hover:text-primary-700">
                     {listName(list)}
                   </h2>
                   <p className="text-sm text-neutral-500">
                     {t('shoppingLists.productCount', { count: getListProgress(list.items).total })}
                   </p>
+                  </div>
+                  <ChevronRight className="h-5 w-5 shrink-0 text-neutral-400" aria-hidden="true" />
                 </Link>
-                <Button onClick={() => navigate(`/shopping-lists/${list.id}?store=1`)} className="shrink-0">
-                  {/* No icon on phones: the list name needs the room */}
-                  <ShoppingBasket size={18} className="mr-2 hidden sm:block" aria-hidden="true" />
-                  {t('shoppingLists.storeMode.open')}
-                </Button>
                 <MoreMenu
                   items={[
                     {

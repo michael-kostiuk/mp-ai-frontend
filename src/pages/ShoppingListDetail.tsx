@@ -1,21 +1,17 @@
 import React, { useEffect, useCallback, useMemo, useState } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Calendar, CloudOff, Home, RefreshCw, ShoppingBasket } from 'lucide-react';
+import { ArrowLeft, CloudOff, RefreshCw } from 'lucide-react';
 import Container from '../components/layout/Container';
-import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Skeleton from '../components/ui/Skeleton';
 import ErrorMessage from '../components/ui/ErrorMessage';
-import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
-import ShoppingModeView from '../components/shoppingLists/ShoppingModeView';
+import ShoppingListView from '../components/shoppingLists/ShoppingListView';
 import { ShoppingList } from '../types';
 import useApi from '../hooks/useApi';
 import useShoppingListSync from '../hooks/useShoppingListSync';
 import { getShoppingList } from '../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../utils/i18nUtils';
-import { formatMealPlanRange } from '../utils/mealPlanUtils';
-import { formatDate } from '../utils/dateUtils';
 import {
   ShoppingLine,
   formatLineQuantity,
@@ -30,10 +26,6 @@ const ShoppingListDetail: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // "In the store" button on the lists page opens this page straight in store mode
-  const [storeMode, setStoreMode] = useState(() => new URLSearchParams(location.search).get('store') === '1');
 
   const shoppingListId = id ? parseInt(id, 10) : null;
   const locale = getLocaleFromLanguage(i18n.language);
@@ -91,79 +83,56 @@ const ShoppingListDetail: React.FC = () => {
     navigate('/shopping-lists');
   };
 
-  const renderLine = (line: ShoppingLine) => (
-    <ShoppingListItem
-      key={line.key}
-      item={line.items[0]}
-      quantityText={quantityOf(line)}
-      checked={isLineBought(line, statuses)}
-      onToggle={() => onToggleLine(line)}
-    />
-  );
-
   if (!shoppingListId) {
     return null;
   }
 
   return (
-    <Container className="py-6 sm:py-8 lg:py-12">
-      <div className="mb-6 sm:mb-8">
-        <Button
-          variant="ghost"
-          onClick={handleBack}
-          leftIcon={<ArrowLeft className="h-4 w-4" />}
-          className="mb-4 hidden lg:inline-flex"
-        >
-          {t('shoppingLists.backToShoppingLists')}
-        </Button>
+    <Container className="py-6 sm:py-8 lg:py-12" maxWidth="3xl">
+      <Button
+        variant="ghost"
+        onClick={handleBack}
+        leftIcon={<ArrowLeft className="h-4 w-4" />}
+        className="mb-4 hidden lg:inline-flex"
+      >
+        {t('shoppingLists.backToShoppingLists')}
+      </Button>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            {shoppingList ? (
-              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">
-                {getShoppingListTitle(shoppingList, t, locale)}
-              </h1>
-            ) : (
-              <Skeleton className="h-8 w-64" />
-            )}
-            {shoppingList && (
-              <p className="text-neutral-500 mt-1">
-                {t('shoppingLists.createdOn')} {formatDate(shoppingList.created_at, locale)}
-              </p>
-            )}
-            {shoppingList?.meal_plan && (
-              <Link
-                to={`/meal-plans/${shoppingList.meal_plan.id}`}
-                className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
-              >
-                <Calendar className="h-4 w-4" />
-                {t('shoppingLists.fromMealPlan', {
-                  range: formatMealPlanRange(shoppingList.meal_plan, locale),
-                })}
-              </Link>
-            )}
-          </div>
-
-          {shoppingList && (
-            <div className="flex flex-col sm:flex-row gap-2">
-              {shoppingList.items.length > 0 && (
-                <Button leftIcon={<ShoppingBasket className="h-4 w-4" />} onClick={() => setStoreMode(true)}>
-                  {t('shoppingLists.storeMode.open')}
-                </Button>
-              )}
-            </div>
+      {/* The list itself is the in-store view: one screen to shop from */}
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          {shoppingList ? (
+            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900 first-letter:uppercase">
+              {getShoppingListTitle(shoppingList, t, locale)}
+            </h1>
+          ) : (
+            <Skeleton className="h-8 w-48" />
+          )}
+          {shoppingList && lines.length > 0 && (
+            <p className="mt-1 text-sm text-neutral-500">
+              {t('shoppingLists.storeMode.progress', { bought: purchasedCount, total: lines.length })}
+            </p>
           )}
         </div>
+        {syncFailed ? (
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-xs text-warning-600">
+            <CloudOff className="h-3.5 w-3.5" />
+            {t('shoppingLists.syncOffline')}
+          </span>
+        ) : hasPending ? (
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-xs text-neutral-500">
+            <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+            {t('shoppingLists.syncSaving')}
+          </span>
+        ) : null}
       </div>
 
       {loading && !shoppingList && (
-        <Card aria-busy="true" aria-label={t('shoppingLists.loadingShoppingList')}>
-          <CardContent className="space-y-3 py-6">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-10" />
-            ))}
-          </CardContent>
-        </Card>
+        <div className="space-y-2 rounded-lg border border-neutral-200 bg-white p-4" aria-busy="true" aria-label={t('shoppingLists.loadingShoppingList')}>
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-10" />
+          ))}
+        </div>
       )}
 
       {error && (
@@ -174,67 +143,22 @@ const ShoppingListDetail: React.FC = () => {
         />
       )}
 
-      {shoppingList && (
-        <Card className="animate-fadeIn">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle>
-                {t('shoppingLists.items')} ({purchasedCount}/{lines.length})
-              </CardTitle>
-              {syncFailed ? (
-                <span className="inline-flex items-center gap-1.5 text-xs text-warning-600">
-                  <CloudOff className="h-3.5 w-3.5" />
-                  {t('shoppingLists.syncOffline')}
-                </span>
-              ) : hasPending ? (
-                <span className="inline-flex items-center gap-1.5 text-xs text-neutral-500">
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                  {t('shoppingLists.syncSaving')}
-                </span>
-              ) : null}
-            </div>
-          </CardHeader>
-
-          <CardContent>
-            {shoppingList.items.length === 0 ? (
-              <div className="text-center py-8 text-neutral-500">
-                {t('shoppingLists.emptyList')}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* One plain alphabetical list, no category headings */}
-                <div className="space-y-2">{lines.map(renderLine)}</div>
-                {pantryLines.length > 0 && (
-                  <div className="rounded-lg bg-neutral-50 p-3">
-                    <h3 className="flex items-center gap-1.5 text-sm font-semibold text-neutral-700 uppercase tracking-wide">
-                      <Home className="h-4 w-4" aria-hidden="true" />
-                      {t('shoppingLists.pantry.title')}
-                    </h3>
-                    <p className="mt-1 mb-3 text-sm text-neutral-500">{t('shoppingLists.pantry.hint')}</p>
-                    <div className="space-y-2">{pantryLines.map(renderLine)}</div>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {shoppingList && shoppingList.items.length === 0 && (
+        <div className="rounded-lg border border-neutral-200 bg-white py-8 text-center text-neutral-500">
+          {t('shoppingLists.emptyList')}
+        </div>
       )}
 
-      {storeMode && shoppingList && (
-        <ShoppingModeView
-          title={getShoppingListTitle(shoppingList, t, locale)}
+      {shoppingList && shoppingList.items.length > 0 && (
+        <ShoppingListView
+          listId={shoppingList.id}
           lines={lines}
           pantryLines={pantryLines}
           statuses={statuses}
           quantityOf={quantityOf}
           onToggle={onToggleLine}
-          onClose={() => {
-            setStoreMode(false);
-            if (location.search) navigate(location.pathname, { replace: true });
-          }}
         />
       )}
-
     </Container>
   );
 };

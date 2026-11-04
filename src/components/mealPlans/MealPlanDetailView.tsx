@@ -152,7 +152,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
         return;
       }
     }
-    if (list) navigate(`/shopping-lists/${list.id}?store=1`);
+    if (list) navigate(`/shopping-lists/${list.id}`);
   };
 
   const handleGenerateShoppingList = async () => {
