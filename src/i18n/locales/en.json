@@ -172,7 +172,8 @@
       "weightsDescription": "Weights determine how likely this recipe is to be selected for each meal type during auto-generation.",
       "validationError": "Please fill in all required fields and add at least one ingredient.",
       "addValidIngredientsFirst": "Please add valid ingredients before estimating nutrition.",
-      "imageSavedButUploadFailed": "Recipe saved but image upload failed. Please try adding the image again."
+      "imageSavedButUploadFailed": "Recipe saved but image upload failed. Please try adding the image again.",
+      "totalTime": "Cooking time (min)"
     },
     "detail": {
       "servings": "Servings",

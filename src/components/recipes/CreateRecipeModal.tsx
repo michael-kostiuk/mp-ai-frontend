@@ -75,8 +75,9 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       setFormData({
         name: editingRecipe.name,
         servings: editingRecipe.servings,
-        prep_time: editingRecipe.prep_time,
-        cook_time: editingRecipe.cook_time,
+        // The form has one total time; it is saved as cooking time
+        prep_time: 0,
+        cook_time: editingRecipe.prep_time + editingRecipe.cook_time,
         instructions: editingRecipe.instructions,
         category: (editingRecipe.category || 'dinner').toLowerCase(),
         dietary_tags: [...(editingRecipe.dietary_tags || [])],
@@ -119,6 +120,9 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
       const merged: RecipeCreate = {
         ...base,
         ...(initialRecipe || {}),
+        // An imported recipe's prep and cooking times go into the one total time field
+        prep_time: 0,
+        cook_time: Number(initialRecipe?.prep_time ?? 0) + Number(initialRecipe?.cook_time ?? 0),
         // Imported recipes may say "Lunch"; the options are lowercase keys
         category: (initialRecipe?.category || base.category).toLowerCase(),
         dietary_tags: initialRecipe?.dietary_tags ?? base.dietary_tags,
@@ -519,7 +523,7 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
             </div>
 
             {/* Time and Servings */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <NumericInput
                 label={t('recipes.form.servings')}
                 value={formData.servings}
@@ -531,23 +535,14 @@ const CreateRecipeModal: React.FC<CreateRecipeModalProps> = ({
                 fullWidth
               />
 
+              {/* One total time, as the recipe page shows it */}
               <NumericInput
-                label={t('recipes.form.prepTime')}
-                value={formData.prep_time}
-                onChange={(val) => handleInputChange('prep_time', val)}
-                leftIcon={<Clock className="h-5 w-5" />}
-                min={0}
-                max={480}
-                fullWidth
-              />
-
-              <NumericInput
-                label={t('recipes.form.cookTime')}
+                label={t('recipes.form.totalTime')}
                 value={formData.cook_time}
                 onChange={(val) => handleInputChange('cook_time', val)}
                 leftIcon={<Clock className="h-5 w-5" />}
                 min={0}
-                max={480}
+                max={960}
                 fullWidth
               />
             </div>
