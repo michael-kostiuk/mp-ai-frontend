@@ -386,9 +386,10 @@
       "title": "Check at home",
       "hint": "Usually already in the kitchen. Buy only if you have run out."
     },
-    "moreToBuy": "{{count}} more to buy",
     "archive_one": "Older lists ({{count}})",
-    "archive_other": "Older lists ({{count}})"
+    "archive_other": "Older lists ({{count}})",
+    "productCount_one": "{{count}} product",
+    "productCount_other": "{{count}} products"
   },
   "ingredients": {
     "title": "Ingredients",

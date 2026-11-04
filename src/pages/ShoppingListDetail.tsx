@@ -27,7 +27,6 @@ import {
   isPantryItem,
   toggleLine,
 } from '../utils/shoppingListUtils';
-import { ingredientCategoryLabel } from '../utils/categoryUtils';
 
 const ShoppingListDetail: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -88,7 +87,6 @@ const ShoppingListDetail: React.FC = () => {
     };
   }, [shoppingList?.items]);
   const purchasedCount = lines.filter((line) => isLineBought(line, statuses)).length;
-  const categoryLabel = useCallback((category: string) => ingredientCategoryLabel(category, t), [t]);
   const quantityOf = useCallback(
     (line: ShoppingLine) => formatLineQuantity(line, t, locale),
     [t, locale]
@@ -123,15 +121,6 @@ const ShoppingListDetail: React.FC = () => {
     }
   };
 
-  // Lines grouped under translated category names, alphabetically
-  const groupedLines = useMemo(() => {
-    const groups: Record<string, ShoppingLine[]> = {};
-    lines.forEach((line) => {
-      (groups[categoryLabel(line.category)] ||= []).push(line);
-    });
-    return groups;
-  }, [lines, categoryLabel]);
-  const sortedCategories = useMemo(() => Object.keys(groupedLines).sort((a, b) => a.localeCompare(b)), [groupedLines]);
 
   const renderLine = (line: ShoppingLine) => (
     <ShoppingListItem
@@ -252,14 +241,8 @@ const ShoppingListDetail: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-6">
-                {sortedCategories.map((category) => (
-                  <div key={category}>
-                    <h3 className="text-sm font-semibold text-neutral-700 uppercase tracking-wide mb-3 pb-2 border-b border-neutral-200">
-                      {category}
-                    </h3>
-                    <div className="space-y-2">{groupedLines[category].map(renderLine)}</div>
-                  </div>
-                ))}
+                {/* One plain alphabetical list, no category headings */}
+                <div className="space-y-2">{lines.map(renderLine)}</div>
                 {pantryLines.length > 0 && (
                   <div className="rounded-lg bg-neutral-50 p-3">
                     <h3 className="flex items-center gap-1.5 text-sm font-semibold text-neutral-700 uppercase tracking-wide">
@@ -282,7 +265,6 @@ const ShoppingListDetail: React.FC = () => {
           lines={lines}
           pantryLines={pantryLines}
           statuses={statuses}
-          categoryLabel={categoryLabel}
           quantityOf={quantityOf}
           onToggle={onToggleLine}
           onClose={() => {

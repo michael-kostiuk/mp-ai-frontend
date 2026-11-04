@@ -400,11 +400,14 @@
       "title": "Перевірте вдома",
       "hint": "Зазвичай це вже є на кухні. Купуйте, лише якщо закінчилося."
     },
-    "moreToBuy": "ще {{count}} купити",
     "archive_one": "Старі списки ({{count}})",
     "archive_few": "Старі списки ({{count}})",
     "archive_many": "Старі списки ({{count}})",
-    "archive_other": "Старі списки ({{count}})"
+    "archive_other": "Старі списки ({{count}})",
+    "productCount_one": "{{count}} продукт",
+    "productCount_few": "{{count}} продукти",
+    "productCount_many": "{{count}} продуктів",
+    "productCount_other": "{{count}} продукту"
   },
   "ingredients": {
     "title": "Інгредієнти",

@@ -9,7 +9,6 @@ interface ShoppingModeViewProps {
   lines: ShoppingLine[];
   pantryLines: ShoppingLine[];
   statuses: Record<number, ShoppingListItemStatus>;
-  categoryLabel: (category: string) => string;
   quantityOf: (line: ShoppingLine) => string;
   onToggle: (line: ShoppingLine) => void;
   onClose: () => void;
@@ -21,7 +20,6 @@ const ShoppingModeView: React.FC<ShoppingModeViewProps> = ({
   lines,
   pantryLines,
   statuses,
-  categoryLabel,
   quantityOf,
   onToggle,
   onClose,
@@ -43,11 +41,6 @@ const ShoppingModeView: React.FC<ShoppingModeViewProps> = ({
   const toBuy = lines.filter((line) => !isLineBought(line, statuses));
   const bought = lines.filter((line) => isLineBought(line, statuses));
 
-  const groups = toBuy.reduce((acc, line) => {
-    const category = categoryLabel(line.category);
-    (acc[category] ||= []).push(line);
-    return acc;
-  }, {} as Record<string, ShoppingLine[]>);
 
   const renderLine = (line: ShoppingLine) => {
     const checked = isLineBought(line, statuses);
@@ -102,14 +95,7 @@ const ShoppingModeView: React.FC<ShoppingModeViewProps> = ({
         {toBuy.length === 0 && (
           <p className="px-4 py-8 text-center text-lg text-success-600">{t('shoppingLists.storeMode.allDone')}</p>
         )}
-        {Object.keys(groups)
-          .sort((a, b) => a.localeCompare(b))
-          .map((category) => (
-            <section key={category}>
-              <h3 className={sectionHeading}>{category}</h3>
-              <ul className="divide-y divide-neutral-100">{groups[category].map(renderLine)}</ul>
-            </section>
-          ))}
+        {toBuy.length > 0 && <ul className="divide-y divide-neutral-100">{toBuy.map(renderLine)}</ul>}
         {bought.length > 0 && (
           <section>
             <h3 className={sectionHeading}>{t('shoppingLists.storeMode.bought')}</h3>
