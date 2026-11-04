@@ -391,7 +391,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
         <div className="max-w-4xl mx-auto">
           <Link
             to={backTo || '/recipes'}
-            className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-4"
+            className="hidden lg:inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
             {backLabel || t('common.back')}

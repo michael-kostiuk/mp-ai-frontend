@@ -112,7 +112,7 @@ const ShoppingListDetail: React.FC = () => {
           variant="ghost"
           onClick={handleBack}
           leftIcon={<ArrowLeft className="h-4 w-4" />}
-          className="mb-4"
+          className="mb-4 hidden lg:inline-flex"
         >
           {t('shoppingLists.backToShoppingLists')}
         </Button>

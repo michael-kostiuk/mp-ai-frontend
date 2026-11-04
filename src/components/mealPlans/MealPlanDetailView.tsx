@@ -248,7 +248,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
       <div className="max-w-4xl mx-auto">
         <button
           onClick={onClose}
-          className="inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-4"
+          className="hidden lg:inline-flex items-center text-sm text-neutral-500 hover:text-neutral-700 transition-colors mb-4"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />
           {t('common.back')}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { WifiOff, Home, BookOpen, CalendarDays, ShoppingCart, Carrot } from 'lucide-react';
+import { ArrowLeft, WifiOff, Home, BookOpen, CalendarDays, ShoppingCart, Carrot } from 'lucide-react';
 import { useApiContext } from '../../context/ApiContext';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 import BrandMark from '../ui/BrandMark';
@@ -25,6 +25,18 @@ const Header: React.FC = () => {
   };
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'checking'>('checking');
   const location = useLocation();
+  const navigate = useNavigate();
+  // Inner pages (one recipe, plan, list or ingredient) get a back arrow in the phone header,
+  // like other apps; it returns where the user came from, or to the section's list
+  const parentPath = location.pathname.match(/^\/(recipes|meal-plans|shopping-lists|ingredients)\/[^/]+/)?.[1];
+  const goBack = () => {
+    if ((window.history.state?.idx ?? 0) > 0) return navigate(-1);
+    // Opened straight from a link: a recipe seen from a plan or list goes back there
+    const params = new URLSearchParams(location.search);
+    const fromPlan = params.get('fromMealPlan');
+    const fromList = params.get('fromShoppingList');
+    navigate(fromPlan ? `/meal-plans/${fromPlan}` : fromList ? `/shopping-lists/${fromList}` : `/${parentPath}`);
+  };
   const baseUrl = config.baseUrl;
   const timeout = config.timeout;
   
@@ -139,6 +151,16 @@ const Header: React.FC = () => {
         <div className="flex h-14 sm:h-16 lg:h-18 justify-between">
           <div className="flex">
             <div className="flex flex-shrink-0 items-center">
+              {parentPath && (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  className="lg:hidden -ml-2 mr-1 inline-flex items-center justify-center rounded-full p-2 text-neutral-700 hover:bg-neutral-100"
+                  aria-label={t('common.back')}
+                >
+                  <ArrowLeft className="h-6 w-6" aria-hidden="true" />
+                </button>
+              )}
               <Link to="/" className="flex items-center group">
                 <BrandMark className="h-6 w-6 sm:h-7 sm:w-7 text-neutral-900" />
                 <span className="ml-2 text-lg sm:text-xl font-bold tracking-[-0.03em] text-neutral-900">
