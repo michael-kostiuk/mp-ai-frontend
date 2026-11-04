@@ -2,17 +2,12 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  AlertTriangle,
   ArrowLeft,
-  Calendar,
   ChevronDown,
-  Clock,
   Edit,
   RefreshCw,
   ShoppingBasket,
-  Target,
   Trash2,
-  Users,
 } from 'lucide-react';
 import { MealPlan, MealPlanEntry, ShoppingList } from '../../types';
 import Button from '../ui/Button';
@@ -26,7 +21,7 @@ import useCachedApi from '../../hooks/useCachedApi';
 import { getMealPlan, getMealPlans, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
 import { getMealPlanShoppingLists } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
-import { formatDate, formatDateRange, formatDayHeading } from '../../utils/dateUtils';
+import { formatDateRange, formatDayHeading } from '../../utils/dateUtils';
 import { getMealPlanDayCount, getPlanVersions, toDateKey } from '../../utils/mealPlanUtils';
 import { useAuth } from '../../context/AuthContext';
 import DemoEditHint from '../auth/DemoEditHint';
@@ -301,8 +296,21 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
           )}
         </div>
         {mealPlan?.name && (
-          <p className="-mt-4 mb-6 text-neutral-600 first-letter:uppercase">
+          <p className="-mt-4 mb-2 text-neutral-600 first-letter:uppercase">
             {formatDateRange(mealPlan.start_date, mealPlan.end_date, locale)}
+          </p>
+        )}
+        {/* Calories in one line instead of stat cards; amber when more than 10% off the goal */}
+        {mealPlan && caloriesPerDayPerPerson > 0 && (
+          <p
+            className={`${mealPlan.name ? '' : '-mt-4'} mb-6 text-sm ${
+              mealPlan.target_calories &&
+              Math.abs(caloriesPerDayPerPerson - mealPlan.target_calories) > mealPlan.target_calories * 0.1
+                ? 'font-medium text-warning-700'
+                : 'text-neutral-500'
+            }`}
+          >
+            {t('mealPlans.detail.caloriesLine', { actual: caloriesPerDayPerPerson, target: mealPlan.target_calories })}
           </p>
         )}
 
@@ -325,7 +333,6 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
             <div className="space-y-6">
               {/* Meal Schedule */}
               <div>
-                <h2 className="mb-4 text-lg font-semibold text-neutral-900">{t('mealPlans.detail.mealSchedule')}</h2>
                 {dayGroups.length === 0 ? (
                   <div className="text-center py-8 text-neutral-500">
                     {t('mealPlans.noMealsScheduled')}
@@ -351,50 +358,9 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                 )}
               </div>
 
-              {/* Header Info */}
-              <div className="grid grid-cols-4 gap-2 md:gap-4">
-                {[
-                  { icon: <Calendar className="h-6 w-6 md:h-8 md:w-8 text-primary-600 mx-auto mb-2" />, value: days, label: t('mealPlans.detail.days') },
-                  { icon: <Users className="h-6 w-6 md:h-8 md:w-8 text-accent-600 mx-auto mb-2" />, value: mealPlan.people_count, label: t('mealPlans.detail.people') },
-                  { icon: <Target className="h-6 w-6 md:h-8 md:w-8 text-secondary-600 mx-auto mb-2" />, value: mealPlan.target_calories, label: t('mealPlans.detail.targetCalDay') },
-                  { icon: <Clock className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />, value: caloriesPerDayPerPerson, label: t('mealPlans.detail.actualCalDay') },
-                ].map((stat) => (
-                  <Card key={stat.label} padding="none">
-                    <CardContent className="px-1 py-3 md:p-6 text-center">
-                      {stat.icon}
-                      <div className="text-lg md:text-2xl font-bold text-neutral-900">{stat.value}</div>
-                      <div className="text-xs md:text-sm leading-tight text-neutral-500">{stat.label}</div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Warn when the meals are far from the calorie goal (more than 10% either way) */}
-              {(() => {
-                const actual = caloriesPerDayPerPerson;
-                const target = mealPlan.target_calories;
-                if (!target || !actual || Math.abs(actual - target) <= target * 0.1) return null;
-                return (
-                  <div className="flex items-start gap-3 rounded-lg border border-warning-200 bg-warning-50 p-4 text-sm text-warning-800" role="status">
-                    <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />
-                    <div>
-                      <p className="font-medium">
-                        {t(actual < target ? 'mealPlans.detail.caloriesBelowTarget' : 'mealPlans.detail.caloriesAboveTarget', {
-                          actual,
-                          target,
-                          difference: Math.abs(target - actual),
-                        })}
-                      </p>
-                      <p className="mt-1">{t('mealPlans.detail.caloriesHint')}</p>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              <div className="text-center text-sm text-neutral-500">
-                {t('mealPlans.detail.createdOn')} {formatDate(mealPlan.created_at, locale)}
-                {versions.length > 1 && (
-                  <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2">
+              {versions.length > 1 && (
+                <div className="text-center text-sm text-neutral-500">
+                  <div className="flex flex-wrap items-center justify-center gap-x-2">
                     <span>{t('mealPlans.detail.versionOf', { index: versions.findIndex((v) => v.id === mealPlan.id) + 1, total: versions.length })}</span>
                     {versions.map((version, i) =>
                       version.id === mealPlan.id ? null : (
@@ -404,8 +370,8 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                       )
                     )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
               {/* Dietary Preferences */}
               {mealPlan.dietary_preferences.length > 0 && (

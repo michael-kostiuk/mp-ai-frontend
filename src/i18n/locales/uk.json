@@ -46,9 +46,9 @@
   },
   "nav": {
     "recipes": "Рецепти",
-    "mealPlans": "Плани харчування",
-    "shoppingLists": "Списки покупок",
-    "ingredients": "Інгредієнти",
+    "mealPlans": "Плани",
+    "shoppingLists": "Покупки",
+    "ingredients": "Продукти",
     "short": {
       "today": "Сьогодні",
       "recipes": "Рецепти",
@@ -91,7 +91,8 @@
       "calories_one": "{{perServing}} ккал / порція · {{count}} порція",
       "calories_few": "{{perServing}} ккал / порція · {{count}} порції",
       "calories_many": "{{perServing}} ккал / порція · {{count}} порцій",
-      "calories_other": "{{perServing}} ккал / порція · {{count}} порції"
+      "calories_other": "{{perServing}} ккал / порція · {{count}} порції",
+      "noPlan": "На сьогодні плану ще немає."
     },
     "features": {
       "recipes": {
@@ -231,7 +232,7 @@
   },
   "mealPlans": {
     "leftover": "Залишки",
-    "title": "Плани харчування",
+    "title": "Плани",
     "description": "Плануйте та організовуйте своє харчування на тиждень",
     "createMealPlan": "Створити план харчування",
     "editMealPlan": "Редагувати план харчування",
@@ -326,7 +327,8 @@
       "pastDays_few": "Минулі дні ({{count}})",
       "pastDays_many": "Минулі дні ({{count}})",
       "pastDays_other": "Минулі дні ({{count}})",
-      "regenerateConfirm": "Скласти план заново? Усі страви зміняться, список покупок теж створиться заново."
+      "regenerateConfirm": "Скласти план заново? Усі страви зміняться, список покупок теж створиться заново.",
+      "caloriesLine": "≈ {{actual}} з {{target}} ккал на день на людину"
     },
     "mealTypes": {
       "breakfast": "Сніданок",
@@ -365,7 +367,7 @@
     "deleteConfirm": "Видалити цей план харчування? Це не можна скасувати."
   },
   "shoppingLists": {
-    "title": "Списки покупок",
+    "title": "Покупки",
     "description": "Переглядайте та керуйте списками покупок",
     "shoppingListNumber": "Список покупок #{{id}}",
     "loadingShoppingLists": "Завантаження списків покупок...",
@@ -387,7 +389,7 @@
     "syncSaving": "Збереження…",
     "syncOffline": "Немає зв’язку — синхронізуємо пізніше",
     "purchasedCount": "Куплено {{purchased}}/{{total}}",
-    "titleForPlan": "Покупки на {{range}}",
+    "titleForPlan": "{{range}}",
     "titleFromDate": "Список покупок від {{date}}",
     "storeMode": {
       "open": "У магазині",
@@ -409,7 +411,7 @@
     "productCount_other": "{{count}} продукту"
   },
   "ingredients": {
-    "title": "Інгредієнти",
+    "title": "Продукти",
     "description": "Переглядайте та керуйте інгредієнтами",
     "addIngredient": "Додати інгредієнт",
     "addFirstIngredient": "Додати перший інгредієнт",

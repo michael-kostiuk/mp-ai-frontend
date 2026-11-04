@@ -101,17 +101,20 @@ const ShoppingLists: React.FC = () => {
       />
 
       {loading && shoppingLists === null && (
-        <div className="space-y-6" aria-busy="true" aria-label={t('shoppingLists.loadingShoppingLists')}>
+        <div className="space-y-4" aria-busy="true" aria-label={t('shoppingLists.loadingShoppingLists')}>
+          {/* Same shape as the list cards: name, product count, button */}
           {[0, 1].map((i) => (
-            <Card key={i}>
-              <CardContent className="space-y-3 py-6">
-                <Skeleton className="h-6 w-56" />
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-10" />
-                <Skeleton className="h-10" />
+            <Card key={i} padding="none">
+              <CardContent className="flex items-center gap-3 p-3 sm:p-4">
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-36" />
+                  <Skeleton className="h-4 w-20" />
+                </div>
+                <Skeleton className="h-10 w-28" />
               </CardContent>
             </Card>
           ))}
+          <Skeleton className="h-12" />
         </div>
       )}
 

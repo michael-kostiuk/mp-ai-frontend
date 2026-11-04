@@ -44,9 +44,9 @@
   },
   "nav": {
     "recipes": "Recipes",
-    "mealPlans": "Meal Plans",
-    "shoppingLists": "Shopping Lists",
-    "ingredients": "Ingredients",
+    "mealPlans": "Plans",
+    "shoppingLists": "Shopping",
+    "ingredients": "Products",
     "short": {
       "today": "Today",
       "recipes": "Recipes",
@@ -87,7 +87,8 @@
       "viewPlan": "View plan",
       "now": "Now",
       "calories_one": "{{perServing}} cal per serving · {{count}} serving",
-      "calories_other": "{{perServing}} cal per serving · {{count}} servings"
+      "calories_other": "{{perServing}} cal per serving · {{count}} servings",
+      "noPlan": "There is no plan for today yet."
     },
     "features": {
       "recipes": {
@@ -227,7 +228,7 @@
   },
   "mealPlans": {
     "leftover": "Leftovers",
-    "title": "Meal Plans",
+    "title": "Plans",
     "description": "Plan and organize your meals for the week",
     "createMealPlan": "Create Meal Plan",
     "editMealPlan": "Edit Meal Plan",
@@ -314,7 +315,8 @@
       "openVersion": "open version {{index}}",
       "pastDays_one": "Past days ({{count}})",
       "pastDays_other": "Past days ({{count}})",
-      "regenerateConfirm": "Make the plan again? All meals will change and the shopping list will be made again too."
+      "regenerateConfirm": "Make the plan again? All meals will change and the shopping list will be made again too.",
+      "caloriesLine": "≈ {{actual}} of {{target}} cal a day per person"
     },
     "mealTypes": {
       "breakfast": "Breakfast",
@@ -351,7 +353,7 @@
     "deleteConfirm": "Delete this meal plan? This cannot be undone."
   },
   "shoppingLists": {
-    "title": "Shopping Lists",
+    "title": "Shopping",
     "description": "View and manage your shopping lists",
     "shoppingListNumber": "Shopping List #{{id}}",
     "loadingShoppingLists": "Loading shopping lists...",
@@ -373,7 +375,7 @@
     "syncSaving": "Saving…",
     "syncOffline": "Offline — will sync",
     "purchasedCount": "{{purchased}}/{{total}} bought",
-    "titleForPlan": "Shopping for {{range}}",
+    "titleForPlan": "{{range}}",
     "titleFromDate": "Shopping list from {{date}}",
     "storeMode": {
       "open": "In the store",
@@ -391,7 +393,7 @@
     "productCount_other": "{{count}} products"
   },
   "ingredients": {
-    "title": "Ingredients",
+    "title": "Products",
     "description": "Browse and manage ingredients",
     "addIngredient": "Add Ingredient",
     "addFirstIngredient": "Add Your First Ingredient",

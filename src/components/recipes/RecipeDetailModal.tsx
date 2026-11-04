@@ -19,6 +19,7 @@ import { useAuth } from '../../context/AuthContext';
 import DemoEditHint from '../auth/DemoEditHint';
 import RecipeImagePlaceholder from './RecipeImagePlaceholder';
 import { recipeCategoryLabel } from '../../utils/categoryUtils';
+import { categoryRank } from '../../utils/shoppingListUtils';
 
 interface RecipeDetailModalProps {
   isOpen: boolean;
@@ -98,6 +99,12 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
   if (!isOpen) return null;
 
   const dietaryTags = Array.isArray(recipe?.dietary_tags) ? recipe.dietary_tags : [];
+  // Same order as the shopping list: by store section, then alphabetically
+  const sortedIngredients = [...(recipe?.ingredients ?? [])].sort(
+    (a, b) =>
+      categoryRank(a.ingredient.category || '') - categoryRank(b.ingredient.category || '') ||
+      a.ingredient.name.localeCompare(b.ingredient.name)
+  );
 
   const body = (
         <>
@@ -242,7 +249,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     </div>
                   ) : (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {recipe.ingredients.map((ingredient, index) => (
+                            {sortedIngredients.map((ingredient, index) => (
                               <div key={index} className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg">
                                 {asPage ? (
                                   <Link

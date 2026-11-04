@@ -1,11 +1,10 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChefHat, CalendarDays, ShoppingCart, List } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import Container from '../components/layout/Container';
-import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import Card, { CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import BrandMark from '../components/ui/BrandMark';
 import Skeleton from '../components/ui/Skeleton';
 import TodayMeals from '../components/mealPlans/TodayMeals';
 import { findTodayPlan, getCurrentMeal } from '../utils/mealPlanUtils';
@@ -13,6 +12,8 @@ import { MealPlan } from '../types';
 import useCachedApi from '../hooks/useCachedApi';
 import { getMealPlans } from '../api/mealPlanApi';
 
+// Home is today's menu only, the same on phones and computers; the sections are in the
+// header menu (computer) or the bottom tab bar (phone)
 const Home: React.FC = () => {
   const { t } = useTranslation();
   const { data: mealPlans, loading: loadingMealPlans, execute: fetchMealPlans } = useCachedApi<MealPlan[], []>('mealPlans', getMealPlans, { initialArgs: [] });
@@ -25,61 +26,20 @@ const Home: React.FC = () => {
 
   const currentMeal = getCurrentMeal(new Date());
   const today = mealPlans ? findTodayPlan(mealPlans, currentMeal.dateKey) : null;
-  // Until the plans arrive, keep the compact layout and a placeholder where today's menu goes
   const waitingForPlans = mealPlans === null && loadingMealPlans;
-  const compact = Boolean(today) || waitingForPlans;
 
-  const features = [
-    {
-      title: t('home.features.recipes.title'),
-      description: t('home.features.recipes.description'),
-      icon: <ChefHat className="h-8 w-8 lg:h-10 lg:w-10 text-primary-600" />,
-      link: '/recipes',
-      linkText: t('home.features.recipes.linkText'),
-    },
-    {
-      title: t('home.features.mealPlans.title'),
-      description: t('home.features.mealPlans.description'),
-      icon: <CalendarDays className="h-8 w-8 lg:h-10 lg:w-10 text-accent-500" />,
-      link: '/meal-plans',
-      linkText: t('home.features.mealPlans.linkText'),
-    },
-    {
-      title: t('home.features.shoppingLists.title'),
-      description: t('home.features.shoppingLists.description'),
-      icon: <ShoppingCart className="h-8 w-8 lg:h-10 lg:w-10 text-secondary-500" />,
-      link: '/shopping-lists',
-      linkText: t('home.features.shoppingLists.linkText'),
-    },
-    {
-      title: t('home.features.ingredients.title'),
-      description: t('home.features.ingredients.description'),
-      icon: <List className="h-8 w-8 lg:h-10 lg:w-10 text-neutral-600" />,
-      link: '/ingredients',
-      linkText: t('home.features.ingredients.linkText'),
-    },
-  ];
-  
   return (
     <div className="min-h-screen bg-neutral-50">
-      <div className={`${compact ? 'pt-6 pb-6 sm:pt-10 sm:pb-8' : 'py-12 sm:py-16 lg:py-20 xl:py-24'}`}>
+      <div className="pt-6 pb-6 sm:pt-10 sm:pb-8">
         <Container>
-          <div className="max-w-4xl mx-auto text-center">
-            <div className={compact ? 'hidden' : 'mb-6 sm:mb-8'}>
-              <BrandMark className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 mx-auto text-neutral-900" />
-            </div>
-            <h1 className={`font-bold tracking-[-0.035em] text-neutral-900 ${compact ? 'text-2xl sm:text-3xl lg:text-4xl mb-2' : 'text-3xl sm:text-4xl lg:text-5xl xl:text-6xl mb-4 sm:mb-6'}`}>
-              {t('home.title')}
-            </h1>
-            <p className={`text-neutral-500 max-w-3xl mx-auto leading-relaxed ${compact ? 'hidden sm:block text-base sm:text-lg' : 'text-lg sm:text-xl lg:text-2xl'}`}>
-              {t('home.subtitle')}
-            </p>
-          </div>
+          <h1 className="text-center text-2xl sm:text-3xl lg:text-4xl font-bold tracking-[-0.035em] text-neutral-900">
+            {t('home.title')}
+          </h1>
         </Container>
       </div>
-      
-      {waitingForPlans && (
-        <Container>
+
+      <Container maxWidth="5xl">
+        {waitingForPlans && (
           <Card padding="none">
             <CardContent className="p-4 sm:p-6">
               <Skeleton className="h-6 w-40 mb-2" />
@@ -91,49 +51,28 @@ const Home: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </Container>
-      )}
+        )}
 
-      {today && (
-        <Container>
+        {today && (
           <TodayMeals
             mealPlan={today.mealPlan}
             entries={today.entries}
             dateKey={currentMeal.dateKey}
             currentMealType={currentMeal.mealType}
           />
-        </Container>
-      )}
+        )}
 
-      {/* Phones reach the sections from the bottom tab bar, so the tiles are left out there */}
-      <Container className="hidden sm:block py-8 sm:py-12 lg:py-16 xl:py-20">
-        <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
-          {features.map((feature) => (
-            <Card key={feature.title} className="h-full group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <CardHeader className="flex flex-col items-center text-center sm:items-start sm:text-left lg:items-center lg:text-center xl:items-start xl:text-left">
-                <div className="mb-4 p-3 sm:p-4 bg-gradient-to-br from-neutral-50 to-neutral-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
-                </div>
-                <CardTitle className="text-lg sm:text-xl lg:text-2xl">{feature.title}</CardTitle>
-              </CardHeader>
-              
-              <CardContent className="space-y-4 sm:space-y-6 flex-1 flex flex-col">
-                <p className="text-neutral-600 text-sm sm:text-base leading-relaxed flex-1">
-                  {feature.description}
-                </p>
-                
-                <div className="mt-auto">
-                  <Link to={feature.link}>
-                    <Button variant="outline" fullWidth className="group-hover:bg-primary-50 group-hover:border-primary-300 group-hover:text-primary-700 transition-all duration-300">
-                      {feature.linkText}
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        
+        {!waitingForPlans && !today && (
+          <Card className="py-10 text-center">
+            <CardContent>
+              <CalendarDays className="mx-auto mb-3 h-10 w-10 text-neutral-300" aria-hidden="true" />
+              <p className="mb-4 text-neutral-600">{t('home.today.noPlan')}</p>
+              <Link to="/meal-plans">
+                <Button>{t('mealPlans.createMealPlan')}</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
       </Container>
     </div>
   );

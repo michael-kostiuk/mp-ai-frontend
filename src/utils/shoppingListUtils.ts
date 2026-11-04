@@ -20,8 +20,8 @@ export const isPantryItem = (item: ShoppingListItem) =>
   (item.ingredient.category || item.category || '').toLowerCase() === 'spices' ||
   PANTRY_NAMES.test(item.ingredient.name.trim());
 
-// Order a store is walked in: fresh produce first, spices and drinks last. Lines follow it
-// (no headings are shown); unknown categories go to the end.
+// Order a store is walked in: fresh produce first, spices and drinks last. Shopping lines and
+// recipe ingredients follow it (no headings are shown); unknown categories go to the end.
 const CATEGORY_ORDER = [
   'vegetables', 'herbs', 'fresh herbs', 'fruits', 'meat', 'meat & poultry', 'seafood', 'proteins',
   'eggs, tofu & protein', 'dairy', 'frozen', 'grains', 'grains & cereals', 'legumes', 'baking',
@@ -29,7 +29,7 @@ const CATEGORY_ORDER = [
   'fats & oils', 'nuts', 'nuts & seeds', 'snacks', 'beverages', 'spices',
 ];
 
-const categoryRank = (category: string) => {
+export const categoryRank = (category: string) => {
   const rank = CATEGORY_ORDER.indexOf(category.trim().toLowerCase());
   return rank === -1 ? CATEGORY_ORDER.length : rank;
 };

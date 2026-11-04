@@ -7,7 +7,7 @@ import MealPlanCard from '../components/mealPlans/MealPlanCard';
 import CreateMealPlanModal from '../components/mealPlans/CreateMealPlanModal';
 import { getLatestPlans, toDateKey } from '../utils/mealPlanUtils';
 import Button from '../components/ui/Button';
-import Loader from '../components/ui/Loader';
+import Skeleton from '../components/ui/Skeleton';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import Card, { CardContent } from '../components/ui/Card';
 import { MealPlan } from '../types';
@@ -65,9 +65,19 @@ const MealPlans: React.FC = () => {
         }
       />
 
+      {/* Placeholder cards in the shape of the plan cards while plans load */}
       {loading && mealPlans === null && (
-        <div className="py-12 lg:py-16">
-          <Loader centered label={t('mealPlans.loadingMealPlans')} />
+        <div className="space-y-6" aria-busy="true" aria-label={t('mealPlans.loadingMealPlans')}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+            <Card padding="none">
+              <Skeleton className="h-12 rounded-b-none" />
+              <CardContent className="space-y-3 p-4">
+                <Skeleton className="h-6 w-32" />
+                <Skeleton className="h-4 w-24" />
+              </CardContent>
+            </Card>
+          </div>
+          <Skeleton className="h-12" />
         </div>
       )}
       

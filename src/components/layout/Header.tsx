@@ -193,7 +193,7 @@ const Header: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-2 lg:hidden">
-            <LanguageSwitcher />
+            <LanguageSwitcher compact />
             {authButton('text-sm text-neutral-500 hover:text-neutral-700 px-2 py-1 rounded transition-colors')}
           </div>
           
