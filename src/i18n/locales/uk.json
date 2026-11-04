@@ -36,7 +36,8 @@
     "copiedToClipboard": "Скопійовано в буфер обміну",
     "copy": "Копіювати",
     "share": "Поділитися",
-    "copyFailed": "Не вдалося скопіювати. Виділіть текст і скопіюйте вручну."
+    "copyFailed": "Не вдалося скопіювати. Виділіть текст і скопіюйте вручну.",
+    "moreActions": "Інші дії"
   },
   "nav": {
     "recipes": "Рецепти",
@@ -53,7 +54,8 @@
     "wrongPin": "Неправильний PIN-код",
     "tooManyAttempts": "Забагато спроб, спробуйте через {{minutes}} хв",
     "tooManyAttemptsHours": "Забагато спроб, спробуйте через {{hours}} год",
-    "loginFailed": "Не вдалося увійти. Спробуйте ще раз."
+    "loginFailed": "Не вдалося увійти. Спробуйте ще раз.",
+    "loginToEdit": "Це демо. Увійдіть, щоб редагувати чи видаляти."
   },
   "header": {
     "appName": "MealMaster",
@@ -63,7 +65,8 @@
     "checking": "Перевірка...",
     "openMenu": "Відкрити меню",
     "closeMenu": "Закрити меню",
-    "timeout": "таймаут"
+    "timeout": "таймаут",
+    "offline": "Немає зв'язку із сервером. Зміни можуть не зберегтися."
   },
   "home": {
     "title": "MealMaster",
@@ -71,7 +74,11 @@
     "today": {
       "title": "Меню на сьогодні",
       "viewPlan": "Переглянути план",
-      "now": "Зараз"
+      "now": "Зараз",
+      "calories_one": "{{perServing}} ккал / порція · {{count}} порція",
+      "calories_few": "{{perServing}} ккал / порція · {{count}} порції",
+      "calories_many": "{{perServing}} ккал / порція · {{count}} порцій",
+      "calories_other": "{{perServing}} ккал / порція · {{count}} порції"
     },
     "features": {
       "recipes": {
@@ -178,7 +185,8 @@
       "breakfast": "Сніданок",
       "lunch": "Обід",
       "dinner": "Вечеря",
-      "weightDescription": "Ймовірність вибору цього рецепта для кожного типу прийому їжі при автогенерації"
+      "weightDescription": "Ймовірність вибору цього рецепта для кожного типу прийому їжі при автогенерації",
+      "servingsFor": "Порцій:"
     },
     "filters": {
       "searchRecipes": "Шукати рецепти...",
@@ -230,7 +238,17 @@
       "days": "Днів",
       "dateRange": "Період",
       "targetCalories": "Цільові калорії",
-      "preferences": "Вподобання"
+      "preferences": "Вподобання",
+      "dayCount_one": "{{count}} день",
+      "dayCount_few": "{{count}} дні",
+      "dayCount_many": "{{count}} днів",
+      "dayCount_other": "{{count}} дня",
+      "peopleCount_one": "{{count}} особа",
+      "peopleCount_few": "{{count}} особи",
+      "peopleCount_many": "{{count}} осіб",
+      "peopleCount_other": "{{count}} особи",
+      "current": "Зараз",
+      "finished": "Завершено"
     },
     "form": {
       "startDate": "Дата початку",
@@ -264,7 +282,10 @@
       "editPlan": "Редагувати план",
       "regenerate": "Перегенерувати",
       "createdOn": "Створено",
-      "openShoppingList": "Відкрити список"
+      "openShoppingList": "Відкрити список",
+      "today": "Сьогодні",
+      "pastDay": "минув",
+      "entryCalories": "{{total}} ккал разом · {{perServing}} ккал / порція"
     },
     "mealTypes": {
       "breakfast": "Сніданок",
@@ -318,7 +339,15 @@
     "fromMealPlan": "План харчування {{range}}",
     "syncSaving": "Збереження…",
     "syncOffline": "Немає зв’язку — синхронізуємо пізніше",
-    "purchasedCount": "Куплено {{purchased}}/{{total}}"
+    "purchasedCount": "Куплено {{purchased}}/{{total}}",
+    "titleForPlan": "Покупки на {{range}}",
+    "titleFromDate": "Список покупок від {{date}}",
+    "storeMode": {
+      "open": "У магазині",
+      "progress": "Куплено {{bought}} з {{total}}",
+      "allDone": "Усе куплено ✓",
+      "bought": "Куплено"
+    }
   },
   "ingredients": {
     "title": "Інгредієнти",
@@ -346,7 +375,7 @@
       "notUsed": "Ще не використовується в жодному рецепті",
       "notFound": "Інгредієнт не знайдено"
     },
-    "calPer100": "{{calories}} ккал на 100{{unit}}",
+    "calPer100": "{{calories}} ккал на 100 {{unit}}",
     "table": {
       "name": "Назва",
       "category": "Категорія",
@@ -354,7 +383,8 @@
       "calories": "Калорії",
       "macros": "Макроси (Б/В/Ж)",
       "ai": "ШІ",
-      "per100": "на 100{{unit}}"
+      "per100": "на 100 {{unit}}",
+      "macrosShort": "Б {{protein}} · В {{carbs}} · Ж {{fats}} г"
     },
     "modal": {
       "addNewIngredient": "Додати новий інгредієнт",
@@ -404,6 +434,12 @@
       "serviceUnavailable": "Сервіс ШІ тимчасово недоступний. Спробуйте пізніше.",
       "genericEstimateError": "Щось пішло не так при оцінці харчової цінності.",
       "unableToEstimate": "Не вдалося оцінити харчову цінність для {{name}}. {{error}}"
+    },
+    "warnings": {
+      "tooManyCalories": "Понад 900 ккал на 100 г не буває.",
+      "macrosOver100": "Білки, вуглеводи й жири разом дають понад 100 г на 100 г.",
+      "caloriesDontMatch": "Калорії не збігаються з БЖВ. Можливо, жири й вуглеводи переплутані.",
+      "fixHint": "Виправте через «Редагувати»."
     }
   },
   "categories": {
@@ -450,7 +486,22 @@
     "cloves": "зубчики",
     "bunches": "пучки",
     "cans": "банки",
-    "packages": "упаковки"
+    "packages": "упаковки",
+    "short": {
+      "g": "г",
+      "kg": "кг",
+      "ml": "мл",
+      "l": "л",
+      "cup": "скл.",
+      "tbsp": "ст. л.",
+      "tsp": "ч. л.",
+      "piece": "шт.",
+      "slice": "скиб.",
+      "clove": "зубч.",
+      "bunch": "пуч.",
+      "can": "банк.",
+      "package": "уп."
+    }
   },
   "errors": {
     "anErrorOccurred": "Сталася помилка",
@@ -498,7 +549,7 @@
     "ingredientNamePlaceholder": "напр., Куряче філе, Броколі, Рис",
     "baseUnit": "Базова одиниця",
     "baseUnitHelper": "Стандартна одиниця для вимірювання цього інгредієнта",
-    "nutritionValuesPer100": "Харчова цінність має бути на 100{{unit}}",
+    "nutritionValuesPer100": "Харчова цінність має бути на 100 {{unit}}",
     "nutritionValuesExample": "Наприклад: якщо базова одиниця \"г\", введіть харчову цінність на 100г",
     "tip1": "Шукайте інформацію про харчову цінність на упаковці або в базах даних",
     "tip2": "USDA FoodData Central - надійне джерело інформації про харчову цінність",

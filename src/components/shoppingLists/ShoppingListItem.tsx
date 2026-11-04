@@ -9,6 +9,8 @@ import Loader from '../ui/Loader';
 import ErrorMessage from '../ui/ErrorMessage';
 import useApi from '../../hooks/useApi';
 import { getShoppingListItemRecipes } from '../../api/shoppingListApi';
+import { getLocaleFromLanguage } from '../../utils/i18nUtils';
+import { formatQuantity } from '../../utils/unitUtils';
 
 interface ShoppingListItemProps {
   item: ShoppingListItemType;
@@ -22,7 +24,8 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
   checked,
   onToggle
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = getLocaleFromLanguage(i18n.language);
   const isChecked = checked ?? item.status === 'purchased';
   const [showRecipes, setShowRecipes] = useState(false);
 
@@ -67,15 +70,22 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
           {isChecked && <Check className="h-3 w-3" />}
         </button>
         
-        <div className="flex-1 min-w-0">
-          <p className={`
-            text-sm font-medium ${isChecked ? 'text-neutral-500 line-through' : 'text-neutral-900'}
-          `}>
-            {item.ingredient.name} - {item.quantity} {item.unit}
-          </p>
-        </div>
+        <button
+          type="button"
+          className="flex-1 min-w-0 flex items-baseline justify-between gap-3 text-left"
+          onClick={handleToggle}
+          disabled={!onToggle}
+          tabIndex={-1}
+        >
+          <span className={`text-sm font-medium ${isChecked ? 'text-neutral-500 line-through' : 'text-neutral-900'}`}>
+            {item.ingredient.name}
+          </span>
+          <span className={`text-sm whitespace-nowrap ${isChecked ? 'text-neutral-400 line-through' : 'text-neutral-600'}`}>
+            {formatQuantity(item.quantity, item.unit, t, locale)}
+          </span>
+        </button>
         
-        <div className="ml-3 flex items-center">
+        <div className="ml-2 flex items-center">
           <Button
             variant="ghost"
             size="sm"
@@ -83,8 +93,9 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
             className="text-primary-600 hover:text-primary-700 hover:bg-primary-50 px-2 py-1"
             leftIcon={<ChefHat className="h-3 w-3" />}
             rightIcon={showRecipes ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            aria-label={t('shoppingListItem.recipes')}
           >
-            {t('shoppingListItem.recipes')}
+            <span className="hidden sm:inline">{t('shoppingListItem.recipes')}</span>
           </Button>
         </div>
       </div>
@@ -136,14 +147,14 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
                             {recipe.name}
                           </Link>
                           <div className="text-xs text-neutral-500 capitalize">
-                            {recipe.category} • {recipe.servings} servings
+                            {recipe.category} • {recipe.servings} {t('common.servings')}
                           </div>
                         </div>
                         
                         {recipeIngredient && (
                           <div className="ml-2 text-right flex-shrink-0">
                             <div className="text-sm font-medium text-primary-700">
-                              {recipeIngredient.quantity} {recipeIngredient.unit}
+                              {formatQuantity(recipeIngredient.quantity, recipeIngredient.unit, t, locale)}
                             </div>
                             <div className="text-xs text-neutral-500">
                               {t('shoppingListItem.perRecipe')}
@@ -158,7 +169,7 @@ const ShoppingListItem: React.FC<ShoppingListItemProps> = React.memo(({
                 {/* Summary */}
                 <div className="mt-3 pt-2 border-t border-neutral-200">
                   <div className="text-xs text-neutral-600">
-                    <span className="font-medium">{t('shoppingListItem.totalNeeded')}</span> {item.quantity} {item.unit}
+                    <span className="font-medium">{t('shoppingListItem.totalNeeded')}</span> {formatQuantity(item.quantity, item.unit, t, locale)}
                   </div>
                 </div>
               </div>

@@ -9,7 +9,7 @@ import Select from '../ui/Select';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
 import useApi from '../../hooks/useApi';
 import { createIngredient, updateIngredient } from '../../api/ingredientApi';
-import { UNIT_OPTIONS, coerceUnit } from '../../utils/unitUtils';
+import { UNIT_OPTIONS, coerceUnit, formatUnitLabel } from '../../utils/unitUtils';
 
 interface CreateIngredientModalProps {
   isOpen: boolean;
@@ -238,7 +238,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
             
             <div className="flex items-end">
               <div className="text-sm text-neutral-500 bg-neutral-50 p-3 rounded-md">
-                <p className="font-medium">{t('ingredientForm.nutritionValuesPer100', { unit: formData.base_unit })}</p>
+                <p className="font-medium">{t('ingredientForm.nutritionValuesPer100', { unit: formatUnitLabel(formData.base_unit, t) })}</p>
                 <p className="text-xs mt-1">
                   {t('ingredientForm.nutritionValuesExample')}
                 </p>
@@ -249,7 +249,7 @@ const CreateIngredientModal: React.FC<CreateIngredientModalProps> = ({
           {/* Nutrition Information */}
           <Card>
             <CardHeader>
-              <CardTitle>{t('recipes.form.nutritionInfo')} (per 100{formData.base_unit})</CardTitle>
+              <CardTitle>{t('recipes.form.nutritionInfo')} ({t('ingredients.table.per100', { unit: formatUnitLabel(formData.base_unit, t) })})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

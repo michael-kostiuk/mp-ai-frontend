@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Clock, Users, Tag, CalendarDays } from 'lucide-react';
+import { Clock, Users, Tag } from 'lucide-react';
 import { Recipe } from '../../types';
 import Card, { CardContent } from '../ui/Card';
-import { getLocaleFromLanguage } from '../../utils/i18nUtils';
+import { formatDuration } from '../../utils/dateUtils';
+import RecipeImagePlaceholder from './RecipeImagePlaceholder';
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -12,7 +13,7 @@ interface RecipeCardProps {
 }
 
 const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const totalTime = recipe.prep_time + recipe.cook_time;
   
   const CardWrapper = onClick ? 'div' : Link;
@@ -34,9 +35,11 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
               className="w-full h-32 sm:h-40 lg:h-48 object-cover rounded-t-lg"
             />
           ) : (
-            <div className="bg-gradient-to-br from-secondary-100 to-secondary-200 h-32 sm:h-40 lg:h-48 rounded-t-lg flex items-center justify-center group-hover:from-secondary-200 group-hover:to-secondary-300 transition-all duration-300">
-              <span className="text-3xl sm:text-4xl lg:text-5xl group-hover:scale-110 transition-transform duration-300">🍲</span>
-            </div>
+            <RecipeImagePlaceholder
+              category={recipe.category}
+              className="h-32 sm:h-40 lg:h-48 rounded-t-lg"
+              iconClassName="h-10 w-10 sm:h-12 sm:w-12 group-hover:scale-110 transition-transform duration-300"
+            />
           )}
           
           {/* Category badge */}
@@ -48,21 +51,10 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
         </div>
         
         <CardContent className="px-0 py-3 sm:py-4 lg:py-5">
-          <h3 className="text-base sm:text-lg font-semibold text-neutral-900 mb-1 line-clamp-2 group-hover:text-primary-700 transition-colors">
+          <h3 className="text-base sm:text-lg font-semibold text-neutral-900 mb-2 sm:mb-3 line-clamp-2 group-hover:text-primary-700 transition-colors">
             {recipe.name}
           </h3>
 
-          {recipe.created_at && (
-            <time
-              dateTime={recipe.created_at}
-              title={t('recipes.detail.created')}
-              className="flex items-center text-xs text-neutral-500 mb-2 sm:mb-3"
-            >
-              <CalendarDays className="h-3 w-3 mr-1" aria-hidden="true" />
-              {new Date(recipe.created_at).toLocaleDateString(getLocaleFromLanguage(i18n.language), { month: 'short', day: 'numeric', year: 'numeric' })}
-            </time>
-          )}
-          
           <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
             {(recipe.dietary_tags || []).slice(0, 2).map((tag) => (
               <span 
@@ -83,7 +75,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
           <div className="grid grid-cols-3 gap-2 sm:gap-3 text-xs sm:text-sm text-neutral-500 whitespace-nowrap">
             <div className="flex items-center justify-center sm:justify-start">
               <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-              <span className="truncate">{totalTime}m</span>
+              <span>{formatDuration(totalTime, { minutes: t('common.minutes'), hours: t('common.hours') })}</span>
             </div>
             
             <div className="flex items-center justify-center">
@@ -92,7 +84,7 @@ const RecipeCard: React.FC<RecipeCardProps> = React.memo(({ recipe, onClick }) =
             </div>
             
             <div className="flex items-center justify-center sm:justify-end">
-              <span className="font-medium">{recipe.calories}</span>
+              <span className="font-medium">{Math.round(recipe.calories)}</span>
               <span className="ml-1 hidden sm:inline">{t('common.cal')}</span>
             </div>
           </div>

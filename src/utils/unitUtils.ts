@@ -200,3 +200,38 @@ export const normalizeUnit = (value: unknown): Unit | null => {
 export const coerceUnit = (value: unknown, fallback: Unit = 'piece'): Unit => {
   return normalizeUnit(value) ?? fallback;
 };
+
+const COUNT_UNITS = new Set<Unit>(['piece', 'slice', 'clove', 'bunch', 'can', 'package']);
+const SPOON_UNITS = new Set<Unit>(['cup', 'tbsp', 'tsp']);
+
+// Round to what you'd actually measure: whole grams, quarter spoons, half pieces
+export const roundQuantity = (quantity: number, unit: unknown): number => {
+  if (!Number.isFinite(quantity) || quantity <= 0) return quantity;
+  const normalized = normalizeUnit(unit);
+  if (normalized === 'g' || normalized === 'ml') {
+    if (quantity >= 10) return Math.round(quantity);
+    // Small amounts (a pinch of pepper) keep enough decimals not to show up as 0
+    return quantity >= 1 ? Math.round(quantity * 10) / 10 : Math.max(0.01, Math.round(quantity * 100) / 100);
+  }
+  if (normalized && COUNT_UNITS.has(normalized)) return Math.max(0.5, Math.round(quantity * 2) / 2);
+  if (normalized && SPOON_UNITS.has(normalized)) return Math.max(0.25, Math.round(quantity * 4) / 4);
+  return Math.round(quantity * 100) / 100;
+};
+
+// "800 g", "1.5 tsp", "2 pcs" with the unit translated (units.short.*)
+export const formatQuantity = (
+  quantity: number,
+  unit: string,
+  t: (key: string, fallback: string) => string,
+  locale: string
+): string => {
+  const normalized = normalizeUnit(unit);
+  const label = normalized ? t(`units.short.${normalized}`, normalized) : unit;
+  return `${roundQuantity(quantity, unit).toLocaleString(locale)} ${label}`.trim();
+};
+
+// Nutrition is stored per 100 base units; for count units show it as "per 100 pcs" with a space
+export const formatUnitLabel = (unit: string, t: (key: string, fallback: string) => string): string => {
+  const normalized = normalizeUnit(unit);
+  return normalized ? t(`units.short.${normalized}`, normalized) : unit;
+};

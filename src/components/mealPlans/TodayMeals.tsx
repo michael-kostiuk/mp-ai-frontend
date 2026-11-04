@@ -5,6 +5,7 @@ import { CalendarDays, ChefHat, ChevronRight } from 'lucide-react';
 import { MealPlan, MealPlanEntry } from '../../types';
 import Card, { CardContent } from '../ui/Card';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
+import { formatDayHeading } from '../../utils/dateUtils';
 
 interface TodayMealsProps {
   mealPlan: MealPlan;
@@ -16,11 +17,7 @@ interface TodayMealsProps {
 const TodayMeals: React.FC<TodayMealsProps> = ({ mealPlan, entries, dateKey, currentMealType }) => {
   const { t, i18n } = useTranslation();
 
-  const formattedDate = new Date(dateKey + 'T00:00:00').toLocaleDateString(getLocaleFromLanguage(i18n.language), {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  const formattedDate = formatDayHeading(dateKey, getLocaleFromLanguage(i18n.language));
 
   return (
     <Card className="shadow-xl" padding="none">
@@ -79,7 +76,7 @@ const TodayMeals: React.FC<TodayMealsProps> = ({ mealPlan, entries, dateKey, cur
                     {entry.recipe.name}
                   </div>
                   <div className="text-xs sm:text-sm text-neutral-500">
-                    {entry.recipe.calories * entry.servings} {t('common.cal')}
+                    {t('home.today.calories', { perServing: Math.round(entry.recipe.calories), count: entry.servings })}
                   </div>
                 </div>
                 <ChevronRight className="h-5 w-5 text-neutral-400 shrink-0" />

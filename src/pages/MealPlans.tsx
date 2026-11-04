@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PlusCircle, Calendar, Users, Target } from 'lucide-react';
+import { PlusCircle, Calendar, CalendarCheck, Target } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import MealPlanCard from '../components/mealPlans/MealPlanCard';
 import CreateMealPlanModal from '../components/mealPlans/CreateMealPlanModal';
-import { toDateKey } from '../utils/mealPlanUtils';
+import { getMealPlanDayCount, toDateKey } from '../utils/mealPlanUtils';
+import { parseDateKey } from '../utils/dateUtils';
 import Button from '../components/ui/Button';
 import Loader from '../components/ui/Loader';
 import ErrorMessage from '../components/ui/ErrorMessage';
@@ -47,12 +48,16 @@ const MealPlans: React.FC = () => {
     }
 
     const totalPlans = mealPlans.length;
-    const totalDays = mealPlans.reduce((sum, plan) => {
-      const start = new Date(plan.start_date);
-      const end = new Date(plan.end_date);
-      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
-      return sum + days;
-    }, 0);
+    // Distinct calendar days, so overlapping plans don't count a day twice
+    const plannedDays = new Set<string>();
+    mealPlans.forEach((plan) => {
+      const day = parseDateKey(plan.start_date);
+      for (let i = 0; i < getMealPlanDayCount(plan); i++) {
+        plannedDays.add(toDateKey(day));
+        day.setDate(day.getDate() + 1);
+      }
+    });
+    const totalDays = plannedDays.size;
     const avgCalories = Math.round(
       mealPlans.reduce((sum, plan) => sum + plan.target_calories, 0) / totalPlans
     );
@@ -94,7 +99,7 @@ const MealPlans: React.FC = () => {
 
           <Card padding="none" className="group hover:shadow-lg transition-all duration-300">
             <CardContent className="px-1 py-3 sm:p-11 text-center">
-              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-accent-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
+              <CalendarCheck className="h-6 w-6 sm:h-8 sm:w-8 text-accent-600 mx-auto mb-2 group-hover:scale-110 transition-transform duration-300" />
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-neutral-900">{stats.totalDays}</div>
               <div className="text-xs sm:text-sm text-neutral-500">{t('mealPlans.stats.daysPlanned')}</div>
             </CardContent>
@@ -157,6 +162,7 @@ const MealPlans: React.FC = () => {
               key={mealPlan.id} 
               mealPlan={mealPlan} 
               isPast={mealPlan.end_date.slice(0, 10) < todayKey}
+              isCurrent={mealPlan.start_date.slice(0, 10) <= todayKey && todayKey <= mealPlan.end_date.slice(0, 10)}
             />
           ))}
         </div>

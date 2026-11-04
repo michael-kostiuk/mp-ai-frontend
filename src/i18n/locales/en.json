@@ -36,7 +36,8 @@
     "copiedToClipboard": "Copied to clipboard",
     "copy": "Copy",
     "share": "Share",
-    "copyFailed": "Copy failed. Please select and copy manually."
+    "copyFailed": "Copy failed. Please select and copy manually.",
+    "moreActions": "More actions"
   },
   "nav": {
     "recipes": "Recipes",
@@ -53,7 +54,8 @@
     "wrongPin": "Wrong PIN",
     "tooManyAttempts": "Too many attempts, try again in {{minutes}} min",
     "tooManyAttemptsHours": "Too many attempts, try again in {{hours}} h",
-    "loginFailed": "Could not log in. Please try again."
+    "loginFailed": "Could not log in. Please try again.",
+    "loginToEdit": "This is a demo. Log in to edit or delete."
   },
   "header": {
     "appName": "MealMaster",
@@ -63,7 +65,8 @@
     "checking": "Checking...",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "timeout": "timeout"
+    "timeout": "timeout",
+    "offline": "No connection to the server. Changes may not be saved."
   },
   "home": {
     "title": "MealMaster",
@@ -71,7 +74,9 @@
     "today": {
       "title": "Today's menu",
       "viewPlan": "View plan",
-      "now": "Now"
+      "now": "Now",
+      "calories_one": "{{perServing}} cal per serving · {{count}} serving",
+      "calories_other": "{{perServing}} cal per serving · {{count}} servings"
     },
     "features": {
       "recipes": {
@@ -178,7 +183,8 @@
       "breakfast": "Breakfast",
       "lunch": "Lunch",
       "dinner": "Dinner",
-      "weightDescription": "Likelihood of this recipe being selected for each meal type during auto-generation"
+      "weightDescription": "Likelihood of this recipe being selected for each meal type during auto-generation",
+      "servingsFor": "Servings:"
     },
     "filters": {
       "searchRecipes": "Search recipes...",
@@ -230,7 +236,13 @@
       "days": "Days",
       "dateRange": "Date Range",
       "targetCalories": "Target Calories",
-      "preferences": "Preferences"
+      "preferences": "Preferences",
+      "dayCount_one": "{{count}} day",
+      "dayCount_other": "{{count}} days",
+      "peopleCount_one": "{{count}} person",
+      "peopleCount_other": "{{count}} people",
+      "current": "Now",
+      "finished": "Finished"
     },
     "form": {
       "startDate": "Start Date",
@@ -264,7 +276,10 @@
       "editPlan": "Edit Plan",
       "regenerate": "Regenerate",
       "createdOn": "Created on",
-      "openShoppingList": "Open list"
+      "openShoppingList": "Open list",
+      "today": "Today",
+      "pastDay": "past",
+      "entryCalories": "{{total}} cal in total · {{perServing}} cal per serving"
     },
     "mealTypes": {
       "breakfast": "Breakfast",
@@ -318,7 +333,15 @@
     "fromMealPlan": "Meal plan {{range}}",
     "syncSaving": "Saving…",
     "syncOffline": "Offline — will sync",
-    "purchasedCount": "{{purchased}}/{{total}} bought"
+    "purchasedCount": "{{purchased}}/{{total}} bought",
+    "titleForPlan": "Shopping for {{range}}",
+    "titleFromDate": "Shopping list from {{date}}",
+    "storeMode": {
+      "open": "In the store",
+      "progress": "{{bought}} of {{total}} bought",
+      "allDone": "Everything's bought ✓",
+      "bought": "Bought"
+    }
   },
   "ingredients": {
     "title": "Ingredients",
@@ -346,7 +369,7 @@
       "notUsed": "Not used in any recipe yet",
       "notFound": "Ingredient not found"
     },
-    "calPer100": "{{calories}} cal per 100{{unit}}",
+    "calPer100": "{{calories}} cal per 100 {{unit}}",
     "table": {
       "name": "Name",
       "category": "Category",
@@ -354,7 +377,8 @@
       "calories": "Calories",
       "macros": "Macros (P/C/F)",
       "ai": "AI",
-      "per100": "per 100{{unit}}"
+      "per100": "per 100 {{unit}}",
+      "macrosShort": "P {{protein}} · C {{carbs}} · F {{fats}} g"
     },
     "modal": {
       "addNewIngredient": "Add New Ingredient",
@@ -404,6 +428,12 @@
       "serviceUnavailable": "AI service is temporarily unavailable. Please try again soon.",
       "genericEstimateError": "Something went wrong while estimating nutrition.",
       "unableToEstimate": "Unable to estimate nutrition for {{name}}. {{error}}"
+    },
+    "warnings": {
+      "tooManyCalories": "More than 900 cal per 100 g is impossible.",
+      "macrosOver100": "Protein, carbs and fat add up to more than 100 g per 100 g.",
+      "caloriesDontMatch": "Calories don't match protein, carbs and fat. Fat and carbs may be swapped.",
+      "fixHint": "Use Edit to correct it."
     }
   },
   "categories": {
@@ -450,7 +480,22 @@
     "cloves": "cloves",
     "bunches": "bunches",
     "cans": "cans",
-    "packages": "packages"
+    "packages": "packages",
+    "short": {
+      "g": "g",
+      "kg": "kg",
+      "ml": "ml",
+      "l": "l",
+      "cup": "cup",
+      "tbsp": "tbsp",
+      "tsp": "tsp",
+      "piece": "pcs",
+      "slice": "slices",
+      "clove": "cloves",
+      "bunch": "bunch",
+      "can": "can",
+      "package": "pack"
+    }
   },
   "errors": {
     "anErrorOccurred": "An error occurred",
@@ -498,7 +543,7 @@
     "ingredientNamePlaceholder": "e.g., Chicken Breast, Broccoli, Rice",
     "baseUnit": "Base Unit",
     "baseUnitHelper": "The standard unit for measuring this ingredient",
-    "nutritionValuesPer100": "Nutrition values should be per 100{{unit}}",
+    "nutritionValuesPer100": "Nutrition values should be per 100 {{unit}}",
     "nutritionValuesExample": "For example: if base unit is \"g\", enter nutrition per 100g",
     "tip1": "Look up nutrition facts on food packaging or nutrition databases",
     "tip2": "USDA FoodData Central is a reliable source for nutrition information",

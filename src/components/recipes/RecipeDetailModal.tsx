@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { X, Clock, Users, Target, Edit, Trash2, ChefHat, ArrowLeft } from 'lucide-react';
+import { X, Clock, Users, Timer, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { Recipe } from '../../types';
 import Button from '../ui/Button';
 import Card, { CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -12,6 +12,11 @@ import useApi from '../../hooks/useApi';
 import useCachedApi from '../../hooks/useCachedApi';
 import { getRecipe, deleteRecipe } from '../../api/recipeApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
+import { formatDate, formatDuration } from '../../utils/dateUtils';
+import { formatQuantity } from '../../utils/unitUtils';
+import { useAuth } from '../../context/AuthContext';
+import DemoEditHint from '../auth/DemoEditHint';
+import RecipeImagePlaceholder from './RecipeImagePlaceholder';
 
 interface RecipeDetailModalProps {
   isOpen: boolean;
@@ -37,6 +42,11 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 }) => {
   const { t, i18n } = useTranslation();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // How many servings to show ingredient amounts for; null = the recipe's own count
+  const [servingsShown, setServingsShown] = useState<number | null>(null);
+  const { mode } = useAuth();
+  const canEdit = mode === 'owner';
+  const locale = getLocaleFromLanguage(i18n.language);
   
   const { data: recipe, loading, error, execute: fetchRecipe } = useCachedApi<Recipe, [number]>('recipe', getRecipe, {
     initialArgs: recipeId ? [recipeId] : undefined
@@ -57,14 +67,8 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
     }
   }, [isOpen, recipeId]); // Only depend on isOpen and recipeId, not the fetch function
 
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) {
-      return `${minutes} ${t('common.minutes')}`;
-    }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return remainingMinutes > 0 ? `${hours}${t('common.hours')} ${remainingMinutes}${t('common.minutes')}` : `${hours}${t('common.hours')}`;
-  };
+  const formatTime = (minutes: number) =>
+    formatDuration(minutes, { minutes: t('common.minutes'), hours: t('common.hours') });
 
   const getTotalTime = () => {
     if (!recipe) return 0;
@@ -112,7 +116,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
   const body = (
         <>
-          {loading && (
+          {loading && !recipe && (
             <div className="py-12">
               <Loader centered label={t('recipes.loadingRecipe')} />
             </div>
@@ -137,9 +141,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     className="w-full h-40 sm:h-64 object-cover rounded-lg mb-4"
                   />
                 ) : (
-                  <div className="bg-secondary-100 h-28 sm:h-48 rounded-lg flex items-center justify-center mb-4">
-                    <ChefHat className="h-12 w-12 sm:h-16 sm:w-16 text-secondary-600" />
-                  </div>
+                  <RecipeImagePlaceholder category={recipe.category} className="h-28 sm:h-48 rounded-lg mb-4" />
                 )}
                 <h1 className="text-3xl font-bold text-neutral-900 mb-2">{recipe.name}</h1>
                 <p className="text-lg text-neutral-600 capitalize">{recipe.category}</p>
@@ -173,9 +175,9 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
 
                 <Card padding="none">
                   <CardContent className="px-1 py-3 md:p-9 text-center">
-                    <Target className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />
-                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{recipe.calories}</div>
-                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.calories')}</div>
+                    <Timer className="h-6 w-6 md:h-8 md:w-8 text-warning-600 mx-auto mb-2" />
+                    <div className="text-base md:text-2xl font-bold leading-tight text-neutral-900">{formatTime(getTotalTime())}</div>
+                    <div className="text-xs md:text-sm leading-tight text-neutral-500 [overflow-wrap:anywhere]">{t('recipes.detail.totalTime')}</div>
                   </CardContent>
                 </Card>
               </div>
@@ -209,19 +211,19 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                 <CardContent>
                   <div className="grid grid-cols-4 gap-2 md:gap-6">
                     <div className="text-center">
-                      <div className="text-lg md:text-2xl font-bold text-neutral-900">{recipe.calories}</div>
+                      <div className="text-lg md:text-2xl font-bold text-neutral-900">{Math.round(recipe.calories)}</div>
                       <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.calories')}</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg md:text-2xl font-bold text-primary-600">{recipe.protein}g</div>
+                      <div className="text-lg md:text-2xl font-bold text-primary-600">{Math.round(recipe.protein)} {t('units.short.g')}</div>
                       <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.protein')}</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg md:text-2xl font-bold text-accent-600">{recipe.carbs}g</div>
+                      <div className="text-lg md:text-2xl font-bold text-accent-600">{Math.round(recipe.carbs)} {t('units.short.g')}</div>
                       <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.carbs')}</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-lg md:text-2xl font-bold text-secondary-600">{recipe.fats}g</div>
+                      <div className="text-lg md:text-2xl font-bold text-secondary-600">{Math.round(recipe.fats)} {t('units.short.g')}</div>
                       <div className="text-xs md:text-sm text-neutral-500">{t('recipes.detail.fats')}</div>
                     </div>
                   </div>
@@ -231,7 +233,32 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               {/* Ingredients */}
               <Card>
                 <CardHeader>
-                  <CardTitle>{t('recipes.detail.ingredients')}</CardTitle>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <CardTitle>{t('recipes.detail.ingredients')}</CardTitle>
+                    {recipe.servings > 0 && (
+                      <div className="flex items-center gap-2 text-sm text-neutral-600">
+                        <span>{t('recipes.detail.servingsFor')}</span>
+                        <div className="inline-flex rounded-md border border-neutral-200" role="group">
+                          {Array.from(new Set([1, 2, 4, recipe.servings])).sort((a, b) => a - b).map((count) => {
+                            const active = (servingsShown ?? recipe.servings) === count;
+                            return (
+                              <button
+                                key={count}
+                                type="button"
+                                onClick={() => setServingsShown(count)}
+                                aria-pressed={active}
+                                className={`min-w-[2.25rem] px-2 py-1 first:rounded-l-md last:rounded-r-md ${
+                                  active ? 'bg-primary-600 text-white' : 'bg-white hover:bg-neutral-50'
+                                }`}
+                              >
+                                {count}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   {Object.keys(groupIngredientsByCategory()).length === 0 ? (
@@ -260,8 +287,13 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                                     {ingredient.ingredient.name}
                                   </span>
                                 )}
-                                <span className="text-neutral-600">
-                                  {ingredient.quantity} {ingredient.unit}
+                                <span className="text-neutral-600 whitespace-nowrap ml-3">
+                                  {formatQuantity(
+                                    ingredient.quantity * ((servingsShown ?? recipe.servings) / (recipe.servings || 1)),
+                                    ingredient.unit,
+                                    t,
+                                    locale
+                                  )}
                                 </span>
                               </div>
                             ))}
@@ -318,7 +350,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                     <div>
                       <span className="font-medium text-neutral-700">{t('recipes.detail.created')}:</span>
                       <span className="ml-2 text-neutral-600">
-                        {new Date(recipe.created_at).toLocaleDateString(getLocaleFromLanguage(i18n.language))}
+                        {formatDate(recipe.created_at, locale)}
                       </span>
                     </div>
                   </div>
@@ -358,10 +390,11 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
               </Card>
 
               {/* Actions */}
+              {!canEdit && (onEdit || onDelete) && <DemoEditHint />}
               <div className="flex justify-between pt-6 border-t border-neutral-200">
                 <div>
                   {/* Delete is only offered where the caller handles it (not in read-only lookups) */}
-                  {onDelete && (!showDeleteConfirm ? (
+                  {onDelete && canEdit && (!showDeleteConfirm ? (
                     <Button
                       variant="outline"
                       onClick={() => setShowDeleteConfirm(true)}
@@ -398,7 +431,7 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
                       {t('common.close')}
                     </Button>
                   )}
-                  {onEdit && (
+                  {onEdit && canEdit && (
                     <Button
                       onClick={() => onEdit(recipe)}
                       leftIcon={<Edit className="h-4 w-4" />}
@@ -424,7 +457,6 @@ const RecipeDetailModal: React.FC<RecipeDetailModalProps> = ({
             <ArrowLeft className="h-4 w-4 mr-1" />
             {backLabel || t('common.back')}
           </Link>
-          <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6">{t('recipes.recipeDetails')}</h1>
           {body}
         </div>
       </Container>

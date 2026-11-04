@@ -1,14 +1,15 @@
 import React, { useEffect, useCallback, useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Download, ArrowLeft, Calendar, CloudOff, RefreshCw } from 'lucide-react';
+import { Download, ArrowLeft, Calendar, CloudOff, RefreshCw, ShoppingBasket } from 'lucide-react';
 import Container from '../components/layout/Container';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
-import Loader from '../components/ui/Loader';
+import Skeleton from '../components/ui/Skeleton';
 import ErrorMessage from '../components/ui/ErrorMessage';
 import ShoppingListItem from '../components/shoppingLists/ShoppingListItem';
 import ExportShoppingListModal from '../components/shoppingLists/ExportShoppingListModal';
+import ShoppingModeView from '../components/shoppingLists/ShoppingModeView';
 import { ShoppingList, ShoppingListItem as ShoppingListItemType } from '../types';
 import useApi from '../hooks/useApi';
 import useShoppingListSync from '../hooks/useShoppingListSync';
@@ -16,6 +17,8 @@ import { getShoppingList, exportShoppingList } from '../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../utils/i18nUtils';
 import { copyTextToClipboard } from '../utils/clipboardUtils';
 import { formatMealPlanRange } from '../utils/mealPlanUtils';
+import { formatDate } from '../utils/dateUtils';
+import { getShoppingListTitle } from '../utils/shoppingListUtils';
 
 // Helper function to normalize category name (capitalize first letter)
 const normalizeCategory = (category: string): string => {
@@ -44,8 +47,10 @@ const ShoppingListDetail: React.FC = () => {
   const [exportModalTitle, setExportModalTitle] = useState('');
   const [exportModalContent, setExportModalContent] = useState('');
   const [exporting, setExporting] = useState(false);
+  const [storeMode, setStoreMode] = useState(false);
 
   const shoppingListId = id ? parseInt(id, 10) : null;
+  const locale = getLocaleFromLanguage(i18n.language);
 
   const { data: shoppingList, loading, error, execute: fetchShoppingList } = useApi<ShoppingList>(getShoppingList);
   // When the request behind `shoppingList` started; lets checkbox sync tell stale responses apart
@@ -100,7 +105,7 @@ const ShoppingListDetail: React.FC = () => {
         return;
       }
 
-      setExportModalTitle(`${t('shoppingLists.shoppingListNumber', { id: shoppingList.id })} - ${t('common.export')}`);
+      setExportModalTitle(`${getShoppingListTitle(shoppingList, t, locale)} - ${t('common.export')}`);
       setExportModalContent(text);
       setExportModalOpen(true);
     } catch (err) {
@@ -140,12 +145,16 @@ const ShoppingListDetail: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">
-              {t('shoppingLists.shoppingListNumber', { id: shoppingListId })}
-            </h1>
+            {shoppingList ? (
+              <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">
+                {getShoppingListTitle(shoppingList, t, locale)}
+              </h1>
+            ) : (
+              <Skeleton className="h-8 w-64" />
+            )}
             {shoppingList && (
               <p className="text-neutral-500 mt-1">
-                {t('shoppingLists.createdOn')} {new Date(shoppingList.created_at).toLocaleDateString(getLocaleFromLanguage(i18n.language))}
+                {t('shoppingLists.createdOn')} {formatDate(shoppingList.created_at, locale)}
               </p>
             )}
             {shoppingList?.meal_plan && (
@@ -155,29 +164,40 @@ const ShoppingListDetail: React.FC = () => {
               >
                 <Calendar className="h-4 w-4" />
                 {t('shoppingLists.fromMealPlan', {
-                  range: formatMealPlanRange(shoppingList.meal_plan, getLocaleFromLanguage(i18n.language)),
+                  range: formatMealPlanRange(shoppingList.meal_plan, locale),
                 })}
               </Link>
             )}
           </div>
 
           {shoppingList && (
-            <Button
-              variant="outline"
-              leftIcon={<Download className="h-4 w-4" />}
-              onClick={handleExport}
-              isLoading={exporting}
-            >
-              {t('shoppingLists.exportList')}
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              {shoppingList.items.length > 0 && (
+                <Button leftIcon={<ShoppingBasket className="h-4 w-4" />} onClick={() => setStoreMode(true)}>
+                  {t('shoppingLists.storeMode.open')}
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                leftIcon={<Download className="h-4 w-4" />}
+                onClick={handleExport}
+                isLoading={exporting}
+              >
+                {t('shoppingLists.exportList')}
+              </Button>
+            </div>
           )}
         </div>
       </div>
 
       {loading && !shoppingList && (
-        <div className="py-12">
-          <Loader centered label={t('shoppingLists.loadingShoppingList')} />
-        </div>
+        <Card aria-busy="true" aria-label={t('shoppingLists.loadingShoppingList')}>
+          <CardContent className="space-y-3 py-6">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-10" />
+            ))}
+          </CardContent>
+        </Card>
       )}
 
       {error && (
@@ -237,6 +257,17 @@ const ShoppingListDetail: React.FC = () => {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {storeMode && shoppingList && (
+        <ShoppingModeView
+          title={getShoppingListTitle(shoppingList, t, locale)}
+          items={shoppingList.items}
+          statuses={statuses}
+          categoryOf={(item) => normalizeCategory(item.category || 'other')}
+          onToggle={toggle}
+          onClose={() => setStoreMode(false)}
+        />
       )}
 
       <ExportShoppingListModal

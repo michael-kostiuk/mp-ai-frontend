@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Merge, PlusCircle, Search, Sparkles, X } from 'lucide-react';
+import { AlertTriangle, Merge, PlusCircle, Search, Sparkles, X } from 'lucide-react';
 import Container from '../components/layout/Container';
 import PageHeader from '../components/layout/PageHeader';
 import CreateIngredientModal from '../components/ingredients/CreateIngredientModal';
@@ -15,6 +15,8 @@ import { useIngredientContext } from '../context/IngredientContext';
 import useApi from '../hooks/useApi';
 import { estimateIngredientNutrition, estimateMissingIngredientNutrition } from '../api/ingredientApi';
 import { ApiError, Ingredient, IngredientNutritionBulkResponse } from '../types';
+import { getNutritionWarning } from '../utils/nutritionUtils';
+import { formatUnitLabel } from '../utils/unitUtils';
 
 const isMissingNutrition = (ingredient: Ingredient): boolean => {
   const values = [ingredient.calories, ingredient.protein, ingredient.carbs, ingredient.fats];
@@ -24,7 +26,7 @@ const isMissingNutrition = (ingredient: Ingredient): boolean => {
 };
 
 const Ingredients: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -52,12 +54,48 @@ const Ingredients: React.FC = () => {
   const { loading: rowEstimating, execute: runSingleEstimate } = useApi(estimateIngredientNutrition);
 
   const filteredIngredients = useMemo(() => {
-    return ingredients.filter(
-      (ingredient) =>
-        ingredient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ingredient.category.toLowerCase().includes(searchQuery.toLowerCase())
+    return ingredients
+      .filter(
+        (ingredient) =>
+          ingredient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          ingredient.category.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      // Alphabetical regardless of capital letters ("Greek yogurt" no longer jumps to the top)
+      .sort((a, b) => a.name.localeCompare(b.name, i18n.language, { sensitivity: 'base' }));
+  }, [ingredients, searchQuery, i18n.language]);
+
+  const per100 = (ingredient: Ingredient) =>
+    t('ingredients.table.per100', { unit: formatUnitLabel(ingredient.base_unit, t) });
+
+  const renderWarning = (ingredient: Ingredient) => {
+    const warning = getNutritionWarning(ingredient);
+    if (!warning) return null;
+    const message = t(`ingredients.warnings.${warning}`);
+    return (
+      <span className="inline-flex shrink-0 text-warning-600" title={message}>
+        <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+        <span className="sr-only">{message}</span>
+      </span>
     );
-  }, [ingredients, searchQuery]);
+  };
+
+  const renderEstimate = (ingredient: Ingredient) =>
+    isMissingNutrition(ingredient) ? (
+      <Button
+        variant="outline"
+        size="sm"
+        leftIcon={<Sparkles size={14} />}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleSingleEstimate(ingredient);
+        }}
+        isLoading={estimatingId === ingredient.id}
+        disabled={bulkEstimating || rowEstimating || (estimatingId !== null && estimatingId !== ingredient.id)}
+        title={estimatingId === ingredient.id ? t('ingredients.estimatingNutrition') : t('ingredients.fillMissingNutrition')}
+      >
+        {t('ingredients.estimate')}
+      </Button>
+    ) : null;
 
   const missingIngredients = useMemo(() => {
     return ingredients.filter(isMissingNutrition);
@@ -247,28 +285,64 @@ const Ingredients: React.FC = () => {
       )}
       
       {ingredients && filteredIngredients.length > 0 && (
-        <Card>
+        <>
+        {/* Phones: one card per ingredient so calories stay visible */}
+        <ul className="sm:hidden space-y-2">
+          {filteredIngredients.map((ingredient) => (
+            <li key={ingredient.id}>
+              <div
+                role="link"
+                tabIndex={0}
+                onClick={() => navigate(`/ingredients/${ingredient.id}`)}
+                onKeyDown={(e) => e.key === 'Enter' && navigate(`/ingredients/${ingredient.id}`)}
+                className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white p-3 active:bg-neutral-50"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 font-medium text-neutral-900">
+                    <span className="first-letter:uppercase">{ingredient.name}</span>
+                    {renderWarning(ingredient)}
+                  </div>
+                  <div className="mt-1 text-sm text-neutral-500">
+                    {Math.round(ingredient.calories)} {t('common.cal')} {per100(ingredient)}
+                  </div>
+                  <div className="text-xs text-neutral-400">
+                    <span className="capitalize">{ingredient.category}</span>
+                    {' · '}
+                    {t('ingredients.table.macrosShort', {
+                      protein: Math.round(ingredient.protein),
+                      carbs: Math.round(ingredient.carbs),
+                      fats: Math.round(ingredient.fats),
+                    })}
+                  </div>
+                </div>
+                {renderEstimate(ingredient)}
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <Card className="hidden sm:block">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-neutral-200">
                 <thead className="bg-neutral-50">
                   <tr>
-                    <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       {t('ingredients.table.name')}
                     </th>
-                    <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       {t('ingredients.table.category')}
                     </th>
-                    <th scope="col" className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    <th scope="col" className="hidden sm:table-cell px-4 lg:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       {t('ingredients.table.unit')}
                     </th>
-                    <th scope="col" className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       {t('ingredients.table.calories')}
                     </th>
-                    <th scope="col" className="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    <th scope="col" className="hidden lg:table-cell px-4 lg:px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       {t('ingredients.table.macros')}
                     </th>
-                    <th scope="col" className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    <th scope="col" className="px-4 lg:px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                       {t('ingredients.table.ai')}
                     </th>
                   </tr>
@@ -280,49 +354,32 @@ const Ingredients: React.FC = () => {
                       className="hover:bg-neutral-50 transition-colors cursor-pointer"
                       onClick={() => navigate(`/ingredients/${ingredient.id}`)}
                     >
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                        <div className="truncate max-w-[120px] sm:max-w-none">
-                          {ingredient.name}
+                      <td className="px-4 lg:px-6 py-4 text-sm font-medium text-neutral-900">
+                        <div className="flex items-center gap-1.5">
+                          <span className="first-letter:uppercase">{ingredient.name}</span>
+                          {renderWarning(ingredient)}
                         </div>
                       </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                      <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
                         <span className="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-800 capitalize">
                           {ingredient.category}
                         </span>
                       </td>
-                      <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                        {t('ingredients.table.per100', { unit: ingredient.base_unit })}
+                      <td className="hidden sm:table-cell px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                        {per100(ingredient)}
                       </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                        <div className="flex flex-col sm:flex-row sm:items-center">
-                          <span>{ingredient.calories} {t('common.cal')}</span>
-                          <span className="sm:hidden text-xs text-neutral-400 mt-1">
-                            {t('ingredients.table.per100', { unit: ingredient.base_unit })}
-                          </span>
-                        </div>
+                      <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                        {Math.round(ingredient.calories)} {t('common.cal')}
                       </td>
-                      <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                        {ingredient.protein}g / {ingredient.carbs}g / {ingredient.fats}g
+                      <td className="hidden lg:table-cell px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                        {t('ingredients.table.macrosShort', {
+                          protein: Math.round(ingredient.protein),
+                          carbs: Math.round(ingredient.carbs),
+                          fats: Math.round(ingredient.fats),
+                        })}
                       </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-right">
-                        {isMissingNutrition(ingredient) ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            leftIcon={<Sparkles size={14} />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSingleEstimate(ingredient);
-                            }}
-                            isLoading={estimatingId === ingredient.id}
-                            disabled={bulkEstimating || rowEstimating || (estimatingId !== null && estimatingId !== ingredient.id)}
-                            title={estimatingId === ingredient.id ? t('ingredients.estimatingNutrition') : t('ingredients.fillMissingNutrition')}
-                          >
-                            {t('ingredients.estimate')}
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-neutral-400">—</span>
-                        )}
+                      <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-right">
+                        {renderEstimate(ingredient) ?? <span className="text-xs text-neutral-400">—</span>}
                       </td>
                     </tr>
                   ))}
@@ -331,6 +388,7 @@ const Ingredients: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+        </>
       )}
 
       {/* Modals */}

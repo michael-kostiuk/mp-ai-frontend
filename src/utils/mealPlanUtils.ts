@@ -1,11 +1,13 @@
 import { MealPlan, MealPlanEntry, ShoppingListMealPlan } from '../types';
+import { formatDateRange, parseDateKey } from './dateUtils';
 
-// "5 Oct – 11 Oct" style label for a meal plan's dates
-export const formatMealPlanRange = (plan: Pick<ShoppingListMealPlan, 'start_date' | 'end_date'>, locale: string) => {
-  const format = (value: string) =>
-    new Date(value).toLocaleDateString(locale, { day: 'numeric', month: 'short' });
-  return `${format(plan.start_date)} – ${format(plan.end_date)}`;
-};
+// "2–8 November" style label for a meal plan's dates
+export const formatMealPlanRange = (plan: Pick<ShoppingListMealPlan, 'start_date' | 'end_date'>, locale: string) =>
+  formatDateRange(plan.start_date, plan.end_date, locale);
+
+// Days covered by a plan, counting both the first and the last day
+export const getMealPlanDayCount = (plan: Pick<MealPlan, 'start_date' | 'end_date'>) =>
+  Math.round((parseDateKey(plan.end_date).getTime() - parseDateKey(plan.start_date).getTime()) / 86400000) + 1;
 
 const MEAL_TYPE_ORDER: Record<string, number> = { breakfast: 1, lunch: 2, dinner: 3, snack: 4 };
 

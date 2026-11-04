@@ -6,6 +6,7 @@ import Container from '../components/layout/Container';
 import Card, { CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import BrandMark from '../components/ui/BrandMark';
+import Skeleton from '../components/ui/Skeleton';
 import TodayMeals from '../components/mealPlans/TodayMeals';
 import { findTodayPlan, getCurrentMeal } from '../utils/mealPlanUtils';
 import { MealPlan } from '../types';
@@ -14,7 +15,7 @@ import { getMealPlans } from '../api/mealPlanApi';
 
 const Home: React.FC = () => {
   const { t } = useTranslation();
-  const { data: mealPlans, execute: fetchMealPlans } = useCachedApi<MealPlan[], []>('mealPlans', getMealPlans, { initialArgs: [] });
+  const { data: mealPlans, loading: loadingMealPlans, execute: fetchMealPlans } = useCachedApi<MealPlan[], []>('mealPlans', getMealPlans, { initialArgs: [] });
 
   useEffect(() => {
     fetchMealPlans().catch(() => {
@@ -24,6 +25,9 @@ const Home: React.FC = () => {
 
   const currentMeal = getCurrentMeal(new Date());
   const today = mealPlans ? findTodayPlan(mealPlans, currentMeal.dateKey) : null;
+  // Until the plans arrive, keep the compact layout and a placeholder where today's menu goes
+  const waitingForPlans = mealPlans === null && loadingMealPlans;
+  const compact = Boolean(today) || waitingForPlans;
 
   const features = [
     {
@@ -58,22 +62,38 @@ const Home: React.FC = () => {
   
   return (
     <div className="min-h-screen bg-neutral-50">
-      <div className={`${today ? 'pt-6 pb-6 sm:pt-10 sm:pb-8' : 'py-12 sm:py-16 lg:py-20 xl:py-24'}`}>
+      <div className={`${compact ? 'pt-6 pb-6 sm:pt-10 sm:pb-8' : 'py-12 sm:py-16 lg:py-20 xl:py-24'}`}>
         <Container>
           <div className="max-w-4xl mx-auto text-center">
-            <div className={today ? 'hidden' : 'mb-6 sm:mb-8'}>
+            <div className={compact ? 'hidden' : 'mb-6 sm:mb-8'}>
               <BrandMark className="h-16 w-16 sm:h-20 sm:w-20 lg:h-24 lg:w-24 mx-auto text-neutral-900" />
             </div>
-            <h1 className={`font-bold tracking-[-0.035em] text-neutral-900 ${today ? 'text-2xl sm:text-3xl lg:text-4xl mb-2' : 'text-3xl sm:text-4xl lg:text-5xl xl:text-6xl mb-4 sm:mb-6'}`}>
+            <h1 className={`font-bold tracking-[-0.035em] text-neutral-900 ${compact ? 'text-2xl sm:text-3xl lg:text-4xl mb-2' : 'text-3xl sm:text-4xl lg:text-5xl xl:text-6xl mb-4 sm:mb-6'}`}>
               {t('home.title')}
             </h1>
-            <p className={`text-neutral-500 max-w-3xl mx-auto leading-relaxed ${today ? 'hidden sm:block text-base sm:text-lg' : 'text-lg sm:text-xl lg:text-2xl'}`}>
+            <p className={`text-neutral-500 max-w-3xl mx-auto leading-relaxed ${compact ? 'hidden sm:block text-base sm:text-lg' : 'text-lg sm:text-xl lg:text-2xl'}`}>
               {t('home.subtitle')}
             </p>
           </div>
         </Container>
       </div>
       
+      {waitingForPlans && (
+        <Container>
+          <Card padding="none">
+            <CardContent className="p-4 sm:p-6">
+              <Skeleton className="h-6 w-40 mb-2" />
+              <Skeleton className="h-4 w-32 mb-4" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {[0, 1, 2].map((i) => (
+                  <Skeleton key={i} className="h-20" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </Container>
+      )}
+
       {today && (
         <Container>
           <TodayMeals

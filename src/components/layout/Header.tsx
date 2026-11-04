@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Menu, X, Wifi, WifiOff } from 'lucide-react';
+import { Menu, X, WifiOff } from 'lucide-react';
 import { useApiContext } from '../../context/ApiContext';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 import BrandMark from '../ui/BrandMark';
@@ -52,7 +52,8 @@ const Header: React.FC = () => {
       }
     }
 
-    setConnectionStatus('checking');
+    // Automatic retries keep the offline banner up instead of flickering it
+    if (isManual) setConnectionStatus('checking');
 
     try {
       const controller = new AbortController();
@@ -105,41 +106,11 @@ const Header: React.FC = () => {
     };
   }, [testConnection]);
   
-  const getStatusIcon = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return <Wifi className="h-4 w-4 text-success-500" />;
-      case 'disconnected':
-        return <WifiOff className="h-4 w-4 text-error-500" />;
-      case 'checking':
-        return <div className="h-4 w-4 border-2 border-warning-500 border-t-transparent rounded-full animate-spin" />;
-    }
-  };
-  
-  const getStatusText = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return t('header.connected');
-      case 'disconnected':
-        return t('header.disconnected');
-      case 'checking':
-        return t('header.checking');
-    }
-  };
-  
-  const getStatusColor = () => {
-    switch (connectionStatus) {
-      case 'connected':
-        return 'text-success-600';
-      case 'disconnected':
-        return 'text-error-600';
-      case 'checking':
-        return 'text-warning-600';
-    }
-  };
-  
   const authButton = (className: string, closeMenu = false) => {
-    if (mode === 'loading') return null;
+    // Reserve the button's space while the session loads so the header doesn't jump
+    if (mode === 'loading') {
+      return <span className={`${className} invisible`} aria-hidden="true">{t('auth.login')}</span>;
+    }
     const isOwner = mode === 'owner';
     return (
       <button
@@ -215,17 +186,6 @@ const Header: React.FC = () => {
           <div className="hidden lg:ml-6 lg:flex lg:items-center gap-2">
             <LanguageSwitcher />
             {authButton('text-sm text-neutral-500 hover:text-neutral-700 px-2 py-1 rounded transition-colors')}
-            <button
-              onClick={() => testConnection(true)}
-              className="flex items-center text-xs xl:text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
-              title={`Click to test connection. Timeout: ${timeout}ms`}
-            >
-              <span className="mr-2 text-neutral-500 hidden xl:inline">{t('header.api')}:</span>
-              <span className={`flex items-center ${getStatusColor()}`}>
-                {getStatusIcon()}
-                <span className="ml-1 hidden xl:inline">{getStatusText()}</span>
-              </span>
-            </button>
           </div>
         </div>
       </div>
@@ -251,28 +211,29 @@ const Header: React.FC = () => {
           </div>
           
           <div className="border-t border-neutral-200 pt-4 pb-3">
-            <div className="flex items-center justify-between px-4">
-              <button
-                onClick={() => testConnection(true)}
-                className="flex items-center text-sm hover:bg-neutral-50 px-2 py-1 rounded transition-colors"
-                title={`Click to test connection. Timeout: ${timeout}ms`}
-              >
-                <span className="mr-2 text-neutral-500">{t('header.api')}:</span>
-                <span className={`flex items-center ${getStatusColor()}`}>
-                  {getStatusIcon()}
-                  <span className="ml-1">{getStatusText()}</span>
-                </span>
-              </button>
+            <div className="px-4">
               <LanguageSwitcher />
             </div>
             <div className="px-4 mt-2">
               {authButton('text-sm text-neutral-600 hover:text-neutral-800 py-1', true)}
             </div>
-            <div className="px-4 mt-2">
-              <div className="text-xs text-neutral-500 break-all">
-                {baseUrl} • {timeout}ms {t('header.timeout')}
-              </div>
-            </div>
+          </div>
+        </div>
+      )}
+      {connectionStatus === 'disconnected' && (
+        <div className="border-t border-error-200 bg-error-50" role="status">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-2 flex items-center justify-between gap-3 text-sm text-error-700">
+            <span className="flex items-center gap-2">
+              <WifiOff className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {t('header.offline')}
+            </span>
+            <button
+              type="button"
+              onClick={() => testConnection(true)}
+              className="shrink-0 font-medium underline hover:text-error-800"
+            >
+              {t('common.tryAgain')}
+            </button>
           </div>
         </div>
       )}

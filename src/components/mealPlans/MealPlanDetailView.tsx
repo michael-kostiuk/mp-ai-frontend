@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Calendar, Users, Target, Clock, ShoppingCart, Edit, Trash2, RefreshCw, ExternalLink } from 'lucide-react';
@@ -13,6 +13,11 @@ import useCachedApi from '../../hooks/useCachedApi';
 import { getMealPlan, deleteMealPlan, generateShoppingList, regenerateMealPlan } from '../../api/mealPlanApi';
 import { getMealPlanShoppingLists } from '../../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../../utils/i18nUtils';
+import { formatDate, formatDateRange, formatDayHeading } from '../../utils/dateUtils';
+import { getMealPlanDayCount, toDateKey } from '../../utils/mealPlanUtils';
+import { formatQuantity } from '../../utils/unitUtils';
+import { useAuth } from '../../context/AuthContext';
+import DemoEditHint from '../auth/DemoEditHint';
 
 interface MealPlanDetailViewProps {
   onClose: () => void;
@@ -31,6 +36,12 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [existingShoppingList, setExistingShoppingList] = useState<ShoppingList | null>(null);
   const navigate = useNavigate();
+  const { mode } = useAuth();
+  const canEdit = mode === 'owner';
+  const locale = getLocaleFromLanguage(i18n.language);
+  const todayKey = toDateKey(new Date());
+  const todayRef = useRef<HTMLDivElement>(null);
+  const scrolledToToday = useRef(false);
   
   const { data: mealPlan, loading, error, execute: fetchMealPlan } = useCachedApi<MealPlan, [number]>('mealPlan', getMealPlan, {
     initialArgs: mealPlanId ? [mealPlanId] : undefined
@@ -74,31 +85,15 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
     return cancelShoppingLists;
   }, [loadExistingShoppingList, cancelShoppingLists]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString(getLocaleFromLanguage(i18n.language), { 
-      weekday: 'long',
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
+  const getDaysDifference = () => (mealPlan ? getMealPlanDayCount(mealPlan) : 0);
 
-  // e.g. "Mo 12.10.26"
-  const formatShortDate = (dateString: string) => {
-    const date = new Date(dateString.slice(0, 10) + 'T00:00:00');
-    const weekday = date.toLocaleDateString(getLocaleFromLanguage(i18n.language), { weekday: 'short' }).slice(0, 2);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)} ${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${String(date.getFullYear()).slice(-2)}`;
-  };
-
-  const getDaysDifference = () => {
-    if (!mealPlan) return 0;
-    const startDate = new Date(mealPlan.start_date);
-    const endDate = new Date(mealPlan.end_date);
-    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-  };
+  // Bring today's meals into view once, when the plan first loads
+  useEffect(() => {
+    if (mealPlan && todayRef.current && !scrolledToToday.current) {
+      scrolledToToday.current = true;
+      todayRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [mealPlan]);
 
   const getTotalPlanCalories = () => {
     if (!mealPlan) return 0;
@@ -178,10 +173,12 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
           <ArrowLeft className="h-4 w-4 mr-1" />
           {t('common.back')}
         </button>
-        <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6">{t('mealPlans.mealPlanDetails')}</h1>
+        <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl mb-6 first-letter:uppercase">
+          {mealPlan ? formatDateRange(mealPlan.start_date, mealPlan.end_date, locale) : t('mealPlans.mealPlanDetails')}
+        </h1>
 
         <div>
-          {loading && (
+          {loading && !mealPlan && (
             <div className="py-12">
               <Loader centered label={t('mealPlans.loadingMealPlan')} />
             </div>
@@ -236,11 +233,8 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
               <div>
                 <CardContent>
                   <div className="text-center">
-                    <div className="text-lg font-medium text-neutral-900 mb-1">
-                      {formatShortDate(mealPlan.start_date)} - {formatShortDate(mealPlan.end_date)}
-                    </div>
                     <div className="text-sm text-neutral-500">
-                      {t('mealPlans.detail.createdOn')} {formatDate(mealPlan.created_at)}
+                      {t('mealPlans.detail.createdOn')} {formatDate(mealPlan.created_at, locale)}
                     </div>
                   </div>
                 </CardContent>
@@ -281,10 +275,27 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                     <div className="space-y-6">
                       {Object.entries(groupEntriesByDate())
                         .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-                        .map(([date, entries]) => (
-                          <div key={date} className="bg-white border border-neutral-200 rounded-lg p-3 sm:p-4">
-                            <h4 className="font-medium text-neutral-900 pb-3 mb-3 border-b border-neutral-200">
-                              {formatDate(date + 'T00:00:00')}
+                        .map(([date, entries]) => {
+                          const isToday = date === todayKey;
+                          const isPastDay = date < todayKey;
+                          return (
+                          <div
+                            key={date}
+                            ref={isToday ? todayRef : undefined}
+                            className={`bg-white border rounded-lg p-3 sm:p-4 scroll-mt-20 ${
+                              isToday ? 'border-primary-500 ring-2 ring-primary-500' : 'border-neutral-200'
+                            } ${isPastDay ? 'opacity-60' : ''}`}
+                          >
+                            <h4 className="flex items-center gap-2 font-medium text-neutral-900 pb-3 mb-3 border-b border-neutral-200 first-letter:uppercase">
+                              <span className="first-letter:uppercase">{formatDayHeading(date, locale)}</span>
+                              {isToday && (
+                                <span className="rounded-full bg-primary-600 px-2 py-0.5 text-xs font-medium text-white">
+                                  {t('mealPlans.detail.today')}
+                                </span>
+                              )}
+                              {isPastDay && (
+                                <span className="text-xs font-normal text-neutral-500">{t('mealPlans.detail.pastDay')}</span>
+                              )}
                             </h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {entries
@@ -297,8 +308,8 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                                     className="group w-full text-left bg-neutral-50 rounded-lg p-4 hover:bg-neutral-100 transition-colors"
                                   >
                                     <div className="flex items-center justify-between mb-2">
-                                      <span className="text-sm font-medium text-primary-600 capitalize">
-                                        {entry.meal_type}
+                                      <span className="text-sm font-medium text-primary-600">
+                                        {t(`mealPlans.mealTypes.${entry.meal_type}`, entry.meal_type)}
                                       </span>
                                       <span className="text-sm text-neutral-500">
                                         {entry.is_leftover && (
@@ -313,13 +324,17 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                                       {entry.recipe.name}
                                     </div>
                                     <div className="text-sm text-neutral-500">
-                                      {entry.recipe.calories * entry.servings} {t('common.cal')} ({entry.servings} x {entry.recipe.calories})
+                                      {t('mealPlans.detail.entryCalories', {
+                                        total: Math.round(entry.recipe.calories * entry.servings),
+                                        perServing: Math.round(entry.recipe.calories),
+                                      })}
                                     </div>
                                   </button>
                                 ))}
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                     </div>
                   )}
                 </CardContent>
@@ -364,7 +379,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                           <div key={item.id} className="flex items-center justify-between p-2 bg-neutral-50 rounded">
                             <span className="text-sm">{item.ingredient.name}</span>
                             <span className="text-sm text-neutral-500">
-                              {item.quantity} {item.unit}
+                              {formatQuantity(item.quantity, item.unit, t, locale)}
                             </span>
                           </div>
                         ))}
@@ -384,8 +399,9 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
               </Card>
 
               {/* Actions */}
+              {!canEdit && <DemoEditHint />}
               <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-6 border-t border-neutral-200">
-                {onEdit && (
+                {onEdit && canEdit && (
                   <Button
                     onClick={() => onEdit(mealPlan)}
                     leftIcon={<Edit className="h-4 w-4" />}
@@ -398,13 +414,13 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                   variant="outline"
                   onClick={handleRegenerate}
                   isLoading={regenerating}
-                  disabled={regenerating}
+                  disabled={regenerating || !canEdit}
                   leftIcon={<RefreshCw className="h-4 w-4" />}
                   className="w-full sm:w-auto"
                 >
                   {t('mealPlans.detail.regenerate')}
                 </Button>
-                {!showDeleteConfirm ? (
+                {!canEdit ? null : !showDeleteConfirm ? (
                   <Button
                     variant="outline"
                     onClick={() => setShowDeleteConfirm(true)}
