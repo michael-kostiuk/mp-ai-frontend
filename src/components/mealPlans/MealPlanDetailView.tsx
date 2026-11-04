@@ -260,8 +260,8 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
           <ArrowLeft className="h-4 w-4 mr-1" />
           {t('common.back')}
         </button>
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-neutral-900 sm:text-3xl first-letter:uppercase">
+        <div className="mb-6 flex items-center gap-2">
+          <h1 className="mr-auto text-2xl font-bold text-neutral-900 sm:text-3xl first-letter:uppercase">
             {mealPlan ? mealPlan.name || formatDateRange(mealPlan.start_date, mealPlan.end_date, locale) : t('mealPlans.mealPlanDetails')}
           </h1>
           {/* Straight to the in-store list; a plan without a list gets one made first */}
@@ -276,6 +276,28 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
             >
               {!generatingList && <ShoppingBasket className="h-5 w-5" aria-hidden="true" />}
             </Button>
+          )}
+          {/* Editing and the rarer plan actions sit behind "⋯" next to the basket */}
+          {mealPlan && canEdit && (
+            <MoreMenu
+              buttonClassName="h-11 w-11 !p-0"
+              items={[
+                ...(onEdit
+                  ? [{ label: t('mealPlans.detail.editPlan'), icon: <Edit className="h-4 w-4" />, onClick: () => onEdit(mealPlan) }]
+                  : []),
+                {
+                  label: regenerating ? t('common.loading') : t('mealPlans.detail.regenerate'),
+                  icon: <RefreshCw className="h-4 w-4" />,
+                  onClick: handleRegenerate,
+                },
+                {
+                  label: deleting ? t('common.loading') : t('mealPlans.deletePlan'),
+                  icon: <Trash2 className="h-4 w-4" />,
+                  onClick: handleDelete,
+                  danger: true,
+                },
+              ]}
+            />
           )}
         </div>
         {mealPlan?.name && (
@@ -406,37 +428,7 @@ const MealPlanDetailView: React.FC<MealPlanDetailViewProps> = ({
                 </Card>
               )}
 
-              {/* Actions */}
               {!canEdit && <DemoEditHint />}
-              {canEdit && (
-                <div className="flex flex-wrap justify-end gap-3 pt-6 border-t border-neutral-200">
-                  {onEdit && (
-                    <Button
-                      onClick={() => onEdit(mealPlan)}
-                      leftIcon={<Edit className="h-4 w-4" />}
-                      className="flex-1 sm:flex-none"
-                    >
-                      {t('mealPlans.detail.editPlan')}
-                    </Button>
-                  )}
-                  <MoreMenu
-                    placement="up"
-                    items={[
-                      {
-                        label: regenerating ? t('common.loading') : t('mealPlans.detail.regenerate'),
-                        icon: <RefreshCw className="h-4 w-4" />,
-                        onClick: handleRegenerate,
-                      },
-                      {
-                        label: deleting ? t('common.loading') : t('mealPlans.deletePlan'),
-                        icon: <Trash2 className="h-4 w-4" />,
-                        onClick: handleDelete,
-                        danger: true,
-                      },
-                    ]}
-                  />
-                </div>
-              )}
             </div>
           )}
         </div>

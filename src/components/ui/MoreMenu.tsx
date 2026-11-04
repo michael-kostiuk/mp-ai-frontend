@@ -14,10 +14,11 @@ interface MoreMenuProps {
   items: MoreMenuItem[];
   // Open upwards when the button sits at the bottom of the page
   placement?: 'down' | 'up';
+  buttonClassName?: string;
 }
 
 // "⋯" button with rarely used actions, so destructive ones can't be tapped by accident
-const MoreMenu: React.FC<MoreMenuProps> = ({ items, placement = 'down' }) => {
+const MoreMenu: React.FC<MoreMenuProps> = ({ items, placement = 'down', buttonClassName = '' }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -32,6 +33,7 @@ const MoreMenu: React.FC<MoreMenuProps> = ({ items, placement = 'down' }) => {
         aria-label={t('common.moreActions')}
         aria-expanded={open}
         aria-haspopup="menu"
+        className={buttonClassName}
       >
         <MoreHorizontal className="h-5 w-5" />
       </Button>
