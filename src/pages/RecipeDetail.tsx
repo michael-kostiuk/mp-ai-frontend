@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import RecipeDetailModal from '../components/recipes/RecipeDetailModal';
 import CreateRecipeModal from '../components/recipes/CreateRecipeModal';
 import { Recipe } from '../types';
+import { useWakeLock } from '../hooks/useWakeLock';
 
 const RecipeDetail: React.FC = () => {
   const { t } = useTranslation();
@@ -13,6 +14,7 @@ const RecipeDetail: React.FC = () => {
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  useWakeLock(); // keep the screen on while reading a recipe
 
   const recipeId = id ? parseInt(id, 10) : null;
   const searchParams = new URLSearchParams(location.search);
