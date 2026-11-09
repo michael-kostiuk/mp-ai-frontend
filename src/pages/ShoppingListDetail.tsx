@@ -12,6 +12,7 @@ import ExportShoppingListModal from '../components/shoppingLists/ExportShoppingL
 import { ShoppingList, ShoppingListItem as ShoppingListItemType } from '../types';
 import useApi from '../hooks/useApi';
 import useShoppingListSync from '../hooks/useShoppingListSync';
+import { useWakeLock } from '../hooks/useWakeLock';
 import { getShoppingList, exportShoppingList } from '../api/shoppingListApi';
 import { getLocaleFromLanguage } from '../utils/i18nUtils';
 import { copyTextToClipboard } from '../utils/clipboardUtils';
@@ -35,10 +36,14 @@ const groupItemsByCategory = (items: ShoppingListItemType[]): Record<string, Sho
   }, {} as Record<string, ShoppingListItemType[]>);
 };
 
+// How often an open list re-checks the server for changes made on other devices
+const SHOPPING_LIST_POLL_MS = 10000;
+
 const ShoppingListDetail: React.FC = () => {
   const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  useWakeLock(); // keep the screen on while shopping
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportModalTitle, setExportModalTitle] = useState('');
@@ -78,6 +83,22 @@ const ShoppingListDetail: React.FC = () => {
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [loadShoppingList]);
+
+  // While the list stays open (and the screen on), poll so another person's checks show up
+  // without any interaction. Also refresh on window focus and when the connection returns.
+  useEffect(() => {
+    const refreshIfVisible = () => {
+      if (document.visibilityState === 'visible') loadShoppingList();
+    };
+    const timer = window.setInterval(refreshIfVisible, SHOPPING_LIST_POLL_MS);
+    window.addEventListener('focus', refreshIfVisible);
+    window.addEventListener('online', refreshIfVisible);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('focus', refreshIfVisible);
+      window.removeEventListener('online', refreshIfVisible);
+    };
   }, [loadShoppingList]);
 
   const { statuses, toggle, hasPending, syncFailed } = useShoppingListSync(shoppingListId, shoppingList?.items, fetchedAt);
@@ -180,7 +201,7 @@ const ShoppingListDetail: React.FC = () => {
         </div>
       )}
 
-      {error && (
+      {error && !shoppingList && (
         <ErrorMessage
           title={t('shoppingLists.failedToLoadSingle')}
           message={error.message}
